@@ -1,0 +1,131 @@
+# Local development only. Images must already exist; no runtime registry access.
+name: system-inspector-local
+services:
+  mariadb:
+    platform: linux/amd64
+    image: ${MARIADB_IMAGE:?Run scripts/local_mariadb.py prepare with a pinned image}
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: system_inspector
+      MARIADB_USER: inspector_migrator
+      MARIADB_PASSWORD_FILE: /run/secrets/inspector_db_migration_password
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/inspector_db_root_password
+      MARIADB_ROOT_HOST: localhost
+      TZ: UTC
+    secrets:
+      - inspector_db_root_password
+      - inspector_db_migration_password
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./conf.d/inspector.cnf:/etc/mysql/conf.d/inspector.cnf:ro
+      - ${INSPECTOR_SECRETS_DIR:?}/bootstrap.sql:/docker-entrypoint-initdb.d/20-runtime-user.sql:ro
+    networks: [database]
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      start_period: 30s
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 1g
+    # No host port. Host tools use the isolated Linux runner below.
+
+  migrate:
+    platform: linux/amd64
+    profiles: [tooling]
+    image: ${INSPECTOR_RUNNER_IMAGE:-system-inspector-runner:local}
+    pull_policy: never
+    user: ${INSPECTOR_RUNNER_USER:-10001:10001}
+    working_dir: /workspace/backend
+    entrypoint: []
+    command: [python, -m, alembic, -c, alembic.ini, upgrade, head]
+    environment:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: /workspace/backend/src
+      INSPECTOR_CONFIG_FILE: /etc/system-inspector/application.yaml
+      SI_MIGRATION_DB_USERNAME: inspector_migrator
+      SI_MIGRATION_DB_PASSWORD_FILE: /run/secrets/inspector_db_migration_password
+    volumes:
+      - ../../backend:/workspace/backend:ro
+      - ./application.local.yaml:/etc/system-inspector/application.yaml:ro
+    secrets: [inspector_db_migration_password]
+    networks: [database]
+    depends_on:
+      mariadb: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 128
+    mem_limit: 512m
+
+  runtime:
+    platform: linux/amd64
+    profiles: [tooling]
+    image: ${INSPECTOR_RUNNER_IMAGE:-system-inspector-runner:local}
+    pull_policy: never
+    user: ${INSPECTOR_RUNNER_USER:-10001:10001}
+    working_dir: /workspace/backend
+    entrypoint: []
+    command: [python, -m, uvicorn, inspector.app:create_app, --factory, --host, 0.0.0.0, --port, '8000', --workers, '1']
+    environment:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: /workspace/backend/src
+      INSPECTOR_CONFIG_FILE: /etc/system-inspector/application.yaml
+    volumes:
+      - ../../backend:/workspace/backend:ro
+      - ./application.local.yaml:/etc/system-inspector/application.yaml:ro
+    secrets: [inspector_db_password]
+    networks: [database]
+    depends_on:
+      mariadb: {condition: service_healthy}
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
+      - /var/lib/system-inspector:mode=1777
+      - /var/cache/system-inspector:mode=1777
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 128
+    mem_limit: 512m
+
+  integration:
+    platform: linux/amd64
+    profiles: [tooling]
+    image: ${INSPECTOR_RUNNER_IMAGE:-system-inspector-runner:local}
+    pull_policy: never
+    user: ${INSPECTOR_RUNNER_USER:-10001:10001}
+    working_dir: /workspace/backend
+    entrypoint: []
+    command: [python, -m, pytest, tests/integration, -v, -rs, -p, no:cacheprovider]
+    environment:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: /workspace/backend/src
+      # Opt-in/configuration/secrets are supplied only by new-test's override.
+    volumes:
+      - ../../backend:/workspace/backend:ro
+      - ../../contracts:/workspace/contracts:ro
+    networks: [database]
+    depends_on:
+      mariadb: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 128
+    mem_limit: 512m
+
+networks:
+  database:
+    internal: true
+volumes:
+  mariadb-data: {}
+secrets:
+  inspector_db_root_password:
+    file: ${INSPECTOR_SECRETS_DIR:?}/inspector_db_root_password
+  inspector_db_migration_password:
+    file: ${INSPECTOR_SECRETS_DIR:?}/inspector_db_migration_password
+  inspector_db_password:
+    file: ${INSPECTOR_SECRETS_DIR:?}/inspector_db_password

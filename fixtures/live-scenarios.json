@@ -1,0 +1,82 @@
+[
+  {
+    "id": "append",
+    "steps": [
+      "Open a plain-file source and seed matching history.",
+      "Append a complete synthetic line.",
+      "Assert one published event within the healthy latency target."
+    ]
+  },
+  {
+    "id": "partial-utf8-and-line",
+    "steps": [
+      "Append a UTF-8 sequence and line split over several writes.",
+      "Assert no replacement characters or premature complete event.",
+      "Complete the line; assert one event at the original byte start."
+    ]
+  },
+  {
+    "id": "seed-append-race",
+    "steps": [
+      "Pin seed boundary S.",
+      "Append while backward seeding is in progress.",
+      "Complete any partial line across S.",
+      "Assert no source-range gap or duplicate at S."
+    ]
+  },
+  {
+    "id": "rename-rotation",
+    "steps": [
+      "Rename current file to configured plain rotation.",
+      "Append to old open handle, then create/append new active file.",
+      "Assert old drain and new-generation events, with correct source state."
+    ]
+  },
+  {
+    "id": "copytruncate",
+    "steps": [
+      "Observe baseline file and cursor.",
+      "Truncate and append new content.",
+      "Assert generation reset and visible continuity warning."
+    ]
+  },
+  {
+    "id": "disconnect",
+    "steps": [
+      "Interrupt test SFTP transport.",
+      "Append data and reconnect.",
+      "Assert bounded retry, honest gap interval and offset-based recovery where provable."
+    ]
+  },
+  {
+    "id": "refilter",
+    "steps": [
+      "Acquire matching and nonmatching events into raw buffer.",
+      "Change filter without disconnecting.",
+      "Assert retained previously hidden events become visible and old-version frames are discarded."
+    ]
+  },
+  {
+    "id": "slow-client",
+    "steps": [
+      "Stop acknowledging/reading frames from one test client.",
+      "Continue source acquisition.",
+      "Assert bounded memory and a visible reset/gap, not silent loss."
+    ]
+  },
+  {
+    "id": "idle-source",
+    "steps": [
+      "Monitor five sources but append to only one.",
+      "Assert the merge buffer does not wait for idle-source watermarks."
+    ]
+  },
+  {
+    "id": "late-arrival",
+    "steps": [
+      "Publish a later-timestamp event.",
+      "Append an earlier-timestamp event after the reorder window.",
+      "Assert a late marker and stable anchored chronological insertion."
+    ]
+  }
+]

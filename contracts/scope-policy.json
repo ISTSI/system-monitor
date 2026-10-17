@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "ui_entity_name": "System",
+  "technical_scope_field": "project_id",
+  "backend_deployments_per_instance": 1,
+  "database_per_system": false,
+  "roles_are_application_global": true,
+  "automatic_collection_on_page_open": false,
+  "scope_keys": {
+    "entity": [
+      "project_id",
+      "entity_id"
+    ],
+    "event": [
+      "project_id",
+      "event_id"
+    ],
+    "source": [
+      "project_id",
+      "source_revision_id"
+    ],
+    "inventory_host": [
+      "project_id",
+      "inventory_source_id",
+      "inventory_hostname"
+    ],
+    "inventory_process": [
+      "project_id",
+      "inventory_source_id",
+      "inventory_hostname",
+      "process_extension_id"
+    ],
+    "private_resource": [
+      "project_id",
+      "owner_user_id",
+      "resource_id"
+    ],
+    "live_controller": [
+      "project_id",
+      "owner_user_id",
+      "workspace_id",
+      "session_id"
+    ],
+    "query_cursor": [
+      "project_id",
+      "owner_user_id",
+      "investigation_id",
+      "query_hash",
+      "snapshot_revision"
+    ],
+    "pool_context": [
+      "project_id",
+      "owner_user_id",
+      "connection_id",
+      "configuration_revision",
+      "credential_version",
+      "trust_revision",
+      "route_hash"
+    ]
+  },
+  "same_project_relationships": [
+    "server.subsystem",
+    "server.connection",
+    "process.server",
+    "process.parser",
+    "connection.jump",
+    "flow.source_process",
+    "flow.target_process",
+    "source.process",
+    "event.source",
+    "investigation.source",
+    "investigation.event",
+    "bookmark.event",
+    "live_session.workspace",
+    "inventory_preview.source"
+  ],
+  "shared_between_windows": [
+    "auth_logout_revocation",
+    "account_theme_preference",
+    "same_project_shared_configuration_revision"
+  ],
+  "never_shared_mutably_between_windows": [
+    "active_project",
+    "selected_processes",
+    "filter_state",
+    "live_control_lease",
+    "scroll_position",
+    "query_time_bounds"
+  ]
+}

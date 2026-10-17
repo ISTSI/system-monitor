@@ -1,0 +1,472 @@
+{
+  "schema_version": "2.0",
+  "project": {
+    "id": "system-alpha",
+    "name": "System Alpha",
+    "description": "Synthetic parallel-window system. IDs and addresses intentionally overlap the other system.",
+    "revision": 1,
+    "display_timezone": "UTC"
+  },
+  "subsystems": [
+    {
+      "id": "s-ingress",
+      "name": "Ingress",
+      "description": "Synthetic intake subsystem.",
+      "tags": [
+        "demo"
+      ]
+    },
+    {
+      "id": "s-core",
+      "name": "Core",
+      "description": "Synthetic parsing and routing.",
+      "tags": [
+        "demo"
+      ]
+    },
+    {
+      "id": "s-delivery",
+      "name": "Delivery",
+      "description": "Synthetic delivery and audit.",
+      "tags": [
+        "demo"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "c-jump",
+      "name": "Demo jump",
+      "host": "192.0.2.10",
+      "port": 22,
+      "username": "logreader",
+      "credential_ref": "credential-demo-jump",
+      "jump_connection_id": null,
+      "allowed_log_roots": []
+    },
+    {
+      "id": "c-ingest",
+      "name": "Demo ingest",
+      "host": "192.0.2.20",
+      "port": 22,
+      "username": "logreader",
+      "credential_ref": "credential-demo-ingest",
+      "jump_connection_id": null,
+      "allowed_log_roots": [
+        "/var/log/inspector-demo"
+      ]
+    },
+    {
+      "id": "c-core",
+      "name": "Demo core",
+      "host": "192.0.2.21",
+      "port": 22,
+      "username": "logreader",
+      "credential_ref": "credential-demo-core",
+      "jump_connection_id": "c-jump",
+      "allowed_log_roots": [
+        "/var/log/inspector-demo"
+      ]
+    },
+    {
+      "id": "c-delivery",
+      "name": "Demo delivery",
+      "host": "192.0.2.22",
+      "port": 22,
+      "username": "logreader",
+      "credential_ref": "credential-demo-delivery",
+      "jump_connection_id": "c-jump",
+      "allowed_log_roots": [
+        "/var/log/inspector-demo"
+      ]
+    }
+  ],
+  "servers": [
+    {
+      "id": "h-ingest-a",
+      "name": "demo-ingest-01",
+      "subsystem_id": "s-ingress",
+      "connection_id": "c-ingest",
+      "description": "Synthetic host. Do not connect automatically.",
+      "tags": [
+        "demo",
+        "linux"
+      ]
+    },
+    {
+      "id": "h-core-a",
+      "name": "demo-core-01",
+      "subsystem_id": "s-core",
+      "connection_id": "c-core",
+      "description": "Synthetic host. Do not connect automatically.",
+      "tags": [
+        "demo",
+        "linux"
+      ]
+    },
+    {
+      "id": "h-delivery-a",
+      "name": "demo-delivery-01",
+      "subsystem_id": "s-delivery",
+      "connection_id": "c-delivery",
+      "description": "Synthetic host. Do not connect automatically.",
+      "tags": [
+        "demo",
+        "linux"
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "id": "p-ingest-a",
+      "name": "ingest-instance-a",
+      "server_id": "h-ingest-a",
+      "pcs_resource_name": "demo_ingest_a",
+      "description": "## Ingest\n\nSynthetic configured process instance. Inspect logs by request_id.",
+      "tags": [
+        "demo",
+        "ingest"
+      ],
+      "log_source": {
+        "active_path": "/var/log/inspector-demo/ingest/app.log",
+        "rotated_patterns": [
+          "/var/log/inspector-demo/ingest/app.log.[0-9]"
+        ],
+        "archives": [
+          {
+            "path_pattern": "/var/log/inspector-demo/ingest/app.log.*.zip",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          },
+          {
+            "path_pattern": "/var/log/inspector-demo/ingest/app.log.*.tar.gz",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          }
+        ],
+        "parser_id": "parser-iso-utc",
+        "encoding": "utf-8",
+        "allow_symlink": false
+      }
+    },
+    {
+      "id": "p-parser-a",
+      "name": "parser-instance-a",
+      "server_id": "h-core-a",
+      "pcs_resource_name": "demo_parser_a",
+      "description": "## Parser\n\nSynthetic configured process instance. Inspect logs by request_id.",
+      "tags": [
+        "demo",
+        "parser"
+      ],
+      "log_source": {
+        "active_path": "/var/log/inspector-demo/parser/app.log",
+        "rotated_patterns": [
+          "/var/log/inspector-demo/parser/app.log.[0-9]"
+        ],
+        "archives": [
+          {
+            "path_pattern": "/var/log/inspector-demo/parser/app.log.*.zip",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          },
+          {
+            "path_pattern": "/var/log/inspector-demo/parser/app.log.*.tar.gz",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          }
+        ],
+        "parser_id": "parser-iso-utc",
+        "encoding": "utf-8",
+        "allow_symlink": false
+      }
+    },
+    {
+      "id": "p-router-a",
+      "name": "router-instance-a",
+      "server_id": "h-core-a",
+      "pcs_resource_name": "demo_router_a",
+      "description": "## Router\n\nSynthetic configured process instance. Inspect logs by request_id.",
+      "tags": [
+        "demo",
+        "router"
+      ],
+      "log_source": {
+        "active_path": "/var/log/inspector-demo/router/app.log",
+        "rotated_patterns": [
+          "/var/log/inspector-demo/router/app.log.[0-9]"
+        ],
+        "archives": [
+          {
+            "path_pattern": "/var/log/inspector-demo/router/app.log.*.zip",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          },
+          {
+            "path_pattern": "/var/log/inspector-demo/router/app.log.*.tar.gz",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          }
+        ],
+        "parser_id": "parser-iso-utc",
+        "encoding": "utf-8",
+        "allow_symlink": false
+      }
+    },
+    {
+      "id": "p-delivery-a",
+      "name": "delivery-instance-a",
+      "server_id": "h-delivery-a",
+      "pcs_resource_name": "demo_delivery_a",
+      "description": "## Delivery\n\nSynthetic configured process instance. Inspect logs by request_id.",
+      "tags": [
+        "demo",
+        "delivery"
+      ],
+      "log_source": {
+        "active_path": "/var/log/inspector-demo/delivery/app.log",
+        "rotated_patterns": [
+          "/var/log/inspector-demo/delivery/app.log.[0-9]"
+        ],
+        "archives": [
+          {
+            "path_pattern": "/var/log/inspector-demo/delivery/app.log.*.zip",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          },
+          {
+            "path_pattern": "/var/log/inspector-demo/delivery/app.log.*.tar.gz",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          }
+        ],
+        "parser_id": "parser-iso-utc",
+        "encoding": "utf-8",
+        "allow_symlink": false
+      }
+    },
+    {
+      "id": "p-audit-a",
+      "name": "audit-instance-a",
+      "server_id": "h-delivery-a",
+      "pcs_resource_name": "demo_audit_a",
+      "description": "## Audit\n\nSynthetic configured process instance. Inspect logs by request_id.",
+      "tags": [
+        "demo",
+        "audit"
+      ],
+      "log_source": {
+        "active_path": "/var/log/inspector-demo/audit/app.log",
+        "rotated_patterns": [
+          "/var/log/inspector-demo/audit/app.log.[0-9]"
+        ],
+        "archives": [
+          {
+            "path_pattern": "/var/log/inspector-demo/audit/app.log.*.zip",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          },
+          {
+            "path_pattern": "/var/log/inspector-demo/audit/app.log.*.tar.gz",
+            "member_patterns": [
+              "logs/app.log.*"
+            ]
+          }
+        ],
+        "parser_id": "parser-iso-utc",
+        "encoding": "utf-8",
+        "allow_symlink": false
+      }
+    }
+  ],
+  "parsers": [
+    {
+      "id": "parser-iso-utc",
+      "name": "ISO8601 UTC prefix",
+      "timestamp": {
+        "kind": "iso8601_prefix",
+        "naive_timezone": "UTC"
+      },
+      "correlation_markers": [
+        {
+          "key": "request_id",
+          "prefix": "request_id=",
+          "terminators": " \t"
+        }
+      ]
+    },
+    {
+      "id": "parser-fixed-utc",
+      "name": "Fixed timestamp with comma milliseconds",
+      "timestamp": {
+        "kind": "fixed_width",
+        "width": 23,
+        "format": "%Y-%m-%d %H:%M:%S,%f",
+        "naive_timezone": "UTC"
+      },
+      "correlation_markers": [
+        {
+          "key": "request_id",
+          "prefix": "request_id=",
+          "terminators": " \t"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f-ingest-parser",
+      "name": "ingest to parser",
+      "source_process_id": "p-ingest-a",
+      "target_process_id": "p-parser-a",
+      "protocol": "TCP (documented only)",
+      "description": "A possible data-transfer relationship in the synthetic model."
+    },
+    {
+      "id": "f-parser-router",
+      "name": "parser to router",
+      "source_process_id": "p-parser-a",
+      "target_process_id": "p-router-a",
+      "protocol": "TCP (documented only)",
+      "description": "A possible data-transfer relationship in the synthetic model."
+    },
+    {
+      "id": "f-router-delivery",
+      "name": "router to delivery",
+      "source_process_id": "p-router-a",
+      "target_process_id": "p-delivery-a",
+      "protocol": "TCP (documented only)",
+      "description": "A possible data-transfer relationship in the synthetic model."
+    },
+    {
+      "id": "f-delivery-audit",
+      "name": "delivery to audit",
+      "source_process_id": "p-delivery-a",
+      "target_process_id": "p-audit-a",
+      "protocol": "TCP (documented only)",
+      "description": "A possible data-transfer relationship in the synthetic model."
+    }
+  ],
+  "views": [
+    {
+      "id": "v-overview",
+      "name": "System overview",
+      "nodes": [
+        {
+          "element_id": "s-ingress",
+          "x": 0,
+          "y": 0,
+          "width": 440,
+          "height": 440,
+          "collapsed": false
+        },
+        {
+          "element_id": "s-core",
+          "x": 470,
+          "y": 0,
+          "width": 440,
+          "height": 440,
+          "collapsed": false
+        },
+        {
+          "element_id": "s-delivery",
+          "x": 940,
+          "y": 0,
+          "width": 440,
+          "height": 440,
+          "collapsed": false
+        },
+        {
+          "element_id": "h-ingest-a",
+          "x": 24,
+          "y": 60,
+          "width": 390,
+          "height": 350,
+          "collapsed": false
+        },
+        {
+          "element_id": "h-core-a",
+          "x": 24,
+          "y": 60,
+          "width": 390,
+          "height": 350,
+          "collapsed": false
+        },
+        {
+          "element_id": "h-delivery-a",
+          "x": 24,
+          "y": 60,
+          "width": 390,
+          "height": 350,
+          "collapsed": false
+        },
+        {
+          "element_id": "p-ingest-a",
+          "x": 24,
+          "y": 70,
+          "width": 320,
+          "height": 80,
+          "collapsed": false
+        },
+        {
+          "element_id": "p-parser-a",
+          "x": 24,
+          "y": 70,
+          "width": 320,
+          "height": 80,
+          "collapsed": false
+        },
+        {
+          "element_id": "p-router-a",
+          "x": 24,
+          "y": 180,
+          "width": 320,
+          "height": 80,
+          "collapsed": false
+        },
+        {
+          "element_id": "p-delivery-a",
+          "x": 24,
+          "y": 70,
+          "width": 320,
+          "height": 80,
+          "collapsed": false
+        },
+        {
+          "element_id": "p-audit-a",
+          "x": 24,
+          "y": 180,
+          "width": 320,
+          "height": 80,
+          "collapsed": false
+        }
+      ],
+      "flow_ids": [
+        "f-ingest-parser",
+        "f-parser-router",
+        "f-router-delivery",
+        "f-delivery-audit"
+      ]
+    }
+  ],
+  "settings": {
+    "ui": {
+      "product_name": "System Inspector",
+      "locale": "en"
+    },
+    "live": {
+      "poll_interval_ms": 750,
+      "reorder_buffer_ms": 500,
+      "record_by_default": false
+    }
+  }
+}

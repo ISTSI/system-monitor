@@ -1,0 +1,49 @@
+# Database-only deployment template. Images must be prepared/loaded beforehand.
+# App data is isolated from any other MariaDB installation on this server.
+name: system-inspector
+services:
+  mariadb:
+    image: ${MARIADB_IMAGE:?Set MARIADB_IMAGE to a prepared MariaDB image}
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: system_inspector
+      MARIADB_USER: inspector_migrator
+      MARIADB_PASSWORD_FILE: /run/secrets/inspector_db_migration_password
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/inspector_db_root_password
+      MARIADB_ROOT_HOST: localhost
+      INSPECTOR_DB_APP_USER: inspector_app
+      TZ: UTC
+    secrets:
+      - inspector_db_root_password
+      - inspector_db_migration_password
+      - inspector_db_password
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./mariadb/conf.d/inspector.cnf:/etc/mysql/conf.d/inspector.cnf:ro
+      - ./mariadb/initdb/20-runtime-user.sh:/docker-entrypoint-initdb.d/20-runtime-user.sh:ro
+    networks: [database]
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      start_period: 30s
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 1g
+    # No published 3306 port, privileged mode or Docker-socket mount.
+networks:
+  database:
+    internal: true
+volumes:
+  mariadb-data: {}
+secrets:
+  inspector_db_root_password:
+    file: ./secrets/inspector_db_root_password
+  inspector_db_migration_password:
+    file: ./secrets/inspector_db_migration_password
+  inspector_db_password:
+    file: ./secrets/inspector_db_password
+  inspector_vault_key:
+    file: ./secrets/inspector_vault_key

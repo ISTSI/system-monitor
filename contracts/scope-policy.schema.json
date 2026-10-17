@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:system-inspector:scope-policy:1",
+  "title": "Declarative multi-system scope invariants",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "ui_entity_name": {
+      "const": "System"
+    },
+    "technical_scope_field": {
+      "const": "project_id"
+    },
+    "backend_deployments_per_instance": {
+      "const": 1
+    },
+    "database_per_system": {
+      "const": false
+    },
+    "roles_are_application_global": {
+      "const": true
+    },
+    "automatic_collection_on_page_open": {
+      "const": false
+    },
+    "scope_keys": {
+      "type": "object",
+      "minProperties": 9,
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "minItems": 2,
+        "maxItems": 20,
+        "uniqueItems": true
+      }
+    },
+    "same_project_relationships": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true
+    },
+    "shared_between_windows": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true
+    },
+    "never_shared_mutably_between_windows": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "ui_entity_name",
+    "technical_scope_field",
+    "backend_deployments_per_instance",
+    "database_per_system",
+    "roles_are_application_global",
+    "automatic_collection_on_page_open",
+    "scope_keys",
+    "same_project_relationships",
+    "shared_between_windows",
+    "never_shared_mutably_between_windows"
+  ],
+  "additionalProperties": false
+}

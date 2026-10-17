@@ -1,0 +1,2 @@
+ansible_user: logreader
+ansible_port: 22

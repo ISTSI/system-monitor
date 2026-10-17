@@ -1,0 +1,112 @@
+# inspector_* variables are an application-specific extension.
+all:
+  children:
+    ingress:
+      hosts:
+        demo-ingest-01:
+          ansible_host: 192.0.2.20
+          ansible_port: 22
+          ansible_user: logreader
+          inspector_subsystem: s-ingress
+          inspector_processes:
+          - id: p-ingest-a
+            name: ingest-instance-a
+            pcs_resource_name: demo_ingest_a
+            log_source:
+              active_path: /var/log/inspector-demo/ingest/app.log
+              rotated_patterns:
+              - /var/log/inspector-demo/ingest/app.log.[0-9]
+              archives:
+              - path_pattern: /var/log/inspector-demo/ingest/app.log.*.zip
+                member_patterns:
+                - logs/app.log.*
+              - path_pattern: /var/log/inspector-demo/ingest/app.log.*.tar.gz
+                member_patterns:
+                - logs/app.log.*
+              parser_id: parser-iso-utc
+              encoding: utf-8
+              allow_symlink: false
+    core:
+      hosts:
+        demo-core-01:
+          ansible_host: 192.0.2.21
+          ansible_port: 22
+          ansible_user: logreader
+          inspector_subsystem: s-core
+          inspector_processes:
+          - id: p-parser-a
+            name: parser-instance-a
+            pcs_resource_name: demo_parser_a
+            log_source:
+              active_path: /var/log/inspector-demo/parser/app.log
+              rotated_patterns:
+              - /var/log/inspector-demo/parser/app.log.[0-9]
+              archives:
+              - path_pattern: /var/log/inspector-demo/parser/app.log.*.zip
+                member_patterns:
+                - logs/app.log.*
+              - path_pattern: /var/log/inspector-demo/parser/app.log.*.tar.gz
+                member_patterns:
+                - logs/app.log.*
+              parser_id: parser-iso-utc
+              encoding: utf-8
+              allow_symlink: false
+          - id: p-router-a
+            name: router-instance-a
+            pcs_resource_name: demo_router_a
+            log_source:
+              active_path: /var/log/inspector-demo/router/app.log
+              rotated_patterns:
+              - /var/log/inspector-demo/router/app.log.[0-9]
+              archives:
+              - path_pattern: /var/log/inspector-demo/router/app.log.*.zip
+                member_patterns:
+                - logs/app.log.*
+              - path_pattern: /var/log/inspector-demo/router/app.log.*.tar.gz
+                member_patterns:
+                - logs/app.log.*
+              parser_id: parser-iso-utc
+              encoding: utf-8
+              allow_symlink: false
+    delivery:
+      hosts:
+        demo-delivery-01:
+          ansible_host: 192.0.2.22
+          ansible_port: 22
+          ansible_user: logreader
+          inspector_subsystem: s-delivery
+          inspector_processes:
+          - id: p-delivery-a
+            name: delivery-instance-a
+            pcs_resource_name: demo_delivery_a
+            log_source:
+              active_path: /var/log/inspector-demo/delivery/app.log
+              rotated_patterns:
+              - /var/log/inspector-demo/delivery/app.log.[0-9]
+              archives:
+              - path_pattern: /var/log/inspector-demo/delivery/app.log.*.zip
+                member_patterns:
+                - logs/app.log.*
+              - path_pattern: /var/log/inspector-demo/delivery/app.log.*.tar.gz
+                member_patterns:
+                - logs/app.log.*
+              parser_id: parser-iso-utc
+              encoding: utf-8
+              allow_symlink: false
+          - id: p-audit-a
+            name: audit-instance-a
+            pcs_resource_name: demo_audit_a
+            log_source:
+              active_path: /var/log/inspector-demo/audit/app.log
+              rotated_patterns:
+              - /var/log/inspector-demo/audit/app.log.[0-9]
+              archives:
+              - path_pattern: /var/log/inspector-demo/audit/app.log.*.zip
+                member_patterns:
+                - logs/app.log.*
+              - path_pattern: /var/log/inspector-demo/audit/app.log.*.tar.gz
+                member_patterns:
+                - logs/app.log.*
+              parser_id: parser-iso-utc
+              encoding: utf-8
+              allow_symlink: false

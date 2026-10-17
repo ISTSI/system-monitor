@@ -1,0 +1,660 @@
+[
+  {
+    "id": "literal-correlation-substring",
+    "description": "A literal substring also matches REQ-00420. Exact correlation-field search is separate.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "request_id=REQ-0042"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-d4d233c1b516d2b5570c027fc1886182b7eda83f4c3eb71ee71b8ee7552a34bf",
+      "evt-26ff6c8ca2e7e15f68ad5ffc51723db70df94f435ec27b1e790616bff3c15a90",
+      "evt-44bb82f836b5e7941e8a19282f08fe27d8f713d189445851c58e4d78be26d43b",
+      "evt-0f58cb87fb96b13fe2310b1f0b4df1ee9ea2c0e276942c126d1dac0300211304",
+      "evt-587f1b11ece7853692fa0fb9e60ab7dd66f45a7a713eefcd376e427d0b716961",
+      "evt-807903d29eae07f03312f5da7e1b630ed66d659df7876efd0b5f63f94fd949f6",
+      "evt-e7b3332bbd983993d134cf79bcf273704ff30fb7ec8b32e186ef02b10033c58d",
+      "evt-2316fc5d2ebcc7852725d6b9d31583b7c643fb39697feffdffbb36d1ffab4c33",
+      "evt-d3ba956c18f52e2870d8cbc64ee86ce16cef22db5fbb849fd3e7b1e3ca732e1e",
+      "evt-6768904c0117369a3c8c3494213a0c81df35ccc984a7cf235fa94db30375f0b3",
+      "evt-96c5d374fa6356ae137eef624c3445fdeecafe6a6e04085bd171a708d0899c46",
+      "evt-5d13f703f5c061db416499cf336eed9956109a5e5bb062adca43544f0c45e889",
+      "evt-619dbb3f86c8927091fc8a6ae4927837b6c5b860bd481d85e18109e3f5d35836",
+      "evt-d11bcd3a9e6ebef5f42ab3cc562c78a2edc1a90a146a91b156b15ff413a7c66b",
+      "evt-e0f3c467fd1e627f6c7cab15c8a8c3bb7b20b93c8c0b37a40b8fb215bb8f7f35",
+      "evt-fac4cfb265d62871e42352b628cd5f38422951c80a536289b35e09909917c8ee",
+      "evt-746d5dd002c05495904de1b698e4a915c8c16ad868504064e642bf2329ed2996",
+      "evt-44dea63e11714a1d25d568e6d460995f129a78a03bd64ca312bd056661415e18"
+    ],
+    "expected_labels": [
+      "ingest-accept",
+      "ingest-misdated-archive",
+      "ingest-sent",
+      "parser-received",
+      "parser-parsed",
+      "ingest-literal",
+      "parser-warn",
+      "router-queued",
+      "router-received",
+      "ingest-repeat-1",
+      "ingest-repeat-2",
+      "router-sent",
+      "delivery-received",
+      "delivery-done",
+      "audit-stored",
+      "audit-lower",
+      "audit-similar-id",
+      "ingest-markup"
+    ]
+  },
+  {
+    "id": "include-all",
+    "description": "Every include term must match.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "request_id=REQ-0042",
+          "WARN"
+        ],
+        "include_mode": "all",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-e7b3332bbd983993d134cf79bcf273704ff30fb7ec8b32e186ef02b10033c58d"
+    ],
+    "expected_labels": [
+      "parser-warn"
+    ]
+  },
+  {
+    "id": "include-any",
+    "description": "Either include term matches.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "phase=parsed",
+          "phase=delivered"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-587f1b11ece7853692fa0fb9e60ab7dd66f45a7a713eefcd376e427d0b716961",
+      "evt-d11bcd3a9e6ebef5f42ab3cc562c78a2edc1a90a146a91b156b15ff413a7c66b"
+    ],
+    "expected_labels": [
+      "parser-parsed",
+      "delivery-done"
+    ]
+  },
+  {
+    "id": "exclude-overrides",
+    "description": "Exclusion is literal and case-sensitive.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "request_id=REQ-0042"
+        ],
+        "include_mode": "any",
+        "exclude": [
+          "INFO"
+        ],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-e7b3332bbd983993d134cf79bcf273704ff30fb7ec8b32e186ef02b10033c58d",
+      "evt-fac4cfb265d62871e42352b628cd5f38422951c80a536289b35e09909917c8ee"
+    ],
+    "expected_labels": [
+      "parser-warn",
+      "audit-lower"
+    ]
+  },
+  {
+    "id": "regex-looking-is-literal",
+    "description": "Regex metacharacters have no special meaning.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "a.*b [x]"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-807903d29eae07f03312f5da7e1b630ed66d659df7876efd0b5f63f94fd949f6"
+    ],
+    "expected_labels": [
+      "ingest-literal"
+    ]
+  },
+  {
+    "id": "sql-looking-is-literal",
+    "description": "SQL wildcard characters have no special meaning.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "100% _"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-807903d29eae07f03312f5da7e1b630ed66d659df7876efd0b5f63f94fd949f6"
+    ],
+    "expected_labels": [
+      "ingest-literal"
+    ]
+  },
+  {
+    "id": "unicode-casefold",
+    "description": "Unicode casefold matches Straße, unlike simple lowercase.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "STRASSE"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": false
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-807903d29eae07f03312f5da7e1b630ed66d659df7876efd0b5f63f94fd949f6"
+    ],
+    "expected_labels": [
+      "ingest-literal"
+    ]
+  },
+  {
+    "id": "case-sensitive-miss",
+    "description": "Case-sensitive matching does not normalise text.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "STRASSE"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [],
+    "expected_labels": []
+  },
+  {
+    "id": "generated-prefix-excluded",
+    "description": "Generated process/host prefixes are not part of raw_line.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "p-parser-a"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [],
+    "expected_labels": []
+  },
+  {
+    "id": "duplicate-text-retained",
+    "description": "Same text and time at different offsets is two events.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "phase=retried"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-6768904c0117369a3c8c3494213a0c81df35ccc984a7cf235fa94db30375f0b3",
+      "evt-96c5d374fa6356ae137eef624c3445fdeecafe6a6e04085bd171a708d0899c46"
+    ],
+    "expected_labels": [
+      "ingest-repeat-1",
+      "ingest-repeat-2"
+    ]
+  },
+  {
+    "id": "selected-processes",
+    "description": "Selection and event-time sorting precede display.",
+    "request": {
+      "process_ids": [
+        "p-router-a",
+        "p-delivery-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "REQ-0042"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-2316fc5d2ebcc7852725d6b9d31583b7c643fb39697feffdffbb36d1ffab4c33",
+      "evt-d3ba956c18f52e2870d8cbc64ee86ce16cef22db5fbb849fd3e7b1e3ca732e1e",
+      "evt-5d13f703f5c061db416499cf336eed9956109a5e5bb062adca43544f0c45e889",
+      "evt-619dbb3f86c8927091fc8a6ae4927837b6c5b860bd481d85e18109e3f5d35836",
+      "evt-d11bcd3a9e6ebef5f42ab3cc562c78a2edc1a90a146a91b156b15ff413a7c66b"
+    ],
+    "expected_labels": [
+      "router-queued",
+      "router-received",
+      "router-sent",
+      "delivery-received",
+      "delivery-done"
+    ]
+  },
+  {
+    "id": "per-process-filter",
+    "description": "Global and per-process predicates are ANDed.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "REQ-0042"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {
+        "p-parser-a": {
+          "include": [],
+          "include_mode": "any",
+          "exclude": [
+            "phase=parsed"
+          ],
+          "case_sensitive": true
+        }
+      },
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-d4d233c1b516d2b5570c027fc1886182b7eda83f4c3eb71ee71b8ee7552a34bf",
+      "evt-26ff6c8ca2e7e15f68ad5ffc51723db70df94f435ec27b1e790616bff3c15a90",
+      "evt-44bb82f836b5e7941e8a19282f08fe27d8f713d189445851c58e4d78be26d43b",
+      "evt-0f58cb87fb96b13fe2310b1f0b4df1ee9ea2c0e276942c126d1dac0300211304",
+      "evt-807903d29eae07f03312f5da7e1b630ed66d659df7876efd0b5f63f94fd949f6",
+      "evt-e7b3332bbd983993d134cf79bcf273704ff30fb7ec8b32e186ef02b10033c58d",
+      "evt-2316fc5d2ebcc7852725d6b9d31583b7c643fb39697feffdffbb36d1ffab4c33",
+      "evt-d3ba956c18f52e2870d8cbc64ee86ce16cef22db5fbb849fd3e7b1e3ca732e1e",
+      "evt-6768904c0117369a3c8c3494213a0c81df35ccc984a7cf235fa94db30375f0b3",
+      "evt-96c5d374fa6356ae137eef624c3445fdeecafe6a6e04085bd171a708d0899c46",
+      "evt-5d13f703f5c061db416499cf336eed9956109a5e5bb062adca43544f0c45e889",
+      "evt-619dbb3f86c8927091fc8a6ae4927837b6c5b860bd481d85e18109e3f5d35836",
+      "evt-d11bcd3a9e6ebef5f42ab3cc562c78a2edc1a90a146a91b156b15ff413a7c66b",
+      "evt-e0f3c467fd1e627f6c7cab15c8a8c3bb7b20b93c8c0b37a40b8fb215bb8f7f35",
+      "evt-fac4cfb265d62871e42352b628cd5f38422951c80a536289b35e09909917c8ee",
+      "evt-746d5dd002c05495904de1b698e4a915c8c16ad868504064e642bf2329ed2996",
+      "evt-44dea63e11714a1d25d568e6d460995f129a78a03bd64ca312bd056661415e18"
+    ],
+    "expected_labels": [
+      "ingest-accept",
+      "ingest-misdated-archive",
+      "ingest-sent",
+      "parser-received",
+      "ingest-literal",
+      "parser-warn",
+      "router-queued",
+      "router-received",
+      "ingest-repeat-1",
+      "ingest-repeat-2",
+      "router-sent",
+      "delivery-received",
+      "delivery-done",
+      "audit-stored",
+      "audit-lower",
+      "audit-similar-id",
+      "ingest-markup"
+    ]
+  },
+  {
+    "id": "end-exclusive",
+    "description": "Includes both records exactly at from, excludes the event exactly at to.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:01.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "REQ-0042"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-6768904c0117369a3c8c3494213a0c81df35ccc984a7cf235fa94db30375f0b3",
+      "evt-96c5d374fa6356ae137eef624c3445fdeecafe6a6e04085bd171a708d0899c46",
+      "evt-5d13f703f5c061db416499cf336eed9956109a5e5bb062adca43544f0c45e889",
+      "evt-619dbb3f86c8927091fc8a6ae4927837b6c5b860bd481d85e18109e3f5d35836",
+      "evt-d11bcd3a9e6ebef5f42ab3cc562c78a2edc1a90a146a91b156b15ff413a7c66b",
+      "evt-e0f3c467fd1e627f6c7cab15c8a8c3bb7b20b93c8c0b37a40b8fb215bb8f7f35",
+      "evt-fac4cfb265d62871e42352b628cd5f38422951c80a536289b35e09909917c8ee",
+      "evt-746d5dd002c05495904de1b698e4a915c8c16ad868504064e642bf2329ed2996",
+      "evt-44dea63e11714a1d25d568e6d460995f129a78a03bd64ca312bd056661415e18"
+    ],
+    "expected_labels": [
+      "ingest-repeat-1",
+      "ingest-repeat-2",
+      "router-sent",
+      "delivery-received",
+      "delivery-done",
+      "audit-stored",
+      "audit-lower",
+      "audit-similar-id",
+      "ingest-markup"
+    ]
+  },
+  {
+    "id": "zip-history",
+    "description": "Equal timestamps are ordered by process ID.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-15T12:00:00.000000Z",
+      "to": "2026-10-15T12:00:01.000000Z",
+      "filter": {
+        "include": [
+          "archive_type=zip"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-6d5c4be09eb7cbf7bab5eaf61bb6f7adf064139e530b2b215bd5f47eed3b3c6b",
+      "evt-5fccfa0448050d9137639991cd23c16441708989ad6a2452205e3ded36392d78",
+      "evt-e2331d2bc12145785123573f385958cb71387f4b18f79da32940842f2072b9a2",
+      "evt-24a88af2932b2b0dbe201cab7afeda9c075f74c80ad148e4f19506b6ff42b1ea",
+      "evt-f2963e2770b42887dfaded984c8c92396cf47250b20fd0800f5204540f671421"
+    ],
+    "expected_labels": [
+      "audit-zip",
+      "delivery-zip",
+      "ingest-zip",
+      "parser-zip",
+      "router-zip"
+    ]
+  },
+  {
+    "id": "tar-history",
+    "description": "TAR.GZ members retain source provenance.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-14T12:00:00.000000Z",
+      "to": "2026-10-14T12:00:01.000000Z",
+      "filter": {
+        "include": [
+          "archive_type=tar.gz"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-46519557910c50f398e243454d059d34a01069bb4072a66fab4ae96c3ababcc3",
+      "evt-c1ab98daa23ae870746fa7a09af345a7e7b7e7fddb0ea312e5d4594ecec8cd0d",
+      "evt-80e7b32a2a16bae8635a8d92ebaca2bb589cc8ab3e4c49c0b6c6455ddf553285",
+      "evt-759868c296b140399bfacc4cb652aa73175844fd98c730492cdf3acf7622ba69",
+      "evt-d450c153e6ea2dba6ffbef607d708283127ae9535899e1e4899adfd3a05cbd27"
+    ],
+    "expected_labels": [
+      "audit-tar",
+      "delivery-tar",
+      "ingest-tar",
+      "parser-tar",
+      "router-tar"
+    ]
+  },
+  {
+    "id": "filename-not-authority",
+    "description": "An archive filename containing 2020 does not override its 2026 event time.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "phase=misdated-archive"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-26ff6c8ca2e7e15f68ad5ffc51723db70df94f435ec27b1e790616bff3c15a90"
+    ],
+    "expected_labels": [
+      "ingest-misdated-archive"
+    ]
+  },
+  {
+    "id": "markup-plain-text",
+    "description": "Display markup as text; the filter sees literal raw text.",
+    "request": {
+      "process_ids": [
+        "p-ingest-a",
+        "p-parser-a",
+        "p-router-a",
+        "p-delivery-a",
+        "p-audit-a"
+      ],
+      "from": "2026-10-16T12:00:00.000000Z",
+      "to": "2026-10-16T12:00:02.000000Z",
+      "filter": {
+        "include": [
+          "<b>not HTML</b>"
+        ],
+        "include_mode": "any",
+        "exclude": [],
+        "case_sensitive": true
+      },
+      "per_process_filters": {},
+      "limit": 200,
+      "cursor": null
+    },
+    "expected_event_ids": [
+      "evt-44dea63e11714a1d25d568e6d460995f129a78a03bd64ca312bd056661415e18"
+    ],
+    "expected_labels": [
+      "ingest-markup"
+    ]
+  }
+]

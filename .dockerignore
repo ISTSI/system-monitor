@@ -1,0 +1,19 @@
+# The connected build needs only locked dependencies, the reviewed wheel and notices.
+# Ignored secrets, local configuration, caches and workstation toolchains never enter context.
+**
+!backend
+!backend/pyproject.toml
+!backend/uv.lock
+!backend/dist
+!backend/dist/*.whl
+!deploy
+!deploy/app
+!deploy/app/Dockerfile
+!deploy/local-mariadb
+!deploy/local-mariadb/runner.Dockerfile
+!deploy/local-mariadb/runner-bootstrap.requirements.txt
+!third_party
+!third_party/backend
+!third_party/backend/**
+!third_party/frontend
+!third_party/frontend/**

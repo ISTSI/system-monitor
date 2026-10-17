@@ -1,0 +1,1066 @@
+[
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-986436a6d8d0c9c60074847d166ce759b3718784082d03a45a1dd17cad88677f",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T11:59:59.999999Z INFO request_id=REQ-0042 phase=before",
+    "timestamp_original": "2026-10-16T11:59:59.999999Z",
+    "timestamp_utc": "2026-10-16T11:59:59.999999Z",
+    "timestamp_us": 1792151999999999,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 66,
+      "line_number": 1,
+      "content_sha256": "f75c649b230baf3bd7a9a10e9c302370410d8a3fdf79f47100e4349ee6687d0d"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-d4d233c1b516d2b5570c027fc1886182b7eda83f4c3eb71ee71b8ee7552a34bf",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:00.000000Z INFO request_id=REQ-0042 phase=accepted channel=tcp",
+    "timestamp_original": "2026-10-16T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.000000Z",
+    "timestamp_us": 1792152000000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 66,
+      "byte_end": 146,
+      "line_number": 2,
+      "content_sha256": "a6414fc9352baf2fc0980b808e5fae1d32cb0aa093ecc5910677f49b96e65c78"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-7e620d9bb97f494be60c7e0da9220f1414142887ba5c02a83946ac424231daca",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:00.100000Z DEBUG request_id=REQ-0099 noise=heartbeat",
+    "timestamp_original": "2026-10-16T12:00:00.100000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.100000Z",
+    "timestamp_us": 1792152000100000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0099"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 146,
+      "byte_end": 216,
+      "line_number": 3,
+      "content_sha256": "b2727727041a2cbe38084d04f8b5eb72bb361f1496c15953a23ebdfd5589f486"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-44bb82f836b5e7941e8a19282f08fe27d8f713d189445851c58e4d78be26d43b",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:00.250000Z INFO request_id=REQ-0042 phase=sent destination=parser",
+    "timestamp_original": "2026-10-16T12:00:00.250000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.250000Z",
+    "timestamp_us": 1792152000250000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 216,
+      "byte_end": 299,
+      "line_number": 4,
+      "content_sha256": "62a97aa24a53815db89f13eece0424ea3527ab9ae35efe3f576931af0021d286"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-807903d29eae07f03312f5da7e1b630ed66d659df7876efd0b5f63f94fd949f6",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:00.500000Z INFO request_id=REQ-0042 literal=\"a.*b [x] 100% _\" note=Straße",
+    "timestamp_original": "2026-10-16T12:00:00.500000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.500000Z",
+    "timestamp_us": 1792152000500000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 299,
+      "byte_end": 391,
+      "line_number": 5,
+      "content_sha256": "db8792aa927a78bf07aecb54d084e77496d93ba3899f29ad7b81a9457e51911e"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-6768904c0117369a3c8c3494213a0c81df35ccc984a7cf235fa94db30375f0b3",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:01.000000Z INFO request_id=REQ-0042 phase=retried",
+    "timestamp_original": "2026-10-16T12:00:01.000000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.000000Z",
+    "timestamp_us": 1792152001000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 391,
+      "byte_end": 458,
+      "line_number": 6,
+      "content_sha256": "e35c0a94852c74ee280340401f5ce9e68d727c693b28530f8d61133b3ab94a45"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-96c5d374fa6356ae137eef624c3445fdeecafe6a6e04085bd171a708d0899c46",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:01.000000Z INFO request_id=REQ-0042 phase=retried",
+    "timestamp_original": "2026-10-16T12:00:01.000000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.000000Z",
+    "timestamp_us": 1792152001000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 458,
+      "byte_end": 525,
+      "line_number": 7,
+      "content_sha256": "e35c0a94852c74ee280340401f5ce9e68d727c693b28530f8d61133b3ab94a45"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-44dea63e11714a1d25d568e6d460995f129a78a03bd64ca312bd056661415e18",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:01.500000Z INFO request_id=REQ-0042 phase=quoted note=\"<b>not HTML</b> $(do-not-run)\"",
+    "timestamp_original": "2026-10-16T12:00:01.500000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.500000Z",
+    "timestamp_us": 1792152001500000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 525,
+      "byte_end": 628,
+      "line_number": 8,
+      "content_sha256": "9a7fcf0f535f06777e675eb134aa198757ac2b914541f4a3804ec5c5becb3ea4"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-7bb0f9fa27045506df71919fe48eea8deb5122bebe5e8430e59e5b873bd1d0dc",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:02.000000Z INFO request_id=REQ-0042 phase=end-boundary",
+    "timestamp_original": "2026-10-16T12:00:02.000000Z",
+    "timestamp_utc": "2026-10-16T12:00:02.000000Z",
+    "timestamp_us": 1792152002000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 628,
+      "byte_end": 700,
+      "line_number": 9,
+      "content_sha256": "a4df8cffdedafb73eb1ff200b98a5dde4fe27ed5d27dae4b10c546b5415b5d42"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-57737281646942807df71f959f2327d40d79ddd7d0430dd249acfddbfbf23e55",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "NOT_A_TIMESTAMP INFO request_id=REQ-0042 parse=invalid",
+    "timestamp_original": null,
+    "timestamp_utc": null,
+    "timestamp_us": null,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "invalid_timestamp",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 700,
+      "byte_end": 755,
+      "line_number": 10,
+      "content_sha256": "0092cfd17dd58427cf5c6d8990fa041eeafe124076628ce463fe20e95e23f0c9"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-a9f081f17f7321d9d732daffad90a75532edd38def30e4e127adff90ffb1485c",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T11:59:58.000000Z INFO request_id=REQ-0042 phase=rotated",
+    "timestamp_original": "2026-10-16T11:59:58.000000Z",
+    "timestamp_utc": "2026-10-16T11:59:58.000000Z",
+    "timestamp_us": 1792151998000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-01",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log.1",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 67,
+      "line_number": 1,
+      "content_sha256": "a9a9d6d64285748806b274e233dd7fd483d482b5aa1b7acd254a84e94150e5bd"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-e2331d2bc12145785123573f385958cb71387f4b18f79da32940842f2072b9a2",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-15T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=zip",
+    "timestamp_original": "2026-10-15T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-15T12:00:00.000000Z",
+    "timestamp_us": 1792065600000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-zip-02",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log.2026-10-15.zip",
+      "archive_member": "logs/app.log.2026-10-15",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 70,
+      "line_number": 1,
+      "content_sha256": "39ea2226b2736af0b54c47829f33837a0eef1a27d89ab0f178ed570000e8b946"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-80e7b32a2a16bae8635a8d92ebaca2bb589cc8ab3e4c49c0b6c6455ddf553285",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-14T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=tar.gz",
+    "timestamp_original": "2026-10-14T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-14T12:00:00.000000Z",
+    "timestamp_us": 1791979200000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-tar-gz-03",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log.2026-10-14.tar.gz",
+      "archive_member": "logs/app.log.2026-10-14",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 73,
+      "line_number": 1,
+      "content_sha256": "776b962b488f93d56640adfaf1b5066b209969f06d8f7a40da4acfbb2d761ed3"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-0f58cb87fb96b13fe2310b1f0b4df1ee9ea2c0e276942c126d1dac0300211304",
+    "project_id": "project-demo",
+    "process_id": "p-parser-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "parser-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T12:00:00.300000Z INFO request_id=REQ-0042 phase=received",
+    "timestamp_original": "2026-10-16T12:00:00.300000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.300000Z",
+    "timestamp_us": 1792152000300000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-parser-plain-04",
+      "remote_path": "/var/log/inspector-demo/parser/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 68,
+      "line_number": 1,
+      "content_sha256": "f2e6db78733ab4112e2e3b6e14fa618ad3a2edf39d4fc1b990e4001c265a64af"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-587f1b11ece7853692fa0fb9e60ab7dd66f45a7a713eefcd376e427d0b716961",
+    "project_id": "project-demo",
+    "process_id": "p-parser-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "parser-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T12:00:00.450000Z INFO request_id=REQ-0042 phase=parsed token=DEMO_NOT_A_SECRET",
+    "timestamp_original": "2026-10-16T12:00:00.450000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.450000Z",
+    "timestamp_us": 1792152000450000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-parser-plain-04",
+      "remote_path": "/var/log/inspector-demo/parser/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 68,
+      "byte_end": 158,
+      "line_number": 2,
+      "content_sha256": "48d57e8b3093331d2336d02a4b4edb3f9fdff5f067e9a86b12b443e605948d3e"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-bc1145e88ac3dde8f191ae9423c28d871f60a0f98ec4b7584833b14a2bb244bb",
+    "project_id": "project-demo",
+    "process_id": "p-parser-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "parser-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T12:00:00.460000Z DEBUG request_id=REQ-0099 noise=heartbeat",
+    "timestamp_original": "2026-10-16T12:00:00.460000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.460000Z",
+    "timestamp_us": 1792152000460000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0099"
+    },
+    "source": {
+      "source_revision_id": "src-parser-plain-04",
+      "remote_path": "/var/log/inspector-demo/parser/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 158,
+      "byte_end": 228,
+      "line_number": 3,
+      "content_sha256": "ce5924cf42852d97869d5c6906f6192c872f9f33fec1a94315b1c339b0088408"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-e7b3332bbd983993d134cf79bcf273704ff30fb7ec8b32e186ef02b10033c58d",
+    "project_id": "project-demo",
+    "process_id": "p-parser-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "parser-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T12:00:00.600000Z WARN request_id=REQ-0042 phase=slow",
+    "timestamp_original": "2026-10-16T12:00:00.600000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.600000Z",
+    "timestamp_us": 1792152000600000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-parser-plain-04",
+      "remote_path": "/var/log/inspector-demo/parser/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 228,
+      "byte_end": 292,
+      "line_number": 4,
+      "content_sha256": "8745948c0e5d7c95a1356f8f32ea2afeec1451a062039dbb1c29be4aa4e61804"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-ab64e68e8263f937068d4beacdc5643f639ae549e9c698906853ab3690a8d9df",
+    "project_id": "project-demo",
+    "process_id": "p-parser-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "parser-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T11:59:58.000000Z INFO request_id=REQ-0042 phase=rotated",
+    "timestamp_original": "2026-10-16T11:59:58.000000Z",
+    "timestamp_utc": "2026-10-16T11:59:58.000000Z",
+    "timestamp_us": 1792151998000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-parser-plain-05",
+      "remote_path": "/var/log/inspector-demo/parser/app.log.1",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 67,
+      "line_number": 1,
+      "content_sha256": "a9a9d6d64285748806b274e233dd7fd483d482b5aa1b7acd254a84e94150e5bd"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-24a88af2932b2b0dbe201cab7afeda9c075f74c80ad148e4f19506b6ff42b1ea",
+    "project_id": "project-demo",
+    "process_id": "p-parser-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "parser-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-15T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=zip",
+    "timestamp_original": "2026-10-15T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-15T12:00:00.000000Z",
+    "timestamp_us": 1792065600000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-parser-zip-06",
+      "remote_path": "/var/log/inspector-demo/parser/app.log.2026-10-15.zip",
+      "archive_member": "logs/app.log.2026-10-15",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 70,
+      "line_number": 1,
+      "content_sha256": "39ea2226b2736af0b54c47829f33837a0eef1a27d89ab0f178ed570000e8b946"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-759868c296b140399bfacc4cb652aa73175844fd98c730492cdf3acf7622ba69",
+    "project_id": "project-demo",
+    "process_id": "p-parser-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "parser-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-14T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=tar.gz",
+    "timestamp_original": "2026-10-14T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-14T12:00:00.000000Z",
+    "timestamp_us": 1791979200000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-parser-tar-gz-07",
+      "remote_path": "/var/log/inspector-demo/parser/app.log.2026-10-14.tar.gz",
+      "archive_member": "logs/app.log.2026-10-14",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 73,
+      "line_number": 1,
+      "content_sha256": "776b962b488f93d56640adfaf1b5066b209969f06d8f7a40da4acfbb2d761ed3"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-d3ba956c18f52e2870d8cbc64ee86ce16cef22db5fbb849fd3e7b1e3ca732e1e",
+    "project_id": "project-demo",
+    "process_id": "p-router-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "router-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T12:00:00.700000Z INFO request_id=REQ-0042 phase=received",
+    "timestamp_original": "2026-10-16T12:00:00.700000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.700000Z",
+    "timestamp_us": 1792152000700000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-router-plain-08",
+      "remote_path": "/var/log/inspector-demo/router/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 68,
+      "line_number": 1,
+      "content_sha256": "01953bf476360e4fe37779b7be41e5472e00318fdd3bec28e58ece5577868323"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-2316fc5d2ebcc7852725d6b9d31583b7c643fb39697feffdffbb36d1ffab4c33",
+    "project_id": "project-demo",
+    "process_id": "p-router-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "router-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T12:00:00.650000Z INFO request_id=REQ-0042 phase=queued",
+    "timestamp_original": "2026-10-16T12:00:00.650000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.650000Z",
+    "timestamp_us": 1792152000650000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-router-plain-08",
+      "remote_path": "/var/log/inspector-demo/router/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 68,
+      "byte_end": 134,
+      "line_number": 2,
+      "content_sha256": "31ed5a23b67e32edc78942bf434e077f80ea070a611f607b37dd8418e72ed5c2"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-5d13f703f5c061db416499cf336eed9956109a5e5bb062adca43544f0c45e889",
+    "project_id": "project-demo",
+    "process_id": "p-router-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "router-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T12:00:01.200000Z INFO request_id=REQ-0042 phase=sent",
+    "timestamp_original": "2026-10-16T12:00:01.200000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.200000Z",
+    "timestamp_us": 1792152001200000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-router-plain-08",
+      "remote_path": "/var/log/inspector-demo/router/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 134,
+      "byte_end": 198,
+      "line_number": 3,
+      "content_sha256": "03c7667f3fd87c97f3351c32d3cc9c0da6f3e4d58d3ad973e5d5cf4f785201f7"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-4d8ecf94802a44a26406cca9f364716d2a86f249f87de72e00d9cc9d4cbb991f",
+    "project_id": "project-demo",
+    "process_id": "p-router-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "router-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-16T11:59:58.000000Z INFO request_id=REQ-0042 phase=rotated",
+    "timestamp_original": "2026-10-16T11:59:58.000000Z",
+    "timestamp_utc": "2026-10-16T11:59:58.000000Z",
+    "timestamp_us": 1792151998000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-router-plain-09",
+      "remote_path": "/var/log/inspector-demo/router/app.log.1",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 67,
+      "line_number": 1,
+      "content_sha256": "a9a9d6d64285748806b274e233dd7fd483d482b5aa1b7acd254a84e94150e5bd"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-f2963e2770b42887dfaded984c8c92396cf47250b20fd0800f5204540f671421",
+    "project_id": "project-demo",
+    "process_id": "p-router-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "router-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-15T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=zip",
+    "timestamp_original": "2026-10-15T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-15T12:00:00.000000Z",
+    "timestamp_us": 1792065600000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-router-zip-10",
+      "remote_path": "/var/log/inspector-demo/router/app.log.2026-10-15.zip",
+      "archive_member": "logs/app.log.2026-10-15",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 70,
+      "line_number": 1,
+      "content_sha256": "39ea2226b2736af0b54c47829f33837a0eef1a27d89ab0f178ed570000e8b946"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-d450c153e6ea2dba6ffbef607d708283127ae9535899e1e4899adfd3a05cbd27",
+    "project_id": "project-demo",
+    "process_id": "p-router-a",
+    "server_id": "h-core-a",
+    "process_name_snapshot": "router-instance-a",
+    "server_name_snapshot": "demo-core-01",
+    "raw_line": "2026-10-14T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=tar.gz",
+    "timestamp_original": "2026-10-14T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-14T12:00:00.000000Z",
+    "timestamp_us": 1791979200000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-router-tar-gz-11",
+      "remote_path": "/var/log/inspector-demo/router/app.log.2026-10-14.tar.gz",
+      "archive_member": "logs/app.log.2026-10-14",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 73,
+      "line_number": 1,
+      "content_sha256": "776b962b488f93d56640adfaf1b5066b209969f06d8f7a40da4acfbb2d761ed3"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-619dbb3f86c8927091fc8a6ae4927837b6c5b860bd481d85e18109e3f5d35836",
+    "project_id": "project-demo",
+    "process_id": "p-delivery-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "delivery-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-16T12:00:01.250000Z INFO request_id=REQ-0042 phase=received",
+    "timestamp_original": "2026-10-16T12:00:01.250000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.250000Z",
+    "timestamp_us": 1792152001250000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-delivery-plain-12",
+      "remote_path": "/var/log/inspector-demo/delivery/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 68,
+      "line_number": 1,
+      "content_sha256": "4309ffddc756ecc706ea46747e6aaabec9d8dd1b741db7daeb91cda602d0a0dc"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-d11bcd3a9e6ebef5f42ab3cc562c78a2edc1a90a146a91b156b15ff413a7c66b",
+    "project_id": "project-demo",
+    "process_id": "p-delivery-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "delivery-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-16T12:00:01.300000Z INFO request_id=REQ-0042 phase=delivered",
+    "timestamp_original": "2026-10-16T12:00:01.300000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.300000Z",
+    "timestamp_us": 1792152001300000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-delivery-plain-12",
+      "remote_path": "/var/log/inspector-demo/delivery/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 68,
+      "byte_end": 137,
+      "line_number": 2,
+      "content_sha256": "e9b2277a4f6a4c4d0c98cecfdc442f28061e63b79196350b3c5c939a3de1d954"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-5f8e58dab5d0a89e26eac2020456b89bbec473cf6fadc37f4e90b829fb37e4be",
+    "project_id": "project-demo",
+    "process_id": "p-delivery-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "delivery-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-16T11:59:58.000000Z INFO request_id=REQ-0042 phase=rotated",
+    "timestamp_original": "2026-10-16T11:59:58.000000Z",
+    "timestamp_utc": "2026-10-16T11:59:58.000000Z",
+    "timestamp_us": 1792151998000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-delivery-plain-13",
+      "remote_path": "/var/log/inspector-demo/delivery/app.log.1",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 67,
+      "line_number": 1,
+      "content_sha256": "a9a9d6d64285748806b274e233dd7fd483d482b5aa1b7acd254a84e94150e5bd"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-5fccfa0448050d9137639991cd23c16441708989ad6a2452205e3ded36392d78",
+    "project_id": "project-demo",
+    "process_id": "p-delivery-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "delivery-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-15T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=zip",
+    "timestamp_original": "2026-10-15T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-15T12:00:00.000000Z",
+    "timestamp_us": 1792065600000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-delivery-zip-14",
+      "remote_path": "/var/log/inspector-demo/delivery/app.log.2026-10-15.zip",
+      "archive_member": "logs/app.log.2026-10-15",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 70,
+      "line_number": 1,
+      "content_sha256": "39ea2226b2736af0b54c47829f33837a0eef1a27d89ab0f178ed570000e8b946"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-c1ab98daa23ae870746fa7a09af345a7e7b7e7fddb0ea312e5d4594ecec8cd0d",
+    "project_id": "project-demo",
+    "process_id": "p-delivery-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "delivery-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-14T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=tar.gz",
+    "timestamp_original": "2026-10-14T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-14T12:00:00.000000Z",
+    "timestamp_us": 1791979200000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-delivery-tar-gz-15",
+      "remote_path": "/var/log/inspector-demo/delivery/app.log.2026-10-14.tar.gz",
+      "archive_member": "logs/app.log.2026-10-14",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 73,
+      "line_number": 1,
+      "content_sha256": "776b962b488f93d56640adfaf1b5066b209969f06d8f7a40da4acfbb2d761ed3"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-e0f3c467fd1e627f6c7cab15c8a8c3bb7b20b93c8c0b37a40b8fb215bb8f7f35",
+    "project_id": "project-demo",
+    "process_id": "p-audit-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "audit-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-16T12:00:01.350000Z INFO request_id=REQ-0042 phase=stored",
+    "timestamp_original": "2026-10-16T12:00:01.350000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.350000Z",
+    "timestamp_us": 1792152001350000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-audit-plain-16",
+      "remote_path": "/var/log/inspector-demo/audit/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 66,
+      "line_number": 1,
+      "content_sha256": "c2990975feea08945d320390aa6f6b7441b0ccb4180c9f9b7190456d9ff0fdd6"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-fac4cfb265d62871e42352b628cd5f38422951c80a536289b35e09909917c8ee",
+    "project_id": "project-demo",
+    "process_id": "p-audit-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "audit-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-16T12:00:01.351000Z info request_id=REQ-0042 phase=lowercase",
+    "timestamp_original": "2026-10-16T12:00:01.351000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.351000Z",
+    "timestamp_us": 1792152001351000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-audit-plain-16",
+      "remote_path": "/var/log/inspector-demo/audit/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 66,
+      "byte_end": 135,
+      "line_number": 2,
+      "content_sha256": "7cea0a1797d4932be0bdcd401e1545cccea73c15c342be820b795ef48b2a0131"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-746d5dd002c05495904de1b698e4a915c8c16ad868504064e642bf2329ed2996",
+    "project_id": "project-demo",
+    "process_id": "p-audit-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "audit-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-16T12:00:01.352000Z INFO request_id=REQ-00420 phase=similar-id",
+    "timestamp_original": "2026-10-16T12:00:01.352000Z",
+    "timestamp_utc": "2026-10-16T12:00:01.352000Z",
+    "timestamp_us": 1792152001352000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-00420"
+    },
+    "source": {
+      "source_revision_id": "src-audit-plain-16",
+      "remote_path": "/var/log/inspector-demo/audit/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 135,
+      "byte_end": 206,
+      "line_number": 3,
+      "content_sha256": "1c6e07d7fc6131798ddc8c630d4ed091b096070ba8632d475a86426988223dc7"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-3875a7e783cacd2b3e0599f97d8f4f266da80cc16452a14418eb26be4cbae90f",
+    "project_id": "project-demo",
+    "process_id": "p-audit-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "audit-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-16T11:59:58.000000Z INFO request_id=REQ-0042 phase=rotated",
+    "timestamp_original": "2026-10-16T11:59:58.000000Z",
+    "timestamp_utc": "2026-10-16T11:59:58.000000Z",
+    "timestamp_us": 1792151998000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-audit-plain-17",
+      "remote_path": "/var/log/inspector-demo/audit/app.log.1",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 67,
+      "line_number": 1,
+      "content_sha256": "a9a9d6d64285748806b274e233dd7fd483d482b5aa1b7acd254a84e94150e5bd"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-6d5c4be09eb7cbf7bab5eaf61bb6f7adf064139e530b2b215bd5f47eed3b3c6b",
+    "project_id": "project-demo",
+    "process_id": "p-audit-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "audit-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-15T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=zip",
+    "timestamp_original": "2026-10-15T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-15T12:00:00.000000Z",
+    "timestamp_us": 1792065600000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-audit-zip-18",
+      "remote_path": "/var/log/inspector-demo/audit/app.log.2026-10-15.zip",
+      "archive_member": "logs/app.log.2026-10-15",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 70,
+      "line_number": 1,
+      "content_sha256": "39ea2226b2736af0b54c47829f33837a0eef1a27d89ab0f178ed570000e8b946"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-46519557910c50f398e243454d059d34a01069bb4072a66fab4ae96c3ababcc3",
+    "project_id": "project-demo",
+    "process_id": "p-audit-a",
+    "server_id": "h-delivery-a",
+    "process_name_snapshot": "audit-instance-a",
+    "server_name_snapshot": "demo-delivery-01",
+    "raw_line": "2026-10-14T12:00:00.000000Z INFO request_id=REQ-0042 archive_type=tar.gz",
+    "timestamp_original": "2026-10-14T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-14T12:00:00.000000Z",
+    "timestamp_us": 1791979200000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-audit-tar-gz-19",
+      "remote_path": "/var/log/inspector-demo/audit/app.log.2026-10-14.tar.gz",
+      "archive_member": "logs/app.log.2026-10-14",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 73,
+      "line_number": 1,
+      "content_sha256": "776b962b488f93d56640adfaf1b5066b209969f06d8f7a40da4acfbb2d761ed3"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-26ff6c8ca2e7e15f68ad5ffc51723db70df94f435ec27b1e790616bff3c15a90",
+    "project_id": "project-demo",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:00.125000Z INFO request_id=REQ-0042 phase=misdated-archive",
+    "timestamp_original": "2026-10-16T12:00:00.125000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.125000Z",
+    "timestamp_us": 1792152000125000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-zip-20",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log.2020-01-01.zip",
+      "archive_member": "logs/app.log.2020-01-01",
+      "member_ordinal": 0,
+      "byte_start": 0,
+      "byte_end": 76,
+      "line_number": 1,
+      "content_sha256": "ce44ae9d183763ee79837a4323f73fa313d16d4aff74895f3ad9b56ae56d5784"
+    }
+  }
+]

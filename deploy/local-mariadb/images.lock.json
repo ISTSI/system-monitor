@@ -1,0 +1,19 @@
+{
+  "images": {
+    "mariadb": {
+      "tag": "mariadb:11.8.9",
+      "reference": "docker.io/library/mariadb:11.8.9@sha256:d689f65e09e887e96db5c40ca3957dd9f4e3fad3516baec96d7726c78a5fc2ee",
+      "platform": "linux/amd64",
+      "registry_resolved": true,
+      "container_tested": true
+    },
+    "python": {
+      "tag": "python:3.13.16-slim",
+      "reference": "docker.io/library/python:3.13.16-slim@sha256:8fb4cfa1a2616d7b8e0c2175cc6ad68f5729c34ea8488c0b360d2934b7be9024",
+      "platform": "linux/amd64",
+      "registry_resolved": true,
+      "container_tested": true
+    }
+  },
+  "scope": "Pinned official linux/amd64 images pulled and exercised on the local Docker Desktop Linux engine on 2026-10-17; see verification/stage-1/docker for actual integration and lifecycle evidence. Other platforms and the full offline release remain separate gates."
+}

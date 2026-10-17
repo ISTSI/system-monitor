@@ -1,0 +1,51 @@
+{
+  "field": "request_id",
+  "value": "REQ-0042",
+  "from": "2026-10-16T12:00:00.000000Z",
+  "to": "2026-10-16T12:00:02.000000Z",
+  "process_ids": [
+    "p-ingest-a",
+    "p-parser-a",
+    "p-router-a",
+    "p-delivery-a",
+    "p-audit-a"
+  ],
+  "expected_labels": [
+    "ingest-accept",
+    "ingest-misdated-archive",
+    "ingest-sent",
+    "parser-received",
+    "parser-parsed",
+    "ingest-literal",
+    "parser-warn",
+    "router-queued",
+    "router-received",
+    "ingest-repeat-1",
+    "ingest-repeat-2",
+    "router-sent",
+    "delivery-received",
+    "delivery-done",
+    "audit-stored",
+    "audit-lower",
+    "ingest-markup"
+  ],
+  "expected_event_ids": [
+    "evt-d4d233c1b516d2b5570c027fc1886182b7eda83f4c3eb71ee71b8ee7552a34bf",
+    "evt-26ff6c8ca2e7e15f68ad5ffc51723db70df94f435ec27b1e790616bff3c15a90",
+    "evt-44bb82f836b5e7941e8a19282f08fe27d8f713d189445851c58e4d78be26d43b",
+    "evt-0f58cb87fb96b13fe2310b1f0b4df1ee9ea2c0e276942c126d1dac0300211304",
+    "evt-587f1b11ece7853692fa0fb9e60ab7dd66f45a7a713eefcd376e427d0b716961",
+    "evt-807903d29eae07f03312f5da7e1b630ed66d659df7876efd0b5f63f94fd949f6",
+    "evt-e7b3332bbd983993d134cf79bcf273704ff30fb7ec8b32e186ef02b10033c58d",
+    "evt-2316fc5d2ebcc7852725d6b9d31583b7c643fb39697feffdffbb36d1ffab4c33",
+    "evt-d3ba956c18f52e2870d8cbc64ee86ce16cef22db5fbb849fd3e7b1e3ca732e1e",
+    "evt-6768904c0117369a3c8c3494213a0c81df35ccc984a7cf235fa94db30375f0b3",
+    "evt-96c5d374fa6356ae137eef624c3445fdeecafe6a6e04085bd171a708d0899c46",
+    "evt-5d13f703f5c061db416499cf336eed9956109a5e5bb062adca43544f0c45e889",
+    "evt-619dbb3f86c8927091fc8a6ae4927837b6c5b860bd481d85e18109e3f5d35836",
+    "evt-d11bcd3a9e6ebef5f42ab3cc562c78a2edc1a90a146a91b156b15ff413a7c66b",
+    "evt-e0f3c467fd1e627f6c7cab15c8a8c3bb7b20b93c8c0b37a40b8fb215bb8f7f35",
+    "evt-fac4cfb265d62871e42352b628cd5f38422951c80a536289b35e09909917c8ee",
+    "evt-44dea63e11714a1d25d568e6d460995f129a78a03bd64ca312bd056661415e18"
+  ]
+}

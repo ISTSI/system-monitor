@@ -1,0 +1,83 @@
+/* Reference tokens for Codex implementation. No external fonts or assets. */
+html[data-theme="light"] {
+  color-scheme: light;
+  --si-canvas: #EDF3F8;
+  --si-surface: #F7FAFD;
+  --si-raised: #FFFFFF;
+  --si-header: #DFE8F1;
+  --si-log-background: #F2F6FA;
+  --si-input-background: #FFFFFF;
+  --si-text: #152E4A;
+  --si-text-muted: #405A73;
+  --si-border: #B9CADB;
+  --si-control-border: #657E97;
+  --si-accent: #2466A2;
+  --si-selection-background: #D7E7F7;
+  --si-selection-border: #2466A2;
+  --si-focus: #0B5FAB;
+  --si-flow: #2C6BA6;
+  --si-success: #0A7047;
+  --si-warning: #8B5600;
+  --si-danger: #A62936;
+  --si-unknown: #53677C;
+  --si-match-background: #FFEB9E;
+  --si-match-text: #152E4A;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --si-canvas: #192128;
+  --si-surface: #222D37;
+  --si-raised: #2B3844;
+  --si-header: #2C3B49;
+  --si-log-background: #171F27;
+  --si-input-background: #1D2731;
+  --si-text: #EFF4FA;
+  --si-text-muted: #B8C8D8;
+  --si-border: #506478;
+  --si-control-border: #8299AE;
+  --si-accent: #91C7FF;
+  --si-selection-background: #2E465D;
+  --si-selection-border: #91C7FF;
+  --si-focus: #B2D8FF;
+  --si-flow: #86BFFF;
+  --si-success: #83EDBD;
+  --si-warning: #FFD37F;
+  --si-danger: #FF9BA9;
+  --si-unknown: #B8C8D8;
+  --si-match-background: #70561C;
+  --si-match-text: #FFFFFF;
+}
+
+body {
+  background: var(--si-canvas);
+  color: var(--si-text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.si-log {
+  background: var(--si-log-background);
+  color: var(--si-text);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+:focus-visible { outline: 2px solid var(--si-focus); outline-offset: 3px; }
+.si-log mark { background: var(--si-match-background); color: var(--si-match-text); }
+.react-flow {
+  --xy-edge-stroke-default: var(--si-flow);
+  --xy-edge-stroke-selected-default: var(--si-selection-border);
+  --xy-connectionline-stroke-default: var(--si-flow);
+  --xy-node-color-default: var(--si-text);
+  --xy-node-background-color-default: var(--si-surface);
+  --xy-node-border-default: 1px solid var(--si-border);
+  --xy-node-group-background-color-default: var(--si-surface);
+  --xy-minimap-background-color-default: var(--si-raised);
+  --xy-controls-button-background-color-default: var(--si-raised);
+  --xy-controls-button-background-color-hover-default: var(--si-selection-background);
+  --xy-controls-button-color-default: var(--si-text);
+  --xy-controls-button-color-hover-default: var(--si-text);
+  --xy-controls-button-border-color-default: var(--si-control-border);
+  --xy-handle-background-color-default: var(--si-flow);
+  --xy-handle-border-color-default: var(--si-surface);
+}
+@media (prefers-reduced-motion: reduce) {
+  .si-theme-transition { transition: none; }
+}

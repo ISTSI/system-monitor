@@ -1,0 +1,114 @@
+[
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-986436a6d8d0c9c60074847d166ce759b3718784082d03a45a1dd17cad88677f",
+    "project_id": "system-alpha",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T11:59:59.999999Z INFO request_id=REQ-0042 phase=before system_marker=ALPHA",
+    "timestamp_original": "2026-10-16T11:59:59.999999Z",
+    "timestamp_utc": "2026-10-16T11:59:59.999999Z",
+    "timestamp_us": 1792151999999999,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 86,
+      "line_number": 1,
+      "content_sha256": "bece1a794b5f322898b4a9b3340e7a0a15381509a6779541b55087ddc796becb"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-d4d233c1b516d2b5570c027fc1886182b7eda83f4c3eb71ee71b8ee7552a34bf",
+    "project_id": "system-alpha",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:00.000000Z INFO request_id=REQ-0042 phase=accepted channel=tcp system_marker=ALPHA",
+    "timestamp_original": "2026-10-16T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.000000Z",
+    "timestamp_us": 1792152000000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 66,
+      "byte_end": 166,
+      "line_number": 2,
+      "content_sha256": "aaa15d3370b391a0089cb716a0865914e3dbded9f25787e3bfa06a3254a2d9ac"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-986436a6d8d0c9c60074847d166ce759b3718784082d03a45a1dd17cad88677f",
+    "project_id": "system-beta",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T11:59:59.999999Z INFO request_id=REQ-0042 phase=before system_marker=BETA",
+    "timestamp_original": "2026-10-16T11:59:59.999999Z",
+    "timestamp_utc": "2026-10-16T11:59:59.999999Z",
+    "timestamp_us": 1792151999999999,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 0,
+      "byte_end": 85,
+      "line_number": 1,
+      "content_sha256": "37540de7ba5eed813c524619934f9d92915fb685ee1698a29b4cb5c0882c9641"
+    }
+  },
+  {
+    "schema_version": "1.0",
+    "event_id": "evt-d4d233c1b516d2b5570c027fc1886182b7eda83f4c3eb71ee71b8ee7552a34bf",
+    "project_id": "system-beta",
+    "process_id": "p-ingest-a",
+    "server_id": "h-ingest-a",
+    "process_name_snapshot": "ingest-instance-a",
+    "server_name_snapshot": "demo-ingest-01",
+    "raw_line": "2026-10-16T12:00:00.000000Z INFO request_id=REQ-0042 phase=accepted channel=tcp system_marker=BETA",
+    "timestamp_original": "2026-10-16T12:00:00.000000Z",
+    "timestamp_utc": "2026-10-16T12:00:00.000000Z",
+    "timestamp_us": 1792152000000000,
+    "received_at": "2026-10-16T12:00:03.000000Z",
+    "parse_status": "ok",
+    "metadata": {
+      "request_id": "REQ-0042"
+    },
+    "source": {
+      "source_revision_id": "src-ingest-plain-00",
+      "remote_path": "/var/log/inspector-demo/ingest/app.log",
+      "archive_member": null,
+      "member_ordinal": null,
+      "byte_start": 66,
+      "byte_end": 165,
+      "line_number": 2,
+      "content_sha256": "d8ed8551b368a49bf25ba87538e9c0f39ed868a4061568a6b45407e4b35270a6"
+    }
+  }
+]

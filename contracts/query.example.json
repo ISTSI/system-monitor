@@ -1,0 +1,22 @@
+{
+  "process_ids": [
+    "p-ingest-a",
+    "p-parser-a",
+    "p-router-a",
+    "p-delivery-a",
+    "p-audit-a"
+  ],
+  "from": "2026-10-16T12:00:00.000000Z",
+  "to": "2026-10-16T12:00:02.000000Z",
+  "filter": {
+    "include": [
+      "request_id=REQ-0042"
+    ],
+    "include_mode": "any",
+    "exclude": [],
+    "case_sensitive": true
+  },
+  "per_process_filters": {},
+  "limit": 200,
+  "cursor": null
+}

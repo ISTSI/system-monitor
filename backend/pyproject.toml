@@ -1,0 +1,54 @@
+[project]
+name = "system-inspector"
+version = "0.1.0"
+description = "System Inspector project-scoped backend foundation"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "fastapi>=0.121,<1",
+  "uvicorn>=0.34,<1",
+  "sqlalchemy[asyncio]>=2.0,<2.1",
+  "asyncmy>=0.2,<0.3",
+  "alembic>=1.14,<2",
+  "argon2-cffi>=23.1,<26",
+  "pyyaml>=6,<7",
+  "jsonschema>=4.23,<5",
+  "cryptography>=46,<50",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.25,<2", "httpx>=0.28,<1", "ruff>=0.9,<1", "mypy>=1.15,<2", "types-PyYAML", "types-jsonschema", "hatchling"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/inspector"]
+artifacts = ["src/inspector/contracts/*.json", "src/inspector/web/**/*"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"migrations" = "inspector/migrations"
+"alembic.ini" = "inspector/alembic.ini"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["mariadb: requires explicitly approved disposable MariaDB"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["inspector"]
+
+[tool.mypy]
+python_version = "3.13"
+files = ["src"]
+check_untyped_defs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true

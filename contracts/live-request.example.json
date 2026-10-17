@@ -1,0 +1,25 @@
+{
+  "project_id": "project-demo",
+  "project_revision": 1,
+  "process_ids": [
+    "p-ingest-a",
+    "p-parser-a",
+    "p-router-a",
+    "p-delivery-a",
+    "p-audit-a"
+  ],
+  "mode": "merged",
+  "seed_rows": 36,
+  "seed_rows_by_process": {},
+  "filter": {
+    "include": [
+      "request_id=REQ-0042"
+    ],
+    "include_mode": "any",
+    "exclude": [],
+    "case_sensitive": true
+  },
+  "per_process_filters": {},
+  "record": false,
+  "workspace_id": "workspace-demo-a"
+}

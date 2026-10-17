@@ -1,0 +1,35 @@
+{
+  "project_id": "system-alpha",
+  "inventory_source_id": "inventory-main",
+  "upload_id": "upload-alpha",
+  "expected_revision": 1,
+  "format": "static_zip",
+  "source_files": [
+    "hosts.ini"
+  ],
+  "mapping": {
+    "group_to_subsystem": {
+      "ingress": "s-ingress",
+      "core": "s-core",
+      "delivery": "s-delivery"
+    },
+    "tag_only_groups": [
+      "linux"
+    ],
+    "credential_mapping": {
+      "demo-ingest-01": "credential-demo-ingest",
+      "demo-core-01": "credential-demo-core",
+      "demo-delivery-01": "credential-demo-delivery"
+    },
+    "jump_mapping": {
+      "demo-ingest-01": null,
+      "demo-core-01": "c-jump",
+      "demo-delivery-01": "c-jump"
+    },
+    "preserve_existing_documentation": true,
+    "preserve_existing_layout": true,
+    "delete_missing_hosts": false,
+    "host_to_subsystem": {},
+    "parser_mapping": {}
+  }
+}

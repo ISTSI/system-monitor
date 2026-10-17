@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:system-inspector:filter:1",
+  "title": "Literal log filter",
+  "type": "object",
+  "properties": {
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 512
+      },
+      "minItems": 0,
+      "maxItems": 20
+    },
+    "include_mode": {
+      "enum": [
+        "any",
+        "all"
+      ]
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 512
+      },
+      "minItems": 0,
+      "maxItems": 20
+    },
+    "case_sensitive": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "include",
+    "include_mode",
+    "exclude",
+    "case_sensitive"
+  ],
+  "additionalProperties": false
+}

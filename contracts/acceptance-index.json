@@ -1,0 +1,971 @@
+[
+  {
+    "id": "AT01",
+    "requirements": [
+      "R37"
+    ],
+    "title": "Package and contract baseline"
+  },
+  {
+    "id": "AT02",
+    "requirements": [
+      "R01",
+      "R04",
+      "R35"
+    ],
+    "title": "Authenticated foundation"
+  },
+  {
+    "id": "AT03",
+    "requirements": [
+      "R02",
+      "R34"
+    ],
+    "title": "Local interface assets"
+  },
+  {
+    "id": "AT04",
+    "requirements": [
+      "R03",
+      "R37"
+    ],
+    "title": "Real API shell"
+  },
+  {
+    "id": "AT05",
+    "requirements": [
+      "R05",
+      "R06"
+    ],
+    "title": "Ownership and reparenting"
+  },
+  {
+    "id": "AT06",
+    "requirements": [
+      "R07"
+    ],
+    "title": "Cross-subsystem flows"
+  },
+  {
+    "id": "AT07",
+    "requirements": [
+      "R08"
+    ],
+    "title": "Click-through documentation"
+  },
+  {
+    "id": "AT08",
+    "requirements": [
+      "R09"
+    ],
+    "title": "Whole-project search"
+  },
+  {
+    "id": "AT09",
+    "requirements": [
+      "R10"
+    ],
+    "title": "Multiple views and editing controls"
+  },
+  {
+    "id": "AT10",
+    "requirements": [
+      "R11"
+    ],
+    "title": "Config round trip"
+  },
+  {
+    "id": "AT11",
+    "requirements": [
+      "R11",
+      "R35"
+    ],
+    "title": "Stale/invalid config"
+  },
+  {
+    "id": "AT12",
+    "requirements": [
+      "R05",
+      "R28",
+      "R30"
+    ],
+    "title": "Rename/delete impact"
+  },
+  {
+    "id": "AT13",
+    "requirements": [
+      "R17",
+      "R18"
+    ],
+    "title": "Exact UTC interval"
+  },
+  {
+    "id": "AT14",
+    "requirements": [
+      "R16",
+      "R17"
+    ],
+    "title": "Timestamp failures"
+  },
+  {
+    "id": "AT15",
+    "requirements": [
+      "R24"
+    ],
+    "title": "Literal filters"
+  },
+  {
+    "id": "AT16",
+    "requirements": [
+      "R18",
+      "R24"
+    ],
+    "title": "Process/time/filter composition"
+  },
+  {
+    "id": "AT17",
+    "requirements": [
+      "R16",
+      "R32"
+    ],
+    "title": "Source provenance and duplicates"
+  },
+  {
+    "id": "AT18",
+    "requirements": [
+      "R15",
+      "R16"
+    ],
+    "title": "Historical formats"
+  },
+  {
+    "id": "AT19",
+    "requirements": [
+      "R18",
+      "R32"
+    ],
+    "title": "Out-of-order records and coverage"
+  },
+  {
+    "id": "AT20",
+    "requirements": [
+      "R16",
+      "R35"
+    ],
+    "title": "Archive safety"
+  },
+  {
+    "id": "AT21",
+    "requirements": [
+      "R16",
+      "R27"
+    ],
+    "title": "Cancellable bounded ingestion"
+  },
+  {
+    "id": "AT22",
+    "requirements": [
+      "R18"
+    ],
+    "title": "Stable pagination"
+  },
+  {
+    "id": "AT23",
+    "requirements": [
+      "R03",
+      "R37"
+    ],
+    "title": "Historical performance"
+  },
+  {
+    "id": "AT24",
+    "requirements": [
+      "R13"
+    ],
+    "title": "Direct password SSH"
+  },
+  {
+    "id": "AT25",
+    "requirements": [
+      "R13",
+      "R35"
+    ],
+    "title": "Single jump hop and trust"
+  },
+  {
+    "id": "AT26",
+    "requirements": [
+      "R14"
+    ],
+    "title": "Read-only boundary"
+  },
+  {
+    "id": "AT27",
+    "requirements": [
+      "R14",
+      "R15",
+      "R19"
+    ],
+    "title": "Permissions and path testing"
+  },
+  {
+    "id": "AT28",
+    "requirements": [
+      "R16",
+      "R32"
+    ],
+    "title": "Snapshot changes during collection"
+  },
+  {
+    "id": "AT29",
+    "requirements": [
+      "R13",
+      "R27"
+    ],
+    "title": "Pool lifecycle"
+  },
+  {
+    "id": "AT30",
+    "requirements": [
+      "R20",
+      "R21",
+      "R22"
+    ],
+    "title": "Five-process live monitoring"
+  },
+  {
+    "id": "AT31",
+    "requirements": [
+      "R23"
+    ],
+    "title": "Measured matching seed"
+  },
+  {
+    "id": "AT32",
+    "requirements": [
+      "R23",
+      "R26"
+    ],
+    "title": "Seed/live boundary race"
+  },
+  {
+    "id": "AT33",
+    "requirements": [
+      "R24",
+      "R27"
+    ],
+    "title": "Live refilter without reconnect"
+  },
+  {
+    "id": "AT34",
+    "requirements": [
+      "R25"
+    ],
+    "title": "Pause versus stop"
+  },
+  {
+    "id": "AT35",
+    "requirements": [
+      "R26"
+    ],
+    "title": "Partial UTF-8 and rotation"
+  },
+  {
+    "id": "AT36",
+    "requirements": [
+      "R26"
+    ],
+    "title": "Disconnect and retry"
+  },
+  {
+    "id": "AT37",
+    "requirements": [
+      "R18",
+      "R22",
+      "R26"
+    ],
+    "title": "Idle and late streams"
+  },
+  {
+    "id": "AT38",
+    "requirements": [
+      "R27"
+    ],
+    "title": "Retention and slow clients"
+  },
+  {
+    "id": "AT39",
+    "requirements": [
+      "R25",
+      "R26"
+    ],
+    "title": "Socket resume/filter versions"
+  },
+  {
+    "id": "AT40",
+    "requirements": [
+      "R27",
+      "R28"
+    ],
+    "title": "Live recording"
+  },
+  {
+    "id": "AT41",
+    "requirements": [
+      "R26",
+      "R36"
+    ],
+    "title": "Backend lifecycle"
+  },
+  {
+    "id": "AT42",
+    "requirements": [
+      "R35"
+    ],
+    "title": "HTTP session/CSRF security"
+  },
+  {
+    "id": "AT43",
+    "requirements": [
+      "R08",
+      "R34",
+      "R35"
+    ],
+    "title": "Untrusted text rendering"
+  },
+  {
+    "id": "AT44",
+    "requirements": [
+      "R16",
+      "R35"
+    ],
+    "title": "Decompression/resource limits"
+  },
+  {
+    "id": "AT45",
+    "requirements": [
+      "R35"
+    ],
+    "title": "Parser/config input safety"
+  },
+  {
+    "id": "AT46",
+    "requirements": [
+      "R13",
+      "R35"
+    ],
+    "title": "Secret and target lifecycle"
+  },
+  {
+    "id": "AT47",
+    "requirements": [
+      "R35"
+    ],
+    "title": "WebSocket security"
+  },
+  {
+    "id": "AT48",
+    "requirements": [
+      "R28"
+    ],
+    "title": "Saved workspace"
+  },
+  {
+    "id": "AT49",
+    "requirements": [
+      "R29"
+    ],
+    "title": "Correlation identity"
+  },
+  {
+    "id": "AT50",
+    "requirements": [
+      "R30",
+      "R31"
+    ],
+    "title": "Notes and context pinning"
+  },
+  {
+    "id": "AT51",
+    "requirements": [
+      "R12"
+    ],
+    "title": "Dependency selection"
+  },
+  {
+    "id": "AT52",
+    "requirements": [
+      "R32"
+    ],
+    "title": "Coverage detail"
+  },
+  {
+    "id": "AT53",
+    "requirements": [
+      "R33",
+      "R35"
+    ],
+    "title": "Redacted bundle export"
+  },
+  {
+    "id": "AT54",
+    "requirements": [
+      "R33"
+    ],
+    "title": "Safe offline bundle import"
+  },
+  {
+    "id": "AT55",
+    "requirements": [
+      "R11"
+    ],
+    "title": "Ansible input formats"
+  },
+  {
+    "id": "AT56",
+    "requirements": [
+      "R11"
+    ],
+    "title": "Idempotent inventory reconciliation"
+  },
+  {
+    "id": "AT57",
+    "requirements": [
+      "R06",
+      "R11"
+    ],
+    "title": "Inventory subgroup conflicts"
+  },
+  {
+    "id": "AT58",
+    "requirements": [
+      "R11",
+      "R35"
+    ],
+    "title": "Inventory execution/secret rejection"
+  },
+  {
+    "id": "AT59",
+    "requirements": [
+      "R19"
+    ],
+    "title": "Parser/config preview"
+  },
+  {
+    "id": "AT60",
+    "requirements": [
+      "R34"
+    ],
+    "title": "Desktop accessibility/layout"
+  },
+  {
+    "id": "AT61",
+    "requirements": [
+      "R03",
+      "R34",
+      "R37"
+    ],
+    "title": "Integrated UI/resource baseline"
+  },
+  {
+    "id": "AT62",
+    "requirements": [
+      "R01",
+      "R36"
+    ],
+    "title": "Ubuntu/Rocky deployment"
+  },
+  {
+    "id": "AT63",
+    "requirements": [
+      "R02",
+      "R36"
+    ],
+    "title": "Offline cold start"
+  },
+  {
+    "id": "AT64",
+    "requirements": [
+      "R28",
+      "R35",
+      "R36"
+    ],
+    "title": "Backup and restore"
+  },
+  {
+    "id": "AT65",
+    "requirements": [
+      "R36"
+    ],
+    "title": "Upgrade and rollback"
+  },
+  {
+    "id": "AT66",
+    "requirements": [
+      "R37"
+    ],
+    "title": "Final release evidence"
+  },
+  {
+    "id": "AT67",
+    "requirements": [
+      "R34",
+      "R38"
+    ],
+    "title": "Both visual themes"
+  },
+  {
+    "id": "AT68",
+    "requirements": [
+      "R38",
+      "R24"
+    ],
+    "title": "Switch theme during live work"
+  },
+  {
+    "id": "AT69",
+    "requirements": [
+      "R38",
+      "R39",
+      "R41"
+    ],
+    "title": "Appearance ownership and defaults"
+  },
+  {
+    "id": "AT70",
+    "requirements": [
+      "R34",
+      "R38"
+    ],
+    "title": "Contrast and keyboard paths in both modes"
+  },
+  {
+    "id": "AT71",
+    "requirements": [
+      "R04",
+      "R39",
+      "R35"
+    ],
+    "title": "Server-enforced permission matrix"
+  },
+  {
+    "id": "AT72",
+    "requirements": [
+      "R40"
+    ],
+    "title": "Account lifecycle and last Administrator"
+  },
+  {
+    "id": "AT73",
+    "requirements": [
+      "R35",
+      "R39",
+      "R41"
+    ],
+    "title": "Object ownership across protocols"
+  },
+  {
+    "id": "AT74",
+    "requirements": [
+      "R40",
+      "R35"
+    ],
+    "title": "Revocation while streaming"
+  },
+  {
+    "id": "AT75",
+    "requirements": [
+      "R39",
+      "R35"
+    ],
+    "title": "Safe Inspector projection"
+  },
+  {
+    "id": "AT76",
+    "requirements": [
+      "R28",
+      "R29",
+      "R30",
+      "R31",
+      "R32",
+      "R33",
+      "R41"
+    ],
+    "title": "Inspector investigation workflow"
+  },
+  {
+    "id": "AT77",
+    "requirements": [
+      "R40",
+      "R35"
+    ],
+    "title": "Audit trail without secrets"
+  },
+  {
+    "id": "AT78",
+    "requirements": [
+      "R34",
+      "R39",
+      "R26"
+    ],
+    "title": "Role-aware controls and honest state"
+  },
+  {
+    "id": "AT79",
+    "requirements": [
+      "R42",
+      "R44"
+    ],
+    "title": "MariaDB-native persistence correctness"
+  },
+  {
+    "id": "AT80",
+    "requirements": [
+      "R42",
+      "R35"
+    ],
+    "title": "Database configuration, files and TLS"
+  },
+  {
+    "id": "AT81",
+    "requirements": [
+      "R43"
+    ],
+    "title": "Docker database provisioning and restart"
+  },
+  {
+    "id": "AT82",
+    "requirements": [
+      "R42",
+      "R43"
+    ],
+    "title": "Existing MariaDB endpoint"
+  },
+  {
+    "id": "AT83",
+    "requirements": [
+      "R44",
+      "R45",
+      "R35"
+    ],
+    "title": "Database outage and single-worker ownership"
+  },
+  {
+    "id": "AT84",
+    "requirements": [
+      "R43",
+      "R35"
+    ],
+    "title": "Separate database privileges"
+  },
+  {
+    "id": "AT85",
+    "requirements": [
+      "R45",
+      "R28"
+    ],
+    "title": "MariaDB and cache disaster recovery"
+  },
+  {
+    "id": "AT86",
+    "requirements": [
+      "R44"
+    ],
+    "title": "Version 1 compatibility and conditional data migration"
+  },
+  {
+    "id": "AT87",
+    "requirements": [
+      "R02",
+      "R43",
+      "R45"
+    ],
+    "title": "Three-image offline cold release"
+  },
+  {
+    "id": "AT88",
+    "requirements": [
+      "R34",
+      "R38",
+      "R39"
+    ],
+    "title": "Complete visual regression matrix"
+  },
+  {
+    "id": "AT89",
+    "requirements": [
+      "R39",
+      "R44"
+    ],
+    "title": "Transactional shared settings and topology"
+  },
+  {
+    "id": "AT90",
+    "requirements": [
+      "R03",
+      "R41",
+      "R44"
+    ],
+    "title": "Global and per-account resource budgets"
+  },
+  {
+    "id": "AT91",
+    "title": "Two independent named system configurations",
+    "requirements": [
+      "R46",
+      "R48"
+    ]
+  },
+  {
+    "id": "AT92",
+    "title": "Two windows using the same account and browser context",
+    "requirements": [
+      "R47",
+      "R49",
+      "R56"
+    ]
+  },
+  {
+    "id": "AT93",
+    "title": "System-scoped search with colliding entity names",
+    "requirements": [
+      "R09",
+      "R48"
+    ]
+  },
+  {
+    "id": "AT94",
+    "title": "Forged cross-project API and download references",
+    "requirements": [
+      "R35",
+      "R48",
+      "R56"
+    ]
+  },
+  {
+    "id": "AT95",
+    "title": "Scoped event identities caches and query cursors",
+    "requirements": [
+      "R18",
+      "R31",
+      "R32",
+      "R48"
+    ]
+  },
+  {
+    "id": "AT96",
+    "title": "Independent filters for both different and identical systems",
+    "requirements": [
+      "R24",
+      "R49"
+    ]
+  },
+  {
+    "id": "AT97",
+    "title": "Pause stop close and background-page isolation",
+    "requirements": [
+      "R25",
+      "R26",
+      "R49"
+    ]
+  },
+  {
+    "id": "AT98",
+    "title": "Refresh duplicate deep link and explicit resume",
+    "requirements": [
+      "R47",
+      "R49"
+    ]
+  },
+  {
+    "id": "AT99",
+    "title": "Shared authentication and appearance exceptions",
+    "requirements": [
+      "R38",
+      "R40",
+      "R49"
+    ]
+  },
+  {
+    "id": "AT100",
+    "title": "Two times five live sources and bounded fairness",
+    "requirements": [
+      "R03",
+      "R22",
+      "R27",
+      "R50",
+      "R56"
+    ]
+  },
+  {
+    "id": "AT101",
+    "title": "System archive and restore affect only their target",
+    "requirements": [
+      "R46",
+      "R48"
+    ]
+  },
+  {
+    "id": "AT102",
+    "title": "Direct INI and extensionless inventory files",
+    "requirements": [
+      "R11",
+      "R51",
+      "R52"
+    ]
+  },
+  {
+    "id": "AT103",
+    "title": "Direct YAML inventory with nested groups and processes",
+    "requirements": [
+      "R51",
+      "R52"
+    ]
+  },
+  {
+    "id": "AT104",
+    "title": "Inventory ZIP with relative host and group variables",
+    "requirements": [
+      "R51",
+      "R54"
+    ]
+  },
+  {
+    "id": "AT105",
+    "title": "Canonical inventory JSON remains a safe compatibility path",
+    "requirements": [
+      "R51",
+      "R54"
+    ]
+  },
+  {
+    "id": "AT106",
+    "title": "Unsupported static constructs never guessed or executed",
+    "requirements": [
+      "R51",
+      "R54"
+    ]
+  },
+  {
+    "id": "AT107",
+    "title": "Explicit subsystem mapping and honest import counts",
+    "requirements": [
+      "R52"
+    ]
+  },
+  {
+    "id": "AT108",
+    "title": "Per-system idempotent inventory reimport",
+    "requirements": [
+      "R48",
+      "R53"
+    ]
+  },
+  {
+    "id": "AT109",
+    "title": "Inventory changes preserve manually maintained documentation",
+    "requirements": [
+      "R53"
+    ]
+  },
+  {
+    "id": "AT110",
+    "title": "Tamper stale or cross-system previews cannot commit",
+    "requirements": [
+      "R35",
+      "R53"
+    ]
+  },
+  {
+    "id": "AT111",
+    "title": "Imported secrets jump hints and targets stay unapproved",
+    "requirements": [
+      "R13",
+      "R35",
+      "R52",
+      "R54"
+    ]
+  },
+  {
+    "id": "AT112",
+    "title": "Bounded malicious inventory files and archives",
+    "requirements": [
+      "R35",
+      "R54"
+    ]
+  },
+  {
+    "id": "AT113",
+    "title": "Process extension is explicit and system-local",
+    "requirements": [
+      "R15",
+      "R52"
+    ]
+  },
+  {
+    "id": "AT114",
+    "title": "Roles enforced on every system setup surface",
+    "requirements": [
+      "R39",
+      "R41",
+      "R46",
+      "R51"
+    ]
+  },
+  {
+    "id": "AT115",
+    "title": "MariaDB enforces project-paired relationships",
+    "requirements": [
+      "R42",
+      "R44",
+      "R48"
+    ]
+  },
+  {
+    "id": "AT116",
+    "title": "Upgrade existing projects without arbitrary scope backfill",
+    "requirements": [
+      "R44",
+      "R55",
+      "R56"
+    ]
+  },
+  {
+    "id": "AT117",
+    "title": "Legacy configuration import selects one explicit system",
+    "requirements": [
+      "R11",
+      "R44",
+      "R55"
+    ]
+  },
+  {
+    "id": "AT118",
+    "title": "Investigation bundle exchange preserves system provenance",
+    "requirements": [
+      "R33",
+      "R41",
+      "R48"
+    ]
+  },
+  {
+    "id": "AT119",
+    "title": "Both themes show unambiguous active system context",
+    "requirements": [
+      "R34",
+      "R38",
+      "R47"
+    ]
+  },
+  {
+    "id": "AT120",
+    "title": "Two-system offline release backup and cold restart",
+    "requirements": [
+      "R02",
+      "R36",
+      "R45",
+      "R46",
+      "R56"
+    ]
+  }
+]

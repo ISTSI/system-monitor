@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Own appearance preference response",
+  "type": "object",
+  "properties": {
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "theme_mode": {
+      "enum": [
+        "default",
+        "light",
+        "dark",
+        "system"
+      ]
+    }
+  },
+  "required": [
+    "revision",
+    "theme_mode"
+  ],
+  "additionalProperties": false
+}

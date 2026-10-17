@@ -1,0 +1,35 @@
+inspector_processes:
+- id: p-parser-a
+  name: parser-instance-a
+  pcs_resource_name: demo_parser_a
+  log_source:
+    active_path: /var/log/inspector-demo/parser/app.log
+    rotated_patterns:
+    - /var/log/inspector-demo/parser/app.log.[0-9]
+    archives:
+    - path_pattern: /var/log/inspector-demo/parser/app.log.*.zip
+      member_patterns:
+      - logs/app.log.*
+    - path_pattern: /var/log/inspector-demo/parser/app.log.*.tar.gz
+      member_patterns:
+      - logs/app.log.*
+    parser_id: parser-iso-utc
+    encoding: utf-8
+    allow_symlink: false
+- id: p-router-a
+  name: router-instance-a
+  pcs_resource_name: demo_router_a
+  log_source:
+    active_path: /var/log/inspector-demo/router/app.log
+    rotated_patterns:
+    - /var/log/inspector-demo/router/app.log.[0-9]
+    archives:
+    - path_pattern: /var/log/inspector-demo/router/app.log.*.zip
+      member_patterns:
+      - logs/app.log.*
+    - path_pattern: /var/log/inspector-demo/router/app.log.*.tar.gz
+      member_patterns:
+      - logs/app.log.*
+    parser_id: parser-iso-utc
+    encoding: utf-8
+    allow_symlink: false

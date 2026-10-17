@@ -1,0 +1,534 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "System Inspector server deployment configuration v2",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "2.0"
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "public_origin": {
+          "type": "string",
+          "pattern": "^https://[^/\\s]+$"
+        },
+        "state_dir": {
+          "type": "string",
+          "pattern": "^(?:/(?!/)|[A-Za-z]:/)[^\\x00-\\x1f\\x7f\\\\]*$",
+          "minLength": 2,
+          "maxLength": 4096
+        },
+        "cache_dir": {
+          "type": "string",
+          "pattern": "^(?:/(?!/)|[A-Za-z]:/)[^\\x00-\\x1f\\x7f\\\\]*$",
+          "minLength": 2,
+          "maxLength": 4096
+        },
+        "vault_key_file": {
+          "type": "string",
+          "pattern": "^(?:/(?!/)|[A-Za-z]:/)[^\\x00-\\x1f\\x7f\\\\]*$",
+          "minLength": 2,
+          "maxLength": 4096
+        },
+        "asgi_workers": {
+          "const": 1
+        },
+        "allow_runtime_internet": {
+          "const": false
+        },
+        "allowed_target_mode": {
+          "const": "explicit_administrator_approval"
+        },
+        "allow_sudo": {
+          "const": false
+        }
+      },
+      "required": [
+        "public_origin",
+        "state_dir",
+        "cache_dir",
+        "vault_key_file",
+        "asgi_workers",
+        "allow_runtime_internet",
+        "allowed_target_mode",
+        "allow_sudo"
+      ],
+      "additionalProperties": false
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "const": "mariadb"
+        },
+        "driver": {
+          "const": "asyncmy"
+        },
+        "topology": {
+          "enum": [
+            "managed",
+            "external",
+            "ssh_tunnel"
+          ]
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253,
+          "pattern": "^[^\\s/@\\\\]+$"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,47}$"
+        },
+        "username": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+        },
+        "password_file": {
+          "type": "string",
+          "pattern": "^(?:/(?!/)|[A-Za-z]:/)[^\\x00-\\x1f\\x7f\\\\]*$",
+          "minLength": 2,
+          "maxLength": 4096
+        },
+        "charset": {
+          "const": "utf8mb4"
+        },
+        "collation": {
+          "const": "utf8mb4_bin"
+        },
+        "connect_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60
+        },
+        "startup_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300
+        },
+        "pool": {
+          "type": "object",
+          "properties": {
+            "size": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            },
+            "max_overflow": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "timeout_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            },
+            "recycle_seconds": {
+              "type": "integer",
+              "minimum": 30,
+              "maximum": 86400
+            },
+            "pre_ping": {
+              "const": true
+            }
+          },
+          "required": [
+            "size",
+            "max_overflow",
+            "timeout_seconds",
+            "recycle_seconds",
+            "pre_ping"
+          ],
+          "additionalProperties": false
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "disabled",
+                "verify_identity"
+              ]
+            },
+            "ca_file": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?:/(?!/)|[A-Za-z]:/)[^\\x00-\\x1f\\x7f\\\\]*$",
+                  "minLength": 2,
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "mode",
+            "ca_file"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "engine",
+        "driver",
+        "topology",
+        "host",
+        "port",
+        "name",
+        "username",
+        "password_file",
+        "charset",
+        "collation",
+        "connect_timeout_seconds",
+        "startup_timeout_seconds",
+        "pool",
+        "tls"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "topology": {
+                "const": "external"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "tls": {
+                "properties": {
+                  "mode": {
+                    "const": "verify_identity"
+                  },
+                  "ca_file": {
+                    "type": "string",
+                    "pattern": "^(?:/(?!/)|[A-Za-z]:/)[^\\x00-\\x1f\\x7f\\\\]*$",
+                    "minLength": 2,
+                    "maxLength": 4096
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tls": {
+                "properties": {
+                  "mode": {
+                    "const": "verify_identity"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "tls": {
+                "properties": {
+                  "ca_file": {
+                    "type": "string",
+                    "pattern": "^(?:/(?!/)|[A-Za-z]:/)[^\\x00-\\x1f\\x7f\\\\]*$",
+                    "minLength": 2,
+                    "maxLength": 4096
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "topology": {
+                "const": "ssh_tunnel"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "host": {
+                "enum": ["127.0.0.1", "::1"]
+              },
+              "tls": {
+                "properties": {
+                  "mode": {
+                    "const": "disabled"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "tls": {
+                "properties": {
+                  "mode": {
+                    "const": "disabled"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "tls": {
+                "properties": {
+                  "ca_file": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "bootstrap_settings": {
+      "type": "object",
+      "properties": {
+        "default_theme_mode": {
+          "enum": [
+            "light",
+            "dark"
+          ]
+        }
+      },
+      "required": [
+        "default_theme_mode"
+      ],
+      "additionalProperties": false
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "config_upload_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bundle_upload_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_download_bytes_per_collection": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_expanded_member_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_expanded_bytes_per_collection": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_archive_members": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_compression_ratio": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_line_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "archive_task_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "concurrent_hosts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "concurrent_archive_tasks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "live_buffer_events_per_process": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "live_buffer_bytes_per_process": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "live_seed_max_scan_bytes_per_process": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "live_seed_max_scan_lines_per_process": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "live_seed_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "live_reconnect_lease_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_ws_frame_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ws_queue_max_frames_per_client": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_live_processes_per_user": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_live_processes_global": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_collection_jobs_per_user": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_collection_jobs_global": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_live_processes_per_workspace": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5
+        },
+        "max_live_processes_per_project": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10
+        },
+        "max_workspaces_per_user": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 8
+        },
+        "max_workspaces_global": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 64
+        },
+        "max_collection_jobs_per_project": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2
+        },
+        "inventory_upload_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10485760
+        },
+        "inventory_expanded_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20971520
+        },
+        "inventory_file_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 200
+        }
+      },
+      "required": [
+        "config_upload_bytes",
+        "bundle_upload_bytes",
+        "max_download_bytes_per_collection",
+        "max_expanded_member_bytes",
+        "max_expanded_bytes_per_collection",
+        "max_archive_members",
+        "max_compression_ratio",
+        "max_line_bytes",
+        "archive_task_timeout_seconds",
+        "concurrent_hosts",
+        "concurrent_archive_tasks",
+        "live_buffer_events_per_process",
+        "live_buffer_bytes_per_process",
+        "live_seed_max_scan_bytes_per_process",
+        "live_seed_max_scan_lines_per_process",
+        "live_seed_timeout_seconds",
+        "live_reconnect_lease_seconds",
+        "max_ws_frame_bytes",
+        "ws_queue_max_frames_per_client",
+        "max_live_processes_per_user",
+        "max_live_processes_global",
+        "max_collection_jobs_per_user",
+        "max_collection_jobs_global"
+      ],
+      "additionalProperties": false
+    },
+    "retention": {
+      "type": "object",
+      "properties": {
+        "cache_max_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cache_retention_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3650
+        }
+      },
+      "required": [
+        "cache_max_bytes",
+        "cache_retention_days"
+      ],
+      "additionalProperties": false
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "idle_timeout_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1440
+        },
+        "absolute_timeout_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 168
+        },
+        "self_registration": {
+          "const": false
+        }
+      },
+      "required": [
+        "idle_timeout_minutes",
+        "absolute_timeout_hours",
+        "self_registration"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "deployment",
+    "database",
+    "bootstrap_settings",
+    "limits",
+    "retention",
+    "auth"
+  ],
+  "additionalProperties": false
+}

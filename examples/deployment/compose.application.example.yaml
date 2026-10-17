@@ -1,0 +1,74 @@
+# Merge with compose.mariadb.yaml after Codex builds the application/CLI.
+# This is a deployment interface contract, NOT an existing application image.
+services:
+  migrate:
+    image: ${INSPECTOR_IMAGE:?Set the built application image}
+    pull_policy: never
+    restart: "no"
+    user: ${INSPECTOR_UID:-10001}:${INSPECTOR_GID:-10001}
+    command: [python, -m, inspector.cli, db, upgrade, --config, /etc/system-inspector/application.yaml, --username, inspector_migrator, --password-file, /run/secrets/inspector_db_migration_password]
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ./application.yaml:/etc/system-inspector/application.yaml:ro
+    secrets: [inspector_db_migration_password]
+    networks: [database]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  app:
+    image: ${INSPECTOR_IMAGE:?Set the built application image}
+    pull_policy: never
+    restart: unless-stopped
+    user: ${INSPECTOR_UID:-10001}:${INSPECTOR_GID:-10001}
+    command: [python, -m, inspector]
+    environment:
+      INSPECTOR_CONFIG_FILE: /etc/system-inspector/application.yaml
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./application.yaml:/etc/system-inspector/application.yaml:ro
+      - app-state:/var/lib/system-inspector
+      - log-cache:/var/cache/system-inspector
+    secrets: [inspector_db_password, inspector_vault_key]
+    networks: [database, service]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 256
+    mem_limit: 4g
+    healthcheck:
+      test: [CMD, python, -m, inspector.cli, healthcheck]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+  proxy:
+    image: ${PROXY_IMAGE:?Set a prepared proxy image}
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - ${INSPECTOR_BIND_ADDRESS:-127.0.0.1}:${INSPECTOR_HTTPS_PORT:-8443}:443
+    volumes:
+      - ./Caddyfile.example:/etc/caddy/Caddyfile:ro
+      - ./tls:/etc/system-inspector/tls:ro
+      - proxy-data:/data
+      - proxy-config:/config
+    networks: [service]
+    security_opt: [no-new-privileges:true]
+networks:
+  service: {}
+volumes:
+  app-state: {}
+  log-cache: {}
+  proxy-data: {}
+  proxy-config: {}

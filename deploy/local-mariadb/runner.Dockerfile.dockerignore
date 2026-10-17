@@ -1,0 +1,7 @@
+**
+!backend/
+!backend/pyproject.toml
+!backend/uv.lock
+!deploy/
+!deploy/local-mariadb/
+!deploy/local-mariadb/runner-bootstrap.requirements.txt

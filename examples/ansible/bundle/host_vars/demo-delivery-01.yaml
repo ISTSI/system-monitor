@@ -1,0 +1,35 @@
+inspector_processes:
+- id: p-delivery-a
+  name: delivery-instance-a
+  pcs_resource_name: demo_delivery_a
+  log_source:
+    active_path: /var/log/inspector-demo/delivery/app.log
+    rotated_patterns:
+    - /var/log/inspector-demo/delivery/app.log.[0-9]
+    archives:
+    - path_pattern: /var/log/inspector-demo/delivery/app.log.*.zip
+      member_patterns:
+      - logs/app.log.*
+    - path_pattern: /var/log/inspector-demo/delivery/app.log.*.tar.gz
+      member_patterns:
+      - logs/app.log.*
+    parser_id: parser-iso-utc
+    encoding: utf-8
+    allow_symlink: false
+- id: p-audit-a
+  name: audit-instance-a
+  pcs_resource_name: demo_audit_a
+  log_source:
+    active_path: /var/log/inspector-demo/audit/app.log
+    rotated_patterns:
+    - /var/log/inspector-demo/audit/app.log.[0-9]
+    archives:
+    - path_pattern: /var/log/inspector-demo/audit/app.log.*.zip
+      member_patterns:
+      - logs/app.log.*
+    - path_pattern: /var/log/inspector-demo/audit/app.log.*.tar.gz
+      member_patterns:
+      - logs/app.log.*
+    parser_id: parser-iso-utc
+    encoding: utf-8
+    allow_symlink: false

@@ -1,0 +1,14 @@
+**
+!backend/
+!backend/pyproject.toml
+!backend/uv.lock
+!backend/dist/
+!backend/dist/system_inspector-0.1.0-py3-none-any.whl
+!deploy/
+!deploy/local-mariadb/
+!deploy/local-mariadb/runner-bootstrap.requirements.txt
+!third_party/
+!third_party/backend/
+!third_party/backend/**
+!third_party/frontend/
+!third_party/frontend/**

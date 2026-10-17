@@ -1,0 +1,18 @@
+inspector_processes:
+- id: p-ingest-a
+  name: ingest-instance-a
+  pcs_resource_name: demo_ingest_a
+  log_source:
+    active_path: /var/log/inspector-demo/ingest/app.log
+    rotated_patterns:
+    - /var/log/inspector-demo/ingest/app.log.[0-9]
+    archives:
+    - path_pattern: /var/log/inspector-demo/ingest/app.log.*.zip
+      member_patterns:
+      - logs/app.log.*
+    - path_pattern: /var/log/inspector-demo/ingest/app.log.*.tar.gz
+      member_patterns:
+      - logs/app.log.*
+    parser_id: parser-iso-utc
+    encoding: utf-8
+    allow_symlink: false

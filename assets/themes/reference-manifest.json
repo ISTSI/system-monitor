@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "references": [
+    {
+      "mode": "light",
+      "source_filename": "monitor-v8-01-cool-slate.png",
+      "package_path": "assets/themes/light-cool-slate.png",
+      "sha256": "400be5c402821f05c0ad5fcfd5817cf3e6fbe66f2454756457bbe7a5a9c6a215",
+      "bytes": 1870530,
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "mode": "dark",
+      "source_filename": "monitor-v8-03-graphite-dusk.png",
+      "package_path": "assets/themes/dark-graphite-dusk.png",
+      "sha256": "425049c3674df3a87da06198c408bf0c619523df31e45b245a3046777f475978",
+      "bytes": 1928797,
+      "width": 1672,
+      "height": 941
+    }
+  ]
+}

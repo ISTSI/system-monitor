@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "workspace_id": "workspace-beta",
+  "project_id": "system-beta",
+  "owner_user_id": "user-demo",
+  "revision": 1,
+  "state": "active",
+  "live_session_ids": [
+    "live-beta"
+  ]
+}

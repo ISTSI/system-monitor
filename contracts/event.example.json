@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "event_id": "evt-d4d233c1b516d2b5570c027fc1886182b7eda83f4c3eb71ee71b8ee7552a34bf",
+  "project_id": "project-demo",
+  "process_id": "p-ingest-a",
+  "server_id": "h-ingest-a",
+  "process_name_snapshot": "ingest-instance-a",
+  "server_name_snapshot": "demo-ingest-01",
+  "raw_line": "2026-10-16T12:00:00.000000Z INFO request_id=REQ-0042 phase=accepted channel=tcp",
+  "timestamp_original": "2026-10-16T12:00:00.000000Z",
+  "timestamp_utc": "2026-10-16T12:00:00.000000Z",
+  "timestamp_us": 1792152000000000,
+  "received_at": "2026-10-16T12:00:03.000000Z",
+  "parse_status": "ok",
+  "metadata": {
+    "request_id": "REQ-0042"
+  },
+  "source": {
+    "source_revision_id": "src-ingest-plain-00",
+    "remote_path": "/var/log/inspector-demo/ingest/app.log",
+    "archive_member": null,
+    "member_ordinal": null,
+    "byte_start": 66,
+    "byte_end": 146,
+    "line_number": 2,
+    "content_sha256": "a6414fc9352baf2fc0980b808e5fae1d32cb0aa093ecc5910677f49b96e65c78"
+  }
+}

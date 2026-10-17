@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "note": "Declarative future browser/backend scenarios; not executed app tests.",
+  "same_browser_context": true,
+  "same_user_id": "user-demo",
+  "systems": [
+    "system-alpha",
+    "system-beta"
+  ],
+  "required_scenarios": [
+    "independent_system_selection",
+    "identical_entity_ids",
+    "scoped_search",
+    "independent_filters",
+    "same_system_two_windows",
+    "close_or_stop_one_only",
+    "duplicate_page_no_auto_attach",
+    "explicit_detached_resume",
+    "two_times_five_live_sources",
+    "project_scoped_inventory_reimport",
+    "global_logout_revocation",
+    "background_window_retained_capture"
+  ]
+}

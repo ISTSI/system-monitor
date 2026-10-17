@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "project_id": "system-alpha",
+      "name": "System Alpha",
+      "description": "Synthetic independent system; repeated internal IDs are deliberate.",
+      "revision": 1,
+      "archived": false,
+      "own_live_sessions": 0
+    },
+    {
+      "project_id": "system-beta",
+      "name": "System Beta",
+      "description": "Synthetic independent system; repeated internal IDs are deliberate.",
+      "revision": 1,
+      "archived": false,
+      "own_live_sessions": 0
+    }
+  ]
+}

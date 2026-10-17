@@ -1,0 +1,29 @@
+import { useEffect, useRef, type ReactNode } from 'react';
+
+export function Icon({ kind = 'system', className = '' }: { kind?: 'system' | 'server' | 'process' | 'arrow'; className?: string }) {
+  return <svg aria-hidden="true" className={`icon ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    {kind === 'system' && <><path d="m12 2 9 5v10l-9 5-9-5V7Z" /><path d="m12 7 5 3v5l-5 3-5-3v-5Z" /><path d="m3 7 9 5 9-5M12 12v10" /></>}
+    {kind === 'server' && <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M4 9h16M4 15h16M8 6h.01M8 12h.01M8 18h.01M12 6h5M12 12h5M12 18h5" /></>}
+    {kind === 'process' && <><rect x="6" y="6" width="12" height="12" rx="3" /><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" /><circle cx="12" cy="12" r="2" /></>}
+    {kind === 'arrow' && <path d="M4 12h16m-6-6 6 6-6 6" />}
+  </svg>;
+}
+
+export function ErrorNotice({ children, retry }: { children: ReactNode; retry?: () => void }) {
+  return <div className="notice error" role="alert"><span>{children}</span>{retry && <button type="button" onClick={retry}>Retry</button>}</div>;
+}
+
+export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = ref.current;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    element?.showModal();
+    return () => { element?.close(); previous?.focus(); };
+  }, []);
+  return <dialog ref={ref} onCancel={onClose} aria-labelledby="dialog-title"><div className="dialog-head"><h2 id="dialog-title">{title}</h2><button type="button" aria-label="Close dialog" onClick={onClose}>×</button></div>{children}</dialog>;
+}
+
+export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
+  return <div className="empty-state"><Icon /><h3>{title}</h3><p>{children}</p></div>;
+}

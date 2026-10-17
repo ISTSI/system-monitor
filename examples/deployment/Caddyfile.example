@@ -1,0 +1,8 @@
+{
+  auto_https off
+  admin off
+}
+https://inspector.internal.example {
+  tls /etc/system-inspector/tls/server.crt /etc/system-inspector/tls/server.key
+  reverse_proxy app:8000
+}

@@ -1,0 +1,11 @@
+{
+  "preview_id": "preview-alpha",
+  "project_id": "system-alpha",
+  "owner_user_id": "user-demo",
+  "auth_version": 1,
+  "inventory_source_id": "inventory-main",
+  "expected_revision": 1,
+  "content_sha256": "653ad2c24f80da77660bb51a6df4b5ea734d8a17d3f020e8d191e728c114d8d7",
+  "mapping_sha256": "ee23a6708c9bdb18345f49164e4f288caa64d30cf93d90e84dd16cace7b589c2",
+  "expires_at": "2026-10-17T10:30:00.000000Z"
+}

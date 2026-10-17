@@ -1,0 +1,428 @@
+{
+  "schema_version": "1.0",
+  "roles": [
+    "administrator",
+    "inspector"
+  ],
+  "default_deny": true,
+  "actions": {
+    "topology.read": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "none",
+      "description": "Safe model/access projection only; no credentials or connection-management fields."
+    },
+    "topology.search": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "none",
+      "description": "Safe model/access projection only; no credentials or connection-management fields."
+    },
+    "logs.source_status.read": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "none",
+      "description": "Safe model/access projection only; no credentials or connection-management fields."
+    },
+    "topology.write": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "documentation.write": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "shared_view.write": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "project_config.read": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "project_config.import": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "project_config.export": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "inventory.import": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "connection.manage": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "connection.test": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "credential.manage": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "host_trust.manage": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "parser.manage": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "parser.test": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "settings.read": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "settings.write": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "appearance.default.write": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "users.manage": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "audit.read": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "operations.metadata.read": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Shared configuration or protected administrative operation."
+    },
+    "collection.create": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "create_self",
+      "description": "Owner is assigned from the authenticated session; reject supplied ownership."
+    },
+    "live.create": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "create_self",
+      "description": "Owner is assigned from the authenticated session; reject supplied ownership."
+    },
+    "investigation.create": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "create_self",
+      "description": "Owner is assigned from the authenticated session; reject supplied ownership."
+    },
+    "bundle.import": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "create_self",
+      "description": "Owner is assigned from the authenticated session; reject supplied ownership."
+    },
+    "collection.read": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "live.read": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "live.filter": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "live.history": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "live.save": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "investigation.read": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "investigation.write": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "investigation.delete": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "bookmark.write": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "investigation.pin": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "bundle.export": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "download.read": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "preference.read": {
+      "roles": ["administrator", "inspector"],
+      "ownership": "self",
+      "description": "Read only the authenticated account's appearance preference."
+    },
+    "preference.write": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "self.password.change": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Requires the current user to own the resource or its parent investigation."
+    },
+    "collection.cancel": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self_or_administrator",
+      "description": "Administrator can stop other users' work with an audit entry; this does not grant content read access."
+    },
+    "live.stop": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self_or_administrator",
+      "description": "Administrator can stop other users' work with an audit entry; this does not grant content read access."
+    },
+    "system.create": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Administrator-only system setup; project scope and upload ownership checks also required."
+    },
+    "system.metadata.write": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Administrator-only system setup; project scope and upload ownership checks also required."
+    },
+    "system.archive": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Administrator-only system setup; project scope and upload ownership checks also required."
+    },
+    "system.restore": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Administrator-only system setup; project scope and upload ownership checks also required."
+    },
+    "inventory.upload": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Administrator-only system setup; project scope and upload ownership checks also required."
+    },
+    "inventory.source.manage": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Administrator-only system setup; project scope and upload ownership checks also required."
+    },
+    "credential_binding.manage": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "none",
+      "description": "Administrator-only system setup; project scope and upload ownership checks also required."
+    },
+    "system.list": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "none",
+      "description": "Safe system catalogue only; no private content."
+    },
+    "workspace.create": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "create_self",
+      "description": "Server-derived owner; project and active-controller invariants additionally apply."
+    },
+    "workspace.read": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Server-derived owner; project and active-controller invariants additionally apply."
+    },
+    "workspace.detach": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Server-derived owner; project and active-controller invariants additionally apply."
+    },
+    "workspace.attach": {
+      "roles": [
+        "administrator",
+        "inspector"
+      ],
+      "ownership": "self",
+      "description": "Server-derived owner; project and active-controller invariants additionally apply."
+    },
+    "inventory.upload.cancel": {
+      "roles": [
+        "administrator"
+      ],
+      "ownership": "self",
+      "description": "Server-derived owner; project and active-controller invariants additionally apply."
+    }
+  }
+}

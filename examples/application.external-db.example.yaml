@@ -1,0 +1,74 @@
+# Existing verified-TLS MariaDB endpoint; one database for all systems.
+schema_version: '2.0'
+deployment:
+  public_origin: https://inspector.internal.example:8443
+  state_dir: /var/lib/system-inspector
+  cache_dir: /var/cache/system-inspector
+  vault_key_file: /run/secrets/inspector_vault_key
+  asgi_workers: 1
+  allow_runtime_internet: false
+  allowed_target_mode: explicit_administrator_approval
+  allow_sudo: false
+database:
+  engine: mariadb
+  driver: asyncmy
+  topology: external
+  host: db.internal.example
+  port: 3306
+  name: system_inspector
+  username: inspector_app
+  password_file: /run/secrets/inspector_db_password
+  charset: utf8mb4
+  collation: utf8mb4_bin
+  connect_timeout_seconds: 10
+  startup_timeout_seconds: 60
+  pool:
+    size: 5
+    max_overflow: 5
+    timeout_seconds: 10
+    recycle_seconds: 1800
+    pre_ping: true
+  tls:
+    mode: verify_identity
+    ca_file: /run/secrets/mariadb_ca.pem
+bootstrap_settings:
+  default_theme_mode: dark
+limits:
+  config_upload_bytes: 10485760
+  bundle_upload_bytes: 536870912
+  max_download_bytes_per_collection: 536870912
+  max_expanded_member_bytes: 134217728
+  max_expanded_bytes_per_collection: 1073741824
+  max_archive_members: 10000
+  max_compression_ratio: 500
+  max_line_bytes: 262144
+  archive_task_timeout_seconds: 120
+  concurrent_hosts: 4
+  concurrent_archive_tasks: 2
+  live_buffer_events_per_process: 20000
+  live_buffer_bytes_per_process: 33554432
+  live_seed_max_scan_bytes_per_process: 20971520
+  live_seed_max_scan_lines_per_process: 200000
+  live_seed_timeout_seconds: 10
+  live_reconnect_lease_seconds: 300
+  max_ws_frame_bytes: 1048576
+  ws_queue_max_frames_per_client: 100
+  max_live_processes_per_user: 10
+  max_live_processes_global: 10
+  max_collection_jobs_per_user: 2
+  max_collection_jobs_global: 4
+  max_live_processes_per_workspace: 5
+  max_live_processes_per_project: 10
+  max_workspaces_per_user: 8
+  max_workspaces_global: 64
+  max_collection_jobs_per_project: 2
+  inventory_upload_bytes: 10485760
+  inventory_expanded_bytes: 20971520
+  inventory_file_limit: 200
+retention:
+  cache_max_bytes: 10737418240
+  cache_retention_days: 14
+auth:
+  idle_timeout_minutes: 30
+  absolute_timeout_hours: 8
+  self_registration: false

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:system-inspector:inventory-commit:1",
+  "title": "Commit a stored inventory preview; no replacement model/mapping",
+  "type": "object",
+  "properties": {
+    "preview_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+    },
+    "expected_revision": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "preview_id",
+    "expected_revision"
+  ],
+  "additionalProperties": false
+}

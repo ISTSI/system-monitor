@@ -1,0 +1,42 @@
+{
+  "protocol_version": 2,
+  "type": "events",
+  "project_id": "system-alpha",
+  "workspace_id": "workspace-alpha",
+  "session_id": "live-alpha",
+  "filter_version": 1,
+  "seq": 1,
+  "sent_at": "2026-10-17T10:00:00.000000Z",
+  "payload": {
+    "items": [
+      {
+        "schema_version": "1.0",
+        "event_id": "evt-986436a6d8d0c9c60074847d166ce759b3718784082d03a45a1dd17cad88677f",
+        "project_id": "system-alpha",
+        "process_id": "p-ingest-a",
+        "server_id": "h-ingest-a",
+        "process_name_snapshot": "ingest-instance-a",
+        "server_name_snapshot": "demo-ingest-01",
+        "raw_line": "2026-10-16T11:59:59.999999Z INFO request_id=REQ-0042 phase=before system_marker=ALPHA",
+        "timestamp_original": "2026-10-16T11:59:59.999999Z",
+        "timestamp_utc": "2026-10-16T11:59:59.999999Z",
+        "timestamp_us": 1792151999999999,
+        "received_at": "2026-10-16T12:00:03.000000Z",
+        "parse_status": "ok",
+        "metadata": {
+          "request_id": "REQ-0042"
+        },
+        "source": {
+          "source_revision_id": "src-ingest-plain-00",
+          "remote_path": "/var/log/inspector-demo/ingest/app.log",
+          "archive_member": null,
+          "member_ordinal": null,
+          "byte_start": 0,
+          "byte_end": 86,
+          "line_number": 1,
+          "content_sha256": "bece1a794b5f322898b4a9b3340e7a0a15381509a6779541b55087ddc796becb"
+        }
+      }
+    ]
+  }
+}
