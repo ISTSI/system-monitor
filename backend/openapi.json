@@ -2042,10 +2042,403 @@
         },
         "x-permission": "download.read"
       }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/access": {
+      "get": {
+        "summary": "Access",
+        "operationId": "access_api_v1_projects__project_id__connections__connection_id__access_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "credential.manage"
+      }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/password": {
+      "put": {
+        "summary": "Password",
+        "operationId": "password_api_v1_projects__project_id__connections__connection_id__password_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "credential.manage"
+      }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/host-key/inspect": {
+      "post": {
+        "summary": "Inspect",
+        "operationId": "inspect_api_v1_projects__project_id__connections__connection_id__host_key_inspect_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/inspector__ssh_access__RevisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "host_trust.manage"
+      }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/host-key/approve": {
+      "post": {
+        "summary": "Approve",
+        "operationId": "approve_api_v1_projects__project_id__connections__connection_id__host_key_approve_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "host_trust.manage"
+      }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/test": {
+      "post": {
+        "summary": "Test",
+        "operationId": "test_api_v1_projects__project_id__connections__connection_id__test_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/inspector__ssh_access__RevisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "connection.test"
+      }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/revoke": {
+      "post": {
+        "summary": "Revoke",
+        "operationId": "revoke_api_v1_projects__project_id__connections__connection_id__revoke_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrustInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "host_trust.manage"
+      }
     }
   },
   "components": {
     "schemas": {
+      "AccessResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "connection_id": {
+            "type": "string",
+            "title": "Connection Id"
+          },
+          "config_revision": {
+            "type": "integer",
+            "title": "Config Revision"
+          },
+          "credential": {
+            "$ref": "#/components/schemas/CredentialStatus"
+          },
+          "host_key": {
+            "$ref": "#/components/schemas/TrustStatus"
+          },
+          "jump_connection_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jump Connection Id"
+          },
+          "vault_available": {
+            "type": "boolean",
+            "title": "Vault Available"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "connection_id",
+          "config_revision",
+          "credential",
+          "host_key",
+          "jump_connection_id",
+          "vault_available"
+        ],
+        "title": "AccessResponse"
+      },
       "AccountListResponse": {
         "properties": {
           "items": {
@@ -2132,6 +2525,41 @@
           "expected_auth_version"
         ],
         "title": "AccountVersionInput"
+      },
+      "ApproveInput": {
+        "properties": {
+          "expected_config_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Config Revision"
+          },
+          "expected_trust_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Trust Revision"
+          },
+          "inspection_token": {
+            "type": "string",
+            "maxLength": 43,
+            "minLength": 43,
+            "format": "password",
+            "title": "Inspection Token",
+            "writeOnly": true
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_config_revision",
+          "expected_trust_revision",
+          "inspection_token",
+          "verified"
+        ],
+        "title": "ApproveInput"
       },
       "BootstrapResponse": {
         "properties": {
@@ -2334,6 +2762,25 @@
           "password"
         ],
         "title": "CreateAccountInput"
+      },
+      "CredentialStatus": {
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "configured",
+          "revision"
+        ],
+        "title": "CredentialStatus"
       },
       "DeleteInput": {
         "properties": {
@@ -3444,6 +3891,35 @@
         ],
         "title": "HistoricalSourceProvenance"
       },
+      "InspectResponse": {
+        "properties": {
+          "inspection_token": {
+            "type": "string",
+            "title": "Inspection Token"
+          },
+          "fingerprint": {
+            "type": "string",
+            "title": "Fingerprint"
+          },
+          "algorithm": {
+            "type": "string",
+            "title": "Algorithm"
+          },
+          "expires_us": {
+            "type": "string",
+            "title": "Expires Us"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inspection_token",
+          "fingerprint",
+          "algorithm",
+          "expires_us"
+        ],
+        "title": "InspectResponse"
+      },
       "LoginInput": {
         "properties": {
           "username": {
@@ -3561,6 +4037,36 @@
           "sign_in_required"
         ],
         "title": "PasswordChangedResponse"
+      },
+      "PasswordInput": {
+        "properties": {
+          "expected_config_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Config Revision"
+          },
+          "expected_credential_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Credential Revision"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1,
+            "format": "password",
+            "title": "Password",
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_config_revision",
+          "expected_credential_revision",
+          "password"
+        ],
+        "title": "PasswordInput"
       },
       "PreferenceInput": {
         "properties": {
@@ -4015,6 +4521,30 @@
         ],
         "title": "SettingsResponse"
       },
+      "TestResponse": {
+        "properties": {
+          "ssh": {
+            "type": "boolean",
+            "title": "Ssh"
+          },
+          "sftp": {
+            "type": "boolean",
+            "title": "Sftp"
+          },
+          "config_revision": {
+            "type": "integer",
+            "title": "Config Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ssh",
+          "sftp",
+          "config_revision"
+        ],
+        "title": "TestResponse"
+      },
       "TopologyInput": {
         "properties": {
           "expected_revision": {
@@ -4091,6 +4621,70 @@
           "config"
         ],
         "title": "TopologyResponse"
+      },
+      "TrustInput": {
+        "properties": {
+          "expected_config_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Config Revision"
+          },
+          "expected_trust_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Trust Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_config_revision",
+          "expected_trust_revision"
+        ],
+        "title": "TrustInput"
+      },
+      "TrustStatus": {
+        "properties": {
+          "approved": {
+            "type": "boolean",
+            "title": "Approved"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "algorithm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Algorithm"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "approved",
+          "revision",
+          "fingerprint",
+          "algorithm"
+        ],
+        "title": "TrustStatus"
       },
       "UpdateAccountInput": {
         "properties": {
@@ -4262,6 +4856,21 @@
         "type": "object",
         "required": [
           "expected_revision"
+        ],
+        "title": "RevisionInput"
+      },
+      "inspector__ssh_access__RevisionInput": {
+        "properties": {
+          "expected_config_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Config Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_config_revision"
         ],
         "title": "RevisionInput"
       },

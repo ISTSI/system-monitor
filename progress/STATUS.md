@@ -537,3 +537,171 @@ specified above.
 
 **Stage 03 completion gate passed. Stop for review before Stage 04.** Next scope:
 `prompts/04_SSH_COLLECTION.md`.
+
+## 17 October 2026 - Server SSH configuration correction
+
+The user reported that Add server did not expose an SSH address or port. The
+canonical model already stores these in project-scoped connection profiles, but
+the server form showed only profile names and required creating one separately.
+Corrected that Stage 02 workflow without starting Stage 04.
+
+Changed files:
+
+- `frontend/src/components/TopologyEditor.tsx`: SSH profile selection shows its
+  endpoint; a new profile can be configured inline with host/IP, integer port
+  (default 22), username, unresolved credential reference, optional jump and
+  proposed log roots. Optional profile naming handles existing-name conflicts;
+  generated names respect the 256-character limit. Existing profile edits explain
+  their shared impact. Saving settings does not claim a working SSH connection.
+- `frontend/src/components/SystemWorkspace.tsx`: Add server needs only a subsystem;
+  server and new profile save through one revision-checked configuration PUT.
+  Administrator server details expose host/port and Edit SSH connection.
+- `frontend/src/styles.css`: semantic-token SSH section with normal form spacing.
+- `frontend/e2e/topology.spec.ts`: regression for no-profile setup, native invalid
+  ports, cancellation, atomic persistence/undo/redo, reload, endpoint editing and
+  reuse, plus four light/dark desktop screenshots. Test cleanup logs out the
+  synthetic account to release its retained workspace leases between cases.
+- `backend/README.md`, `docs/12_TRACEABILITY.md` and this status: setup guidance,
+  evidence and explicit remaining retrieval limits.
+
+Commands actually run and results:
+
+- `backend/.venv/Scripts/python.exe -m pytest backend/tests/unit/test_project_config.py -q`:
+  **124 passed in 0.80 s**; existing canonical validation regressions.
+- `backend/.venv/Scripts/python.exe scripts/frontend.py lint`: PASS.
+- `backend/.venv/Scripts/python.exe scripts/frontend.py build`: PASS, including
+  TypeScript compilation. `scripts/build_stage1.py` then rebuilt the actual
+  served bundle and Python wheel/sdist successfully. Existing Vite chunk-size
+  advisory remains non-fatal.
+- `backend/.venv/Scripts/python.exe scripts/frontend.py e2e topology.spec.ts`
+  against `https://localhost:8445`, protected Stage 03 synthetic accounts,
+  `INSPECTOR_E2E_REPORT_STAGE=stage-3` and
+  `INSPECTOR_E2E_REPORT_NAME=browser-server-ssh-final`: **5 passed in 14.9 s**.
+  Covers the four existing topology/role/window regressions plus the new setup
+  case against real local MariaDB. After the CSS spacing correction, the same
+  command with report name `browser-server-ssh-visual-final` passed **5/5 in
+  14.8 s**. Final light 1280x720 and dark 1920x1080 SSH screenshots were visually
+  inspected; all four theme/size captures have clear fields and no page overflow.
+- `backend/.venv/Scripts/python.exe -m unittest discover -s tests/package -q`:
+  **128 run, 119 passed, nine POSIX-only permission tests skipped on Windows**.
+- `backend/.venv/Scripts/python.exe tools/validate_package.py`: PASS, all 56
+  requirements mapped. `git diff --check`: PASS.
+
+The local screenshot manifest now includes 77 PNGs (the four new SSH form views
+plus existing stage evidence). `verification/stage-3/checks/server-ssh-artifacts.json`
+records the rebuilt wheel and served-bundle hashes separately from the original
+Stage 03 artifact record.
+
+Verification corrections: the initial restricted browser run could not read the
+Windows-protected synthetic account file; local-only elevated execution resolved
+it. The first executable run served the old packaged web bundle; rebuilding with
+`build_stage1.py` fixed the asset mismatch. Repeated runs exhausted synthetic
+workspace grace leases; `scripts/stage3_local.py fixture` expired only those test
+accounts' leases in the guarded local test schema. Browser cleanup now uses real
+account logout instead of changing any quota. An implicit select-label test
+locator was changed to its accessible combobox role. No contract or application
+limit was relaxed.
+
+No schema, backend API, SSH transport, trust, secret storage or source approval
+changed. No production host/database was contacted. This fixes configuration
+entry only: remote data retrieval is still unavailable, and the current history
+collector uses the explicitly enabled local synthetic fixture transport. The
+Stage 03 gate remains passed; **Stage 04 SSH/SFTP is still the next stage**.
+
+## 17 October 2026 - SSH password storage and connection testing
+
+The user requested password storage and a connection test for a configured
+server. Implemented that working Stage 04 setup slice. This is not completion of
+the whole SSH collection stage: historical transport still uses local fixtures.
+
+Administrators now open **Password & connection test** from server/profile
+details or Connections. Password entry is write-only and cleared on submit.
+AES-GCM ciphertext/nonces live in MariaDB VARBINARY columns, with separate
+system-to-vault bindings. The 32-byte key is loaded from a protected service-owned
+file, never an export/browser setting. Replacements advance credential versions.
+
+Explicit host-key inspection rejects the target handshake before authentication;
+approval requires an independent verification statement and an owned, expiring,
+revision/route/session-bound inspection. Password authentication pins the key on
+each hop. The test opens SFTP and closes both connections; no shell, exec, file
+write, general forwarding endpoint, source discovery or log collection is added.
+Address resolution validates and pins IPs; unsafe/metadata destinations fail
+closed. All setup endpoints enforce Administrator role, CSRF, current account,
+project, configuration, trust and credential state. A bounded watchdog cancels
+pending network work after revocation, changed state, supervisor loss or failed
+fresh persistence checks. Limits are four in-flight checks, ten/user/minute and
+thirty/deployment/minute, with no unbounded pending queue.
+
+Changed files/groups:
+
+- `backend/src/inspector/ssh_access.py`, `ssh_transport.py`, persistence models,
+  migration `0006_ssh_access`, app/config/database/security and generated OpenAPI;
+  SSH/vault/config unit tests and MariaDB setup/revocation tests.
+- `frontend/src/components/ConnectionAccess.tsx`, SystemWorkspace/TopologyEditor,
+  semantic styles and generated API types. Common Modal now prevents native
+  Escape closure when its caller declines closing an active operation.
+- `frontend/e2e/ssh.spec.ts`; topology regression waits for the acknowledged
+  collapsed state before asserting search reveal, retaining the reveal checks.
+- `scripts/stage4_local.py`, `stage4_ssh_fixture.py`, `verify_stage4.py` and local
+  helper tests. Runner/application Dockerfiles create the named unprivileged
+  inspector account, UID/GID 10001. Only the local runner was rebuilt here.
+- Real AsyncSSH 2.24.1 uv resolution/lock; 52 installed dependency notice entries.
+  README/backend/frontend setup, docs 12/14, toolchain record and this status.
+
+Local lifecycle: retained the previous runner image; stopped only runtime-stage3;
+made a consistent `mariadb-dump --single-transaction --quick --hex-blob` backup
+of the guarded existing Stage 03 schema to the protected ignored SSH secret
+directory (1,312,010,469 bytes, checksum recorded). Added the tested migration
+without resetting systems, accounts, profiles or retained log history, then
+restored **https://localhost:8445**. The mounted key is copied into service-owned
+tmpfs mode 0600 before ASGI starts. Stage 02 and VM services were not migrated or
+reconfigured. No user/production SSH host or real SSH password was used.
+
+Actual commands/results (Windows Python: `backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `.bootstrap/Scripts/uv.exe --cache-dir .cache/uv lock --project backend --python .toolchains/python/cpython-3.13.16-windows-x86_64-none/python.exe`; corresponding locked `sync` | PASS; only AsyncSSH 2.24.1 added, original versions retained. Initial sandbox networking denied; reviewed connected build rerun succeeded. |
+| `python -m pytest backend/tests/unit -q` | **371 passed, one POSIX vault-permission test skipped on Windows**, 9.32 s. |
+| `.cache/stage4_linux.py` via local non-root runner | Actual passwd identity check PASS; **50 SSH transport/vault/helper unit cases passed**, no skips, 2.63 s. Includes direct/jump network handshakes, no target authentication on inspection/rejected keys, wrong password, SFTP denial, timeouts/cancellation and read-only fixture boundaries. Pytest emitted a non-fatal cache warning because the source mount is read-only. |
+| `scripts/verify_stage4.py integration --suffix s4_ssh_isolated_1017` | **61 passed in 74.49 s**, zero skips, on actual Linux MariaDB 11.8.9/Python 3.13.16. Includes all previous history/topology/account cases plus fourteen setup/revocation cases. Six barriers verify cancellation within two seconds after credential/trust/logout/config changes or failed/timed-out DB checks. |
+| `scripts/verify_stage4.py upgrade --suffix s2_upgrade_ssh_1017` | PASS: populated 0002-to-0006 upgrade in a new disposable schema preserves two systems/accounts, password verification, preferences, immutable topology IDs and documentation; workspaces detach. |
+| `scripts/stage4_local.py prepare`, `fixtures-up`, `up`; `stage3_local.py stop`, `migrate`; guarded `.cache/stage4_backup.py` | PASS; isolated local fixtures/key, protected backup, additive existing-schema migration and restored serving app. No reset/reseed or production operation. |
+| Pinned Node `frontend/node_modules/@playwright/test/cli.js test e2e/ssh.spec.ts --max-failures=1` (cwd frontend; URL 8445, Stage 03 synthetic accounts, report stage-4/browser-ssh-setup-final) | **3 passed in 9.3 s**: actual direct/jump SSH/SFTP, incorrect password, cleared inputs, stored status/reload, no password export, same-context system isolation, trust revocation and Inspector 403s. Four screenshots cover both themes at 1280x720/1920x1080; final light/dark views visually inspected. No external browser requests or page errors. |
+| `scripts/frontend.py e2e topology.spec.ts foundation.spec.ts -g 'administrator builds\|same-account pages\|Inspector safely\|diagram drag\|server setup\|unsaved form\|primary controls'` (same URL/accounts; browser-ssh-regressions-final) | **7 passed in 17.5 s**, including all five topology cases and keyboard/Escape/200% layout/draft-theme regressions. |
+| Ruff check/format over backend/src/tests/migrations/scripts; `cd backend` then `.venv/Scripts/python.exe -m mypy src` | PASS; 84 formatted files, 23 typed source files. |
+| `scripts/frontend.py lint`, `typecheck`, `api:generate`, `api:check`; OpenAPI generation with explicit example deployment config; `scripts/build_stage1.py` | PASS; real bundled frontend and wheel/sdist. Existing Vite chunk-size advisory remains non-fatal. |
+| `python -m unittest discover -s tests/package -q`; package/schema/deployment validators | 128 run: **119 passed, nine POSIX permission skips on Windows**. All validators pass (18 schemas, 102 valid/36 rejected instances, 44 deployment checks). |
+| `scripts/audit_local_secrets.py --output verification/stage-4/secret-audit.json` | Final PASS: 68 distinct private values compared with 1,087 source/log/wheel entries, 42 wheel members, zero matches. Values/ciphertexts were not emitted. |
+| Trusted local TLS readiness request | HTTP 200 with certificate and hostname verification enabled. |
+
+Final package/link tests, frontend lint/types/generated API check, Ruff and
+`git diff --check` pass. The wheel contains both SSH modules and migration 0006;
+all packaged web asset bytes match the served bundle. Evidence is in
+`verification/stage-4/checks/artifacts.json`, `checks/changed-files.txt`,
+`readiness.json` and the screenshot manifest (16 captured regression views,
+including four SSH setup screenshots). Original theme/fixture files were not
+changed. The existing Windows line-ending conversion advisories are non-fatal.
+
+Failures/corrections retained in verification: initial SSH FK column collation
+mismatch fixed before local migration; initial logout tests invalidated the
+shared synthetic bootstrap actor, corrected to dedicated temporary Administrators;
+wrong upgrade suffix rejected by its existing guard, then the required fresh
+prefix used. Browser testing exposed a numeric-only container UID missing its
+passwd entry; fixed with a named non-root account, then actual Linux transport
+and browser tests passed. New fixture secret ACLs now include only the tool,
+SYSTEM/Administrators and designated Docker Desktop account. One combined
+topology run searched before its async collapse settled; the test now asserts
+that prerequisite and keeps its original reveal assertions. No trust bypass,
+contract deletion, quota increase or production secret was used.
+
+Limits: no real target was contacted automatically; the user must explicitly
+save their password, verify their host key and start their own connection test.
+No configured log paths are checked by this test. Source/root approval, bounded
+remote candidate planning/downloads, collection revision integration and the full
+Stage 04 golden-log-through-jump gate remain pending, along with later live,
+analysis, import and offline-release work. Full app-image, Ubuntu/Rocky,
+key-rotation and full backup-restore qualification were not performed.
+
+**The requested SSH setup/test slice is implemented. Stage 04 as a whole is not
+complete; its remaining collection work is the next scope.**

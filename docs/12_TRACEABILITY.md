@@ -151,3 +151,41 @@ bounded to 64 MiB including builds and leases, with a five-minute TTL. Its full
 scope includes project, owner, capture/config/snapshot/auth revisions,
 process/time scope and lane. Every hit rechecks MariaDB authorization and current
 session state. Cold, expired or evicted scopes use the bounded SQL scan.
+
+## Server SSH setup correction - 17 October 2026
+
+R05 and the configuration portion of R13 now expose the canonical SSH endpoint
+inside Add/Edit server. An Administrator can create a connection profile and its
+server in one revision, inspect the host/port of reused profiles, and edit the
+profile from server details. No connection data was added to Inspector responses.
+The [topology browser suite](../frontend/e2e/topology.spec.ts) verifies invalid
+ports, cancellation without writes, one-transaction server/profile persistence,
+atomic undo/redo, endpoint editing/reload and reuse without duplicate profiles.
+Its four existing topology/role/window regressions also pass; five cases passed
+in the [browser report](../verification/stage-3/browser-server-ssh-final.json).
+Both themes and desktop sizes are captured in the new server-ssh screenshots.
+
+This is configuration evidence only. R13 credentials/jump transport/trust and
+AT24-AT29/AT46 remote retrieval remain Stage 04; saving a profile creates neither
+password storage nor target/root/host-key approval. The current collector still
+uses the explicitly enabled synthetic local transport. See
+[status](../progress/STATUS.md) for actual commands and verification limits.
+
+## SSH password and connection-test slice - 17 October 2026
+
+| Requirements/targets | Implemented evidence | Remaining limit |
+|---|---|---|
+| R13, AT24/AT29 (setup portion) | Encrypted write-only passwords, explicit project bindings, direct/single-jump SSH/SFTP tests in [transport tests](../backend/tests/unit/test_ssh_transport.py) and [browser tests](../frontend/e2e/ssh.spec.ts) | No remote historical planning/download or source/root approval yet |
+| R14/R35, AT25/AT26/AT46 (setup portion) | Target/jump strict keys, no target authentication during inspect/rejected-key paths, validated pinned addresses, password-only auth, bounded connections and no exec/write; independent host-key approval and revoke | Full collection permissions/archive/root checks remain Stage 04 |
+| R39/R42/R44/R48, AT73/AT94/AT115 | [MariaDB SSH setup tests](../backend/tests/integration/test_ssh_access.py) cover write-only ciphertext VARBINARY, scoped aliases/trust, Inspector denials, concurrent password changes and wrong-type scoped FKs | These checks do not authorize remote log collection or claim full vault rotation/recovery |
+| R35/R40, AT74/AT77 (setup portion) | [Barrier tests](../backend/tests/integration/test_ssh_revocation.py) cancel pending checks within two seconds after credential/trust/config/logout changes or failed/timed-out fresh DB checks | Full live stream revocation remains later scope |
+| R34/R38/R47-R49 | Three real browser setup cases, same-context system collision isolation, four inspected light/dark desktop screenshots; seven topology/keyboard/modal regressions | No live monitor implementation or latency claim |
+
+Actual results: 61 Linux MariaDB integration tests, 371 Windows unit passes
+(one POSIX permission skip), 50 Linux SSH/vault/helper passes with no skips,
+three SSH browser cases and seven topology/keyboard regressions. A populated
+0002-to-0006 upgrade preserves existing identities/accounts/preferences, and the
+running local development schema was separately backed up before migration.
+See [current status](../progress/STATUS.md) for commands, failures corrected and
+unrun gates. This is a user-requested connection setup slice, not a passed full
+Stage 04 historical collection gate.

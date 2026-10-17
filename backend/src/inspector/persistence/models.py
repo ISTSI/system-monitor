@@ -19,7 +19,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.dialects.mysql import LONGTEXT, VARCHAR
+from sqlalchemy.dialects.mysql import LONGTEXT, VARBINARY, VARCHAR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -379,6 +379,102 @@ class ConnectionProfile(NamedTopology, Base):
         ),
     )
     jump_connection_id: Mapped[str | None] = mapped_column(identifier(), nullable=True)
+
+
+class SSHCredential(Base):
+    """Global encrypted vault row; use always requires an explicit project binding."""
+
+    __tablename__ = "ssh_credentials"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="pk_ssh_credentials"),
+        CheckConstraint("revision >= 1 AND key_version >= 1", name="versions"),
+        TABLE_OPTIONS,
+    )
+    id: Mapped[str] = mapped_column(identifier())
+    revision: Mapped[int] = mapped_column(Integer)
+    key_version: Mapped[int] = mapped_column(Integer)
+    nonce: Mapped[bytes] = mapped_column(VARBINARY(12))
+    ciphertext: Mapped[bytes] = mapped_column(VARBINARY(1040))
+
+
+class ProjectCredentialBinding(Base):
+    __tablename__ = "project_credential_bindings"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "alias", name="pk_project_credential_bindings"),
+        ForeignKeyConstraint(["project_id"], ["projects.id"], name="fk_credential_binding_project"),
+        ForeignKeyConstraint(
+            ["credential_id"], ["ssh_credentials.id"], name="fk_credential_binding_vault"
+        ),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    alias: Mapped[str] = mapped_column(identifier())
+    credential_id: Mapped[str] = mapped_column(identifier())
+
+
+class SSHHostTrust(Base):
+    __tablename__ = "ssh_host_trust"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "connection_id", name="pk_ssh_host_trust"),
+        ForeignKeyConstraint(
+            ["project_id", "connection_id", "connection_kind"],
+            ["entity_identities.project_id", "entity_identities.id", "entity_identities.kind"],
+            name="fk_ssh_host_trust_scoped_connection",
+        ),
+        CheckConstraint("connection_kind = 'connection'", name="connection_kind"),
+        CheckConstraint("revision >= 1", name="revision"),
+        CheckConstraint("approved IN (0, 1)", name="approved"),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    connection_id: Mapped[str] = mapped_column(identifier())
+    connection_kind: Mapped[str] = mapped_column(
+        VARCHAR(16, charset="ascii", collation="ascii_bin"), default="connection"
+    )
+    revision: Mapped[int] = mapped_column(Integer)
+    approved: Mapped[bool] = mapped_column(Boolean)
+    route_digest: Mapped[str] = mapped_column(verifier())
+    public_key: Mapped[str] = mapped_column(binary_text(8192))
+    algorithm: Mapped[str] = mapped_column(binary_text(64))
+    fingerprint: Mapped[str] = mapped_column(binary_text(128))
+
+
+class SSHKeyInspection(Base):
+    __tablename__ = "ssh_key_inspections"
+    __table_args__ = (
+        PrimaryKeyConstraint("token_hash", name="pk_ssh_key_inspections"),
+        ForeignKeyConstraint(
+            ["project_id", "connection_id", "connection_kind"],
+            ["entity_identities.project_id", "entity_identities.id", "entity_identities.kind"],
+            name="fk_ssh_inspection_scoped_connection",
+        ),
+        ForeignKeyConstraint(["owner_user_id"], ["users.id"], name="fk_ssh_inspection_owner"),
+        ForeignKeyConstraint(
+            ["project_id", "config_revision"],
+            ["project_revisions.project_id", "project_revisions.revision"],
+            name="fk_ssh_inspection_revision",
+        ),
+        CheckConstraint("connection_kind = 'connection'", name="connection_kind"),
+        Index("ix_ssh_inspections_expiry", "expires_us"),
+        TABLE_OPTIONS,
+    )
+    token_hash: Mapped[str] = mapped_column(verifier())
+    project_id: Mapped[str] = mapped_column(identifier())
+    connection_id: Mapped[str] = mapped_column(identifier())
+    connection_kind: Mapped[str] = mapped_column(
+        VARCHAR(16, charset="ascii", collation="ascii_bin"), default="connection"
+    )
+    owner_user_id: Mapped[str] = mapped_column(identifier())
+    auth_version: Mapped[int] = mapped_column(Integer)
+    auth_session_hash: Mapped[str] = mapped_column(verifier())
+    trust_revision: Mapped[int] = mapped_column(Integer)
+    config_revision: Mapped[int] = mapped_column(Integer)
+    route_digest: Mapped[str] = mapped_column(verifier())
+    network_signature: Mapped[str] = mapped_column(verifier())
+    public_key: Mapped[str] = mapped_column(binary_text(8192))
+    algorithm: Mapped[str] = mapped_column(binary_text(64))
+    fingerprint: Mapped[str] = mapped_column(binary_text(128))
+    expires_us: Mapped[int] = mapped_column(BigInteger)
 
 
 class ParserProfile(NamedTopology, Base):

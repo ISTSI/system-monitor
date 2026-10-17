@@ -163,6 +163,9 @@ _ADMIN_ACTIONS = frozenset(
         "project_config.read",
         "project_config.import",
         "project_config.export",
+        "credential.manage",
+        "host_trust.manage",
+        "connection.test",
     }
 )
 _OWN_ACTIONS = frozenset(

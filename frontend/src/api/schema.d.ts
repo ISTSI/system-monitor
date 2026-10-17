@@ -740,10 +740,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Access */
+        get: operations["access_api_v1_projects__project_id__connections__connection_id__access_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Password */
+        put: operations["password_api_v1_projects__project_id__connections__connection_id__password_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/host-key/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inspect */
+        post: operations["inspect_api_v1_projects__project_id__connections__connection_id__host_key_inspect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/host-key/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approve_api_v1_projects__project_id__connections__connection_id__host_key_approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test */
+        post: operations["test_api_v1_projects__project_id__connections__connection_id__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke */
+        post: operations["revoke_api_v1_projects__project_id__connections__connection_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccessResponse */
+        AccessResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Connection Id */
+            connection_id: string;
+            /** Config Revision */
+            config_revision: number;
+            credential: components["schemas"]["CredentialStatus"];
+            host_key: components["schemas"]["TrustStatus"];
+            /** Jump Connection Id */
+            jump_connection_id: string | null;
+            /** Vault Available */
+            vault_available: boolean;
+        };
         /** AccountListResponse */
         AccountListResponse: {
             /** Items */
@@ -773,6 +890,20 @@ export interface components {
         AccountVersionInput: {
             /** Expected Auth Version */
             expected_auth_version: number;
+        };
+        /** ApproveInput */
+        ApproveInput: {
+            /** Expected Config Revision */
+            expected_config_revision: number;
+            /** Expected Trust Revision */
+            expected_trust_revision: number;
+            /**
+             * Inspection Token
+             * Format: password
+             */
+            inspection_token: string;
+            /** Verified */
+            verified: boolean;
         };
         /** BootstrapResponse */
         BootstrapResponse: {
@@ -863,6 +994,13 @@ export interface components {
              * @default false
              */
             must_change_password: boolean;
+        };
+        /** CredentialStatus */
+        CredentialStatus: {
+            /** Configured */
+            configured: boolean;
+            /** Revision */
+            revision: number;
         };
         /** DeleteInput */
         DeleteInput: {
@@ -1242,6 +1380,17 @@ export interface components {
             /** Content Sha256 */
             content_sha256: string;
         };
+        /** InspectResponse */
+        InspectResponse: {
+            /** Inspection Token */
+            inspection_token: string;
+            /** Fingerprint */
+            fingerprint: string;
+            /** Algorithm */
+            algorithm: string;
+            /** Expires Us */
+            expires_us: string;
+        };
         /** LoginInput */
         LoginInput: {
             /** Username */
@@ -1294,6 +1443,18 @@ export interface components {
              * @constant
              */
             sign_in_required: true;
+        };
+        /** PasswordInput */
+        PasswordInput: {
+            /** Expected Config Revision */
+            expected_config_revision: number;
+            /** Expected Credential Revision */
+            expected_credential_revision: number;
+            /**
+             * Password
+             * Format: password
+             */
+            password: string;
         };
         /** PreferenceInput */
         PreferenceInput: {
@@ -1466,6 +1627,15 @@ export interface components {
              */
             default_theme_mode: "light" | "dark" | "system";
         };
+        /** TestResponse */
+        TestResponse: {
+            /** Ssh */
+            ssh: boolean;
+            /** Sftp */
+            sftp: boolean;
+            /** Config Revision */
+            config_revision: number;
+        };
         /** TopologyInput */
         TopologyInput: {
             /** Expected Revision */
@@ -1503,6 +1673,24 @@ export interface components {
             config: {
                 [key: string]: unknown;
             };
+        };
+        /** TrustInput */
+        TrustInput: {
+            /** Expected Config Revision */
+            expected_config_revision: number;
+            /** Expected Trust Revision */
+            expected_trust_revision: number;
+        };
+        /** TrustStatus */
+        TrustStatus: {
+            /** Approved */
+            approved: boolean;
+            /** Revision */
+            revision: number;
+            /** Fingerprint */
+            fingerprint: string | null;
+            /** Algorithm */
+            algorithm: string | null;
         };
         /** UpdateAccountInput */
         UpdateAccountInput: {
@@ -1558,6 +1746,11 @@ export interface components {
         inspector__app__RevisionInput: {
             /** Expected Revision */
             expected_revision: number;
+        };
+        /** RevisionInput */
+        inspector__ssh_access__RevisionInput: {
+            /** Expected Config Revision */
+            expected_config_revision: number;
         };
         /** RevisionInput */
         inspector__topology__RevisionInput: {
@@ -3055,6 +3248,218 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    access_api_v1_projects__project_id__connections__connection_id__access_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    password_api_v1_projects__project_id__connections__connection_id__password_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_api_v1_projects__project_id__connections__connection_id__host_key_inspect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__ssh_access__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InspectResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_api_v1_projects__project_id__connections__connection_id__host_key_approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_api_v1_projects__project_id__connections__connection_id__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__ssh_access__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_api_v1_projects__project_id__connections__connection_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrustInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessResponse"];
                 };
             };
             /** @description Validation Error */

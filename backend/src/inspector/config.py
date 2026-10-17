@@ -87,6 +87,8 @@ class Config:
     cache_dir: str = "/var/cache/system-inspector"
     history_limits: dict[str, int] = field(default_factory=dict)
     local_history_demo: bool = False
+    vault_key_file: str = field(default="", repr=False)
+    ssh_allow_loopback: bool = False
 
 
 def parse_config(
@@ -130,6 +132,8 @@ def parse_config(
     env = environment if environment is not None else dict(os.environ)
     if env.get("SI_LOCAL_HISTORY_DEMO", "0") not in {"0", "1"}:
         raise ConfigurationError("SI_LOCAL_HISTORY_DEMO: expected 0 or 1.")
+    if env.get("SI_SSH_ALLOW_LOOPBACK", "0") not in {"0", "1"}:
+        raise ConfigurationError("SI_SSH_ALLOW_LOOPBACK: expected 0 or 1.")
     overrides = {
         "SI_DB_HOST": "host",
         "SI_DB_PORT": "port",
@@ -218,6 +222,8 @@ def parse_config(
         cache_dir=data["deployment"]["cache_dir"],
         history_limits={key: value for key, value in limits.items() if isinstance(value, int)},
         local_history_demo=env.get("SI_LOCAL_HISTORY_DEMO", "0") == "1",
+        vault_key_file=data["deployment"]["vault_key_file"],
+        ssh_allow_loopback=env.get("SI_SSH_ALLOW_LOOPBACK", "0") == "1",
     )
 
 

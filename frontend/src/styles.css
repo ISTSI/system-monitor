@@ -139,6 +139,17 @@ details > summary { cursor: pointer; }
 .notice.error { color: var(--si-danger); border-color: var(--si-danger); }
 .notice.success { color: var(--si-success); border-color: var(--si-success); }
 .notice button { flex: 0 0 auto; }
+.ssh-connection { display: flex; flex-direction: column; gap: 18px; min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--si-border); border-radius: 6px; }
+.ssh-connection legend { padding: 0 6px; font-weight: 600; }
+.connection-target { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.connection-access { display: flex; flex-direction: column; gap: 24px; }
+.connection-access section { padding: 16px; border: 1px solid var(--si-border); border-radius: 6px; }
+.connection-access h3 { margin: 0 0 10px; }
+.connection-access p { font-size: 12px; line-height: 1.6; margin: 0 0 14px; }
+.connection-access .field-help { margin: 12px 0 0; }
+.connection-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.ssh-fingerprint { display: block; overflow-wrap: anywhere; font-size: 12px; margin: 10px 0; }
+.host-key-preview { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--si-border); }
 .startup { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
 .startup .brand-mark { margin-bottom: 20px; }
 .brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 62px; height: 62px; border-radius: 16px; background: var(--si-selection-background); border: 1px solid var(--si-selection-border); color: var(--si-accent); }

@@ -237,6 +237,16 @@ def test_bundled_schema_matches_authoritative_contract():
     )
 
 
+def test_ssh_vault_and_local_network_exception_are_deployment_owned():
+    raw = yaml.safe_dump(sample()).encode()
+    config = parse_config(raw, {})
+    assert config.vault_key_file == sample()["deployment"]["vault_key_file"]
+    assert config.ssh_allow_loopback is False
+    assert parse_config(raw, {"SI_SSH_ALLOW_LOOPBACK": "1"}).ssh_allow_loopback is True
+    with pytest.raises(ConfigurationError, match="SI_SSH_ALLOW_LOOPBACK"):
+        parse_config(raw, {"SI_SSH_ALLOW_LOOPBACK": "yes"})
+
+
 def test_scope_is_explicit_immutable_and_not_a_display_path():
     context = ProjectContext("system-alpha", "owner")
     with pytest.raises(FrozenInstanceError):

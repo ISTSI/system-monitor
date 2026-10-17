@@ -9,8 +9,59 @@ scoped topology entities and constraints, shared documentation, flows, named
 views, revisioned editing/undo/redo, scoped search and safe YAML/JSON import
 preview/commit/export. Stage 03 adds local historical collection, bounded archive
 parsing, exact microsecond event indexing in MariaDB, literal filtering, source
-context and owner/project-bound snapshot pagination. SSH, saved analysis tools
-and Ansible inventory reconciliation belong to later stages.
+context and owner/project-bound snapshot pagination. The SSH setup slice adds
+encrypted passwords, explicit host-key approval and read-only SSH/SFTP connection
+tests. Remote historical collection, saved analysis tools and Ansible inventory
+reconciliation remain later work.
+
+To configure a server as an Administrator, add a subsystem, then choose **Add
+server**. Its **SSH connection** section shows the selected profile's host and
+port. Choose **Create a new SSH profile** to enter an IP address or hostname,
+SSH port (default 22), username, unresolved credential reference and proposed
+log roots directly in the server form. Saving creates the server and profile in
+one revision; cancelling saves neither. Existing profiles are reusable. Select a
+server and use **Edit SSH connection**, or use **Connections**, to edit a profile;
+changes affect every server using that profile.
+
+Select the server and choose **Password & connection test** (also available in
+**Connections**). The credential reference is a safe label, not a password.
+**Save SSH password** creates or replaces the password for that reference in this
+system. Passwords are stored only as authenticated AES-GCM ciphertext in MariaDB
+`ssh_credentials`; `project_credential_bindings` explicitly maps a system's
+reference to its vault record. They are not returned by GET, exported in project
+configuration, written to browser storage, or shown again after saving.
+
+Next choose **Inspect host key**, compare its fingerprint against an independent
+trusted source, check the verification statement, then **Approve host key**.
+**Test connection** checks password authentication and the SFTP handshake without
+opening a shell or writing files. It does not check log paths or retrieve logs.
+For one jump host, first configure its own password and approve its independent
+key. Unknown or changed keys fail closed. The application server must resolve
+and reach the target/jump; laptop-only VPN access is insufficient.
+
+The deployment's `deployment.vault_key_file` supplies a protected file containing
+exactly 32 raw random bytes, owned by the Linux service user with mode 0600 or
+0400. The key stays outside MariaDB and exports. Back it up separately: changing
+or losing it makes existing credentials undecryptable. Automated key rotation is
+not implemented in this slice. Missing/invalid keys leave ordinary topology and
+local history usable but disable SSH password storage/testing.
+
+The current local development app remains **https://localhost:8445**, using the
+existing Stage 03 schema/accounts/configuration upgraded to `0006_ssh_access`.
+`scripts/stage4_local.py prepare` adds isolated SSH fixtures and a protected master
+key under ignored `.secrets/stage4-ssh/`; it never resets existing data. Its
+container wrapper copies the mounted key to
+`/var/lib/system-inspector/ssh-vault.key` with mode 0600 before starting ASGI.
+Prepare, stop the serving app, back up its database/cache, explicitly run
+`scripts/stage3_local.py migrate`, then `scripts/stage4_local.py up`. Normal
+restarts use `stage4_local.py up`; no package downloads or connections occur at
+startup. Fixture host keys/passwords are synthetic and are not application-wide
+default credentials. The named non-root Linux account is required by AsyncSSH.
+
+This completes connection setup/testing only. The remaining Stage 04 source/root
+approvals, remote planning, path/permission checks, bounded historical retrieval
+and collection integration are still pending. Current historical collection uses
+only the explicitly enabled synthetic local fixture transport.
 
 Historical result pages and context are capped at 8 MiB of raw text. A page can
 contain fewer rows than requested; its cursor continues from the last emitted

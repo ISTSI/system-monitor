@@ -28,6 +28,22 @@ It authorizes only the bundled synthetic fixture mapping through configured
 process/path selectors. Browser requests and project imports cannot enable it
 or choose a local path. It does not authorize SSH or production target access.
 
+The SSH setup slice reads the existing `deployment.vault_key_file`: exactly 32
+raw bytes in a regular, non-symlink file owned by the Linux service identity,
+mode 0600 or 0400. SSH password ciphertext and nonces use MariaDB VARBINARY;
+global vault rows require an explicit system credential-reference binding.
+Password replacement is write-only and versioned, and invalidates pending checks.
+Keep this key outside database/configuration exports and back it up separately.
+Replacing the file does not re-encrypt existing records; automated key rotation
+and a full vault-recovery/backup release workflow remain unimplemented.
+
+`SI_SSH_ALLOW_LOOPBACK=1` is a deployment-only exception for explicitly authorized
+local SSH tests; `0` is the default and other values are rejected. It permits
+loopback only, never link-local, metadata, multicast or unspecified destinations.
+The browser and project imports cannot enable it. Normal LAN targets remain
+subject to resolved-address validation and explicit host-key approval. Merely
+starting the application, opening a system or saving a password starts no SSH.
+
 ## Managed and external connectivity
 
 For the managed Docker stack, `host: mariadb`, port 3306, database `system_inspector`, and runtime user `inspector_app` are the reference values. `localhost` inside an application container is not the database container. The database has a private internal network, persistent named volume, healthcheck and no published port. The application additionally needs an egress-capable service network for its approved LAN/VPN SSH traffic; the DB does not. A private bridge is not encrypted: disabling DB TLS is an explicit managed-single-host exception, not an assertion of transport encryption.

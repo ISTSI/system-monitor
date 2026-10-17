@@ -1,5 +1,13 @@
 # Observed toolchain — 17 October 2026
 
+SSH setup follow-up: the real uv resolution added **AsyncSSH 2.24.1** only;
+existing locked dependency versions were retained. Python 3.13 compatibility was
+tested in Windows and the Linux runner. Its original EPL-2.0/GPL-2.0-or-later
+notices are preserved in the installed backend notice inventory, now 52 entries.
+This remains a free dependency from the required stack. The runner now creates
+the named, non-root `inspector` account (UID/GID 10001), which AsyncSSH needs for
+local username resolution; the application Dockerfile applies the same fix.
+
 Host: Windows PowerShell 5.1, Windows x86-64. Initial Python was 3.14.0 with pip 25.2 only. Python 3.13, uv, Node/npm, Make and database clients were absent from PATH. `py -0p` listed only 3.14. No application or dependencies were initially supplied.
 
 An isolated `.bootstrap` virtual environment now contains uv **0.13.1**, installed from the registry after the sandbox network restriction required a reviewed escalation. uv downloaded **CPython 3.13.16**, the current resolved 3.13 maintenance interpreter, into repository-local `.toolchains/python`. It did not replace the machine Python. uv reported that it could not replace a pre-existing unmanaged user-bin launcher; all recorded commands used explicit local paths. Cache is repository-local `.cache/uv`. These generated trees are ignored and excluded from source/package validation.

@@ -18,5 +18,6 @@ RUN uv sync --project /build/backend --locked --no-install-project --no-managed-
 # Source/configuration and only the identity's own secrets are mounted by Compose.
 ENV UV_OFFLINE=1 PYTHONPATH=/workspace/backend/src
 WORKDIR /workspace/backend
+RUN groupadd --gid 10001 inspector && useradd --uid 10001 --gid 10001 --no-create-home --no-log-init --shell /usr/sbin/nologin inspector
 USER 10001:10001
 CMD ["python", "-m", "pytest", "tests/integration", "-v", "-rs", "-p", "no:cacheprovider"]

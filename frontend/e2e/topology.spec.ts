@@ -11,7 +11,20 @@ test.beforeEach(({ page }) => {
   browserErrors.set(page, errors);
   page.on('pageerror', error => errors.push(error.message));
 });
-test.afterEach(({ page }) => { expect(browserErrors.get(page)).toEqual([]); });
+test.afterEach(async ({ page, baseURL }) => {
+  try { expect(browserErrors.get(page)).toEqual([]); } finally {
+    // Release the synthetic account's leases between tests, including detached
+    // pages retained by the real grace period. Keep production quotas intact.
+    if ((await page.request.get('/api/v1/auth/session')).status() === 200) {
+      const csrf = await page.request.get('/api/v1/auth/csrf');
+      const { csrf_token } = await csrf.json() as { csrf_token: string };
+      const loggedOut = await page.request.post('/api/v1/auth/logout', {
+        headers: { Origin: new URL(baseURL!).origin, 'X-CSRF-Token': csrf_token }, data: {},
+      });
+      expect(loggedOut.status()).toBe(200);
+    }
+  }
+});
 
 async function login(page: Page, role: Role) {
   const filename = process.env.INSPECTOR_E2E_ACCOUNTS;
@@ -133,6 +146,7 @@ test('administrator builds and edits a complete graph, preserves identity and ro
   await createEntity(page, 'view', 'detail-view', 'Detail');
   await page.getByLabel('Named view', { exact: true }).selectOption('detail-view');
   await page.getByRole('button', { name: 'Collapse Processing', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Expand Processing', exact: true })).toBeVisible();
   await page.getByLabel('Search this system', { exact: true }).fill('pcs-ingest');
   await page.getByRole('button', { name: /Renamed ingress.*process|process.*Renamed ingress/i }).click();
   await expect(page.getByRole('button', { name: 'Select process Renamed ingress', exact: true })).toBeVisible();
@@ -302,4 +316,136 @@ test('diagram drag and resize persist view geometry and preserve model parents',
   expect(changed.config.processes).toEqual(before.config.processes);
   await page.reload();
   expect((await readTopology(page, id)).config.views).toEqual(changed.config.views);
+});
+
+test('server setup exposes SSH endpoints and saves a new profile atomically with its server', async ({ page }) => {
+  test.setTimeout(180000);
+  await login(page, 'administrator');
+  const id = await createSystem(page, `Server SSH setup ${Date.now()}`);
+  await createEntity(page, 'subsystem', 'ssh-subsystem', 'Synthetic SSH subsystem');
+  const baseline = await readTopology(page, id);
+  expect(baseline.config.connections).toEqual([]);
+  await expect(page.getByRole('button', { name: 'Add server', exact: true })).toBeEnabled();
+
+  async function openServerForm() {
+    await page.getByRole('button', { name: 'Add server', exact: true }).click();
+    return page.getByRole('dialog', { name: 'Add server', exact: true });
+  }
+  async function fillNewServer(dialog: Locator, serverId: string, name: string) {
+    await dialog.getByLabel('Name', { exact: true }).fill(name);
+    await dialog.getByLabel('Stable ID', { exact: true }).fill(serverId);
+    await dialog.getByLabel('SSH host', { exact: true }).fill('192.0.2.44');
+    await dialog.getByLabel('SSH port', { exact: true }).fill('2022');
+    await dialog.getByLabel('Username', { exact: true }).fill('logreader');
+    await dialog.getByLabel('Credential reference', { exact: true }).fill('unresolved-ssh-test');
+    await dialog.getByLabel(/Proposed log roots/).fill('/var/log/application');
+  }
+
+  for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
+    await page.setViewportSize(size);
+    for (const theme of ['light', 'dark']) {
+      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+      await expect(page.getByLabel('Appearance', { exact: true })).toBeEnabled();
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      const dialog = await openServerForm();
+      await expect(dialog.getByRole('combobox', { name: 'Connection profile', exact: true })).toHaveValue('');
+      await expect(dialog.getByLabel('SSH port', { exact: true })).toHaveValue('22');
+      await fillNewServer(dialog, 'cancelled-server', 'Synthetic application host');
+      await dialog.getByLabel('SSH host', { exact: true }).scrollIntoViewIfNeeded();
+      await capture(page, `administrator-${theme}-${size.width}x${size.height}-server-ssh`);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+      await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    }
+  }
+  const cancelled = await readTopology(page, id);
+  expect(cancelled.revision).toBe(baseline.revision);
+  expect(cancelled.config).toEqual(baseline.config);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const dialog = await openServerForm();
+  await fillNewServer(dialog, 'ssh-server', 'Synthetic application host');
+  const topologyWrites: string[] = [];
+  page.on('request', request => {
+    if (request.method() === 'PUT' && new URL(request.url()).pathname === `/api/v1/projects/${id}/topology`) topologyWrites.push(request.url());
+  });
+  for (const port of ['0', '65536', '22.5']) {
+    await dialog.getByLabel('SSH port', { exact: true }).fill(port);
+    await dialog.getByRole('button', { name: 'Save server', exact: true }).click();
+    await expect(dialog).toBeVisible();
+    expect(await dialog.getByLabel('SSH port', { exact: true }).evaluate((element: HTMLInputElement) => element.validity.valid)).toBe(false);
+    expect((await readTopology(page, id)).revision).toBe(baseline.revision);
+    expect(topologyWrites).toEqual([]);
+  }
+  await dialog.getByLabel('SSH port', { exact: true }).fill('2022');
+  await dialog.getByRole('button', { name: 'Save server', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const saved = await readTopology(page, id);
+  expect(saved.revision).toBe(baseline.revision + 1);
+  expect(topologyWrites).toHaveLength(1);
+  expect(saved.config.connections).toHaveLength(1);
+  expect(saved.config.servers).toHaveLength(1);
+  const profile = saved.config.connections![0];
+  expect(profile).toMatchObject({ name: 'Synthetic application host SSH', host: '192.0.2.44', port: 2022, username: 'logreader', credential_ref: 'unresolved-ssh-test', jump_connection_id: null, allowed_log_roots: ['/var/log/application'] });
+  expect(saved.config.servers[0]).toMatchObject({ id: 'ssh-server', subsystem_id: 'ssh-subsystem', connection_id: profile.id });
+
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Select server Synthetic application host', exact: true })).toHaveCount(0);
+  const undone = await readTopology(page, id);
+  expect(undone.revision).toBe(saved.revision + 1);
+  expect(undone.config.connections).toEqual([]);
+  expect(undone.config.servers).toEqual([]);
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Select server Synthetic application host', exact: true })).toBeVisible();
+  const redone = await readTopology(page, id);
+  expect(redone.revision).toBe(undone.revision + 1);
+  expect(redone.config.connections).toEqual(saved.config.connections);
+  expect(redone.config.servers).toEqual(saved.config.servers);
+
+  await page.reload();
+  await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
+  await page.getByRole('button', { name: 'Select server Synthetic application host', exact: true }).click();
+  const details = page.locator('.process-details');
+  await expect(details.getByText('SSH host', { exact: true })).toBeVisible();
+  await expect(details.getByText('192.0.2.44', { exact: true })).toBeVisible();
+  await expect(details.getByText('SSH port', { exact: true })).toBeVisible();
+  await expect(details.getByText('2022', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Edit selected', exact: true }).click();
+  const editServer = page.getByRole('dialog', { name: 'Edit server', exact: true });
+  await expect(editServer.getByLabel('SSH host', { exact: true })).toHaveValue('192.0.2.44');
+  await expect(editServer.getByLabel('SSH host', { exact: true })).not.toBeEditable();
+  await expect(editServer.getByLabel('SSH port', { exact: true })).toHaveValue('2022');
+  await expect(editServer.getByLabel('SSH port', { exact: true })).not.toBeEditable();
+  await expect(editServer.getByRole('combobox', { name: 'Connection profile', exact: true }).locator('option:checked')).toContainText('192.0.2.44');
+  await expect(editServer.getByRole('combobox', { name: 'Connection profile', exact: true }).locator('option:checked')).toContainText('2022');
+  await editServer.getByRole('button', { name: 'Cancel', exact: true }).click();
+  expect((await readTopology(page, id)).revision).toBe(redone.revision);
+
+  await details.getByRole('button', { name: 'Edit SSH connection', exact: true }).click();
+  const editConnection = page.getByRole('dialog', { name: 'Edit connection', exact: true });
+  await editConnection.getByLabel('SSH host', { exact: true }).fill('192.0.2.45');
+  await editConnection.getByLabel('SSH port', { exact: true }).fill('2223');
+  await editConnection.getByRole('button', { name: 'Save connection', exact: true }).click();
+  await expect(editConnection).not.toBeVisible();
+  const edited = await readTopology(page, id);
+  expect(edited.config.connections).toHaveLength(1);
+  expect(edited.config.connections![0]).toMatchObject({ ...profile, host: '192.0.2.45', port: 2223 });
+  expect(edited.config.servers[0].connection_id).toBe(profile.id);
+  await page.reload();
+  await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
+  await page.getByRole('button', { name: 'Select server Synthetic application host', exact: true }).click();
+  await expect(details.getByText('192.0.2.45', { exact: true })).toBeVisible();
+  await expect(details.getByText('2223', { exact: true })).toBeVisible();
+
+  await createEntity(page, 'server', 'reused-ssh-server', 'Synthetic shared-profile host', async dialog => {
+    await dialog.getByRole('combobox', { name: 'Connection profile', exact: true }).selectOption(profile.id);
+    await expect(dialog.getByLabel('SSH host', { exact: true })).toHaveValue('192.0.2.45');
+    await expect(dialog.getByLabel('SSH host', { exact: true })).not.toBeEditable();
+    await expect(dialog.getByLabel('SSH port', { exact: true })).toHaveValue('2223');
+    await expect(dialog.getByLabel('SSH port', { exact: true })).not.toBeEditable();
+  });
+  const reused = await readTopology(page, id);
+  expect(reused.revision).toBe(edited.revision + 1);
+  expect(reused.config.connections).toEqual(edited.config.connections);
+  expect(reused.config.servers).toHaveLength(2);
+  expect(reused.config.servers.every(server => server.connection_id === profile.id)).toBe(true);
 });

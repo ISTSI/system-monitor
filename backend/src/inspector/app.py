@@ -1,4 +1,4 @@
-"""Backend-only review slice. There is no public setup, SSH or unscoped operation."""
+"""Scoped web application with explicit, Administrator-controlled SSH tests."""
 
 import asyncio
 import hmac
@@ -31,6 +31,7 @@ from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
 from inspector.history import NONTERMINAL, HistoryManager, build_history_router
 from inspector.security import issue_token, require_admin, token_hash
+from inspector.ssh_access import SSHAccess, build_ssh_access_router
 from inspector.topology import build_topology_router, initialize_legacy_documents
 
 SESSION_COOKIE = "__Host-si-session"
@@ -199,6 +200,7 @@ def create_app(config: Config | None = None) -> FastAPI:
                             .values(status="partial", error_code="BACKEND_RESTART")
                         )
                     app.state.history = HistoryManager(config, app.state.sessions, supervisor)
+                    app.state.ssh_access = SSHAccess(config, app.state.sessions, supervisor)
                     try:
                         yield
                     finally:
@@ -662,6 +664,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.include_router(build_account_router(transaction, authenticated, protected_write))
     app.include_router(build_topology_router(transaction, authenticated, protected_write))
     app.include_router(build_history_router(transaction, authenticated, protected_write))
+    app.include_router(build_ssh_access_router(transaction, authenticated, protected_write))
     bundled = Path(__file__).parent / "web"
     frontend = (
         bundled

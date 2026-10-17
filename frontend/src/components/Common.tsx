@@ -21,7 +21,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
     element?.showModal();
     return () => { element?.close(); previous?.focus(); };
   }, []);
-  return <dialog ref={ref} onCancel={onClose} aria-labelledby="dialog-title"><div className="dialog-head"><h2 id="dialog-title">{title}</h2><button type="button" aria-label="Close dialog" onClick={onClose}>×</button></div>{children}</dialog>;
+  return <dialog ref={ref} onCancel={event => { event.preventDefault(); onClose(); }} aria-labelledby="dialog-title"><div className="dialog-head"><h2 id="dialog-title">{title}</h2><button type="button" aria-label="Close dialog" onClick={onClose}>×</button></div>{children}</dialog>;
 }
 
 export function EmptyState({ title, children }: { title: string; children: ReactNode }) {

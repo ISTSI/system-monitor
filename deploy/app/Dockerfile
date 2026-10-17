@@ -14,7 +14,7 @@ COPY --from=build /opt/venv /opt/venv
 COPY third_party/backend /opt/notices/backend
 COPY third_party/frontend /opt/notices/frontend
 ENV PATH=/opt/venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_OFFLINE=1 HOME=/tmp
-RUN mkdir -p /var/lib/system-inspector /var/cache/system-inspector && chown 10001:10001 /var/lib/system-inspector /var/cache/system-inspector
+RUN groupadd --gid 10001 inspector && useradd --uid 10001 --gid 10001 --no-create-home --no-log-init --shell /usr/sbin/nologin inspector && mkdir -p /var/lib/system-inspector /var/cache/system-inspector && chown 10001:10001 /var/lib/system-inspector /var/cache/system-inspector
 USER 10001:10001
 WORKDIR /var/lib/system-inspector
 EXPOSE 8000
