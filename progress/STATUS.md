@@ -705,3 +705,80 @@ key-rotation and full backup-restore qualification were not performed.
 
 **The requested SSH setup/test slice is implemented. Stage 04 as a whole is not
 complete; its remaining collection work is the next scope.**
+
+## 17 October 2026 - Compact topology navigation
+
+Implemented the user's UI rearrangement without advancing a stage gate. Removed
+the Administrator workspace strip and large System workspace heading. Synthetic
+demo data now appears in the top bar. Personal appearance is available only in
+Settings for both roles; shared settings retain Administrator authorization.
+Admin follows Settings and opens `/admin` for system creation, metadata editing,
+archival and restoration.
+
+The compact system bar contains a floating System menu, current name/identifier
+and right-aligned selector. Its nine actions retain the existing real editors,
+connection/parser lists, import preview and JSON/YAML exports. Undo/Redo moved
+beside Documented topology; the old editing button bar is removed. Ordinary
+system links support browser modifier clicks instead of Open separately. Menu
+keyboard navigation, disabled prerequisites, Escape/outside dismissal and focus
+restoration work in both themes. System selection remains URL/page scoped.
+
+Changed files:
+
+- `frontend/src/App.tsx`, `components/Catalogue.tsx`, `Management.tsx`,
+  `SystemWorkspace.tsx`, new `ActionMenu.tsx`, and `styles.css`.
+- All four `frontend/e2e/*.spec.ts` files and new `e2e/ui.ts`: real menu/Settings
+  actions, Admin lifecycle forms, manual new-tab workspace ownership, compact
+  canvas dimensions, role checks, screenshots and synthetic-session cleanup.
+- `frontend/README.md`, `docs/06_UI_UX.md`, `docs/12_TRACEABILITY.md`, this status.
+
+Commands actually run (Python: `backend/.venv/Scripts/python.exe`):
+
+- `scripts/frontend.py lint` and `scripts/frontend.py typecheck`: PASS on final
+  sources/tests. `scripts/build_stage1.py`: PASS, including TypeScript, Vite and
+  rebuilt wheel/sdist. Existing Vite chunk-size advisory remains non-fatal.
+- `scripts/frontend.py e2e foundation.spec.ts topology.spec.ts historical.spec.ts
+  ssh.spec.ts --max-failures=3` with URL `https://localhost:8445`, protected Stage
+  03 synthetic accounts and Stage 04 report output: the corrected broad run
+  passed **18 scenarios**, then three topology sign-ins hit the real HTTP 429
+  limit; one remaining test was not run. Report: `browser-compact-ui-final.json`.
+- `scripts/frontend.py e2e topology.spec.ts --max-failures=1`: **4 passed**,
+  including final Admin/Inspector Settings captures. The geometry prerequisite
+  exposed Chromium's rounded intersection ratio (0.9999987483 for a fully visible
+  scaled handle); the server setup test was not run after that failure. Report:
+  `browser-compact-ui-topology-final.json`.
+- `scripts/frontend.py e2e topology.spec.ts -g 'diagram drag|server setup'
+  --max-failures=1`: **2 passed in 7.9 s**. The handle must fit completely inside
+  both the canvas and browser bounds, without a numerical tolerance. Real drag,
+  resize, model-parent, persisted-geometry and reload assertions remain intact.
+  Report: `browser-compact-ui-geometry-final.json`.
+- Final evidence reconciliation: **all 22 distinct browser scenarios have a
+  passing final result across those runs**, not one all-green suite invocation.
+  `verification/stage-4/checks/compact-ui-browser-coverage.json` records each
+  scenario and its actual source report. No application limit was increased.
+- `python -m unittest discover -s tests/package -q`: **128 run, 119 passed,
+  nine POSIX-only permission cases skipped on Windows**.
+- `tools/validate_package.py`: PASS, all 56 requirements mapped.
+- Wheel/served/frontend byte comparison: PASS for all three built web assets;
+  `verification/stage-4/checks/compact-ui-artifacts.json` records hashes.
+- Local readiness and served-index request: HTTP 200 with explicit localhost
+  certificate/hostname verification; the served index references the rebuilt UI.
+- `git diff --check`: PASS; existing LF/CRLF conversion advisory is non-fatal.
+
+Visual evidence includes topology, open System menu, Admin and Settings in both
+themes at 1280x720/1920x1080, plus existing role/history/SSH regressions. The local
+screenshot manifest now inventories 101 retained captures; representative final
+light/dark menus, topology, Admin and both roles' Settings were visually inspected.
+
+Earlier verification failures remain in the reports. The initial broad run also
+exhausted retained synthetic workspace leases; foundation/history cleanup now
+uses real account logout after each test. Login helpers wait for one bounded
+60-second retry on 429, with the real rate limit unchanged. The compact canvas
+test also exposed flex shrink at 1920x1080; its intended viewport-relative minimum
+height is now enforced. No backend/API/schema/transport change was needed.
+
+The requested UI work is complete with no remaining blocker. Full Stage 04 remote
+collection, later live/investigation/import work and release qualification remain
+pending. No production host, real SSH credential, infrastructure deployment or
+remote repository operation was used. Next stage scope remains
+`prompts/04_SSH_COLLECTION.md`.

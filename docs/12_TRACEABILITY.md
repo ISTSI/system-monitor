@@ -2,6 +2,16 @@
 
 All 56 requirements map to application acceptance targets. The requirement table is not a test-result report; implemented evidence and remaining limits appear below it.
 
+The user-authorized compact navigation update (17 October 2026) retains R05/R10/R11
+editing through the System menu, moves Undo/Redo beside Documented topology, and
+places personal R38 appearance in Settings for both roles. R39/R46 system lifecycle
+controls now live in the dedicated Administrator view. R47/R49 retain ordinary
+system links and fresh page workspaces; Ctrl-click replaces the dedicated Open
+separately control at the user's request. Browser coverage in
+`frontend/e2e/topology.spec.ts`, `foundation.spec.ts`, `historical.spec.ts` and
+`ssh.spec.ts` checks menu actions, themes, roles, manual new-tab navigation and
+same-context isolation. Actual results are recorded in `progress/STATUS.md`.
+
 Actual Stage 00–02 evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Authentication, appearance, scoped topology/configuration and independent browser workspaces have executable unit, MariaDB and browser coverage. SSH, historical/live logs, investigations, inventory import and the complete offline release remain later-stage gates. Passing a subset does not complete an entire acceptance target.
 
 The authorized temporary VM now supplies actual MariaDB evidence for part of R42/R44/R46/R48/R56: the initial migration, binary identities, owner/role/scope behavior, composite FK rejection, exact BIGINT values and named migration locks pass in `backend/tests/vm/test_vm_mariadb.py`. Those rollback-only checks also prove the supplied migration account is refused for serving. They do not replace restricted-runtime/API/browser or disposable-schema integration targets.

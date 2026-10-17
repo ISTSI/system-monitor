@@ -1,6 +1,7 @@
 import { test, expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { setAppearance, submitSignIn, systemAction } from './ui';
 import type { Config, Connection, Topology } from '../src/topology';
 
 type Role = 'administrator' | 'inspector';
@@ -53,9 +54,8 @@ async function login(page: Page, role: Role) {
   await page.getByLabel('Username', { exact: true }).fill(accounts[role].username);
   try {
     await page.getByLabel('Password', { exact: true }).fill(accounts[role].password);
-    const response = page.waitForResponse(value => value.url().endsWith('/api/v1/auth/login') && value.request().method() === 'POST');
-    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    if ((await response).status() !== 200) throw new Error('Synthetic sign-in failed.');
+    const response = await submitSignIn(page);
+    if (response.status() !== 200) throw new Error('Synthetic sign-in failed.');
     await expect(page.getByRole('heading', { name: 'Your systems, in context.' })).toBeVisible();
   } catch {
     await page.evaluate(() => document.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach(input => { input.value = ''; })).catch(() => {});
@@ -114,7 +114,7 @@ async function openAccess(page: Page): Promise<Locator> {
 }
 
 async function openManagerAccess(page: Page): Promise<Locator> {
-  await page.getByRole('button', { name: 'Connections', exact: true }).click();
+  await systemAction(page, 'List connections');
   await page.getByRole('button', { name: 'Password and test Synthetic target', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'SSH password & connection test', exact: true });
   await expect(dialog.getByTestId('ssh-password-status')).toBeVisible();
@@ -192,8 +192,8 @@ test('password setup tests real SFTP, clears write-only secrets, persists safely
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   for (const viewport of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(viewport);
-    for (const theme of ['light', 'dark']) {
-      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       dialog = await openAccess(page);
       await expect(dialog.locator('input[type="password"]')).toHaveValue('');

@@ -1,6 +1,7 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { editSystemDetails, setAppearance, submitSignIn, systemAction } from './ui';
 import type { Config, EntityKind, Topology } from '../src/topology';
 
 const screenshots = resolve(`../verification/${process.env.INSPECTOR_E2E_REPORT_STAGE ?? 'stage-2'}/screenshots`);
@@ -33,10 +34,8 @@ async function login(page: Page, role: Role) {
   await page.goto('/');
   await page.getByLabel('Username', { exact: true }).fill(accounts[role].username);
   await page.getByLabel('Password', { exact: true }).fill(accounts[role].password);
-  const result = page.waitForResponse(response => response.url().endsWith('/api/v1/auth/login') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   // Never retain a failed password form in browser artifacts.
-  const response = await result;
+  const response = await submitSignIn(page);
   if (response.status() !== 200) {
     await page.locator('input[type="password"]').fill('');
     throw new Error(`Synthetic sign-in returned ${response.status()}; protected details withheld.`);
@@ -46,6 +45,7 @@ async function login(page: Page, role: Role) {
 
 async function createSystem(page: Page, name: string): Promise<string> {
   console.log('Creating a synthetic system through the catalogue form.');
+  await page.getByRole('link', { name: 'Admin', exact: true }).click();
   await page.getByRole('button', { name: '+ Create system', exact: true }).click();
   await page.getByLabel('System name', { exact: true }).fill(name);
   await page.getByRole('textbox', { name: 'Description', exact: true }).fill('Synthetic Stage 02 browser acceptance.');
@@ -63,8 +63,11 @@ async function readTopology(page: Page, id: string): Promise<Topology> {
 
 async function createEntity(page: Page, kind: EntityKind, id: string, name: string, fill?: (dialog: Locator) => Promise<void>) {
   console.log(`Creating ${kind} ${id} through its form.`);
-  if (kind === 'connection' || kind === 'parser') await page.getByRole('button', { name: kind === 'connection' ? 'Connections' : 'Parsers', exact: true }).click();
-  await page.getByRole('button', { name: `Add ${kind}`, exact: true }).click();
+  if (kind === 'connection' || kind === 'parser') {
+    await systemAction(page, kind === 'connection' ? 'List connections' : 'List Parsers');
+    await page.getByRole('button', { name: `Add ${kind}`, exact: true }).click();
+  } else if (kind === 'view') await page.getByRole('button', { name: 'Add view', exact: true }).click();
+  else await systemAction(page, `Add ${kind}`);
   const dialog = page.getByRole('dialog', { name: `Add ${kind}`, exact: true });
   await dialog.getByLabel('Name', { exact: true }).fill(name);
   await dialog.getByLabel('Stable ID', { exact: true }).fill(id);
@@ -80,6 +83,90 @@ async function capture(page: Page, filename: string) {
   await page.screenshot({ path: resolve(screenshots, filename + '.png'), animations: 'disabled' });
 }
 
+test('compact topology keeps system actions in a dismissible menu and administration in its own view', async ({ page }) => {
+  await login(page, 'administrator');
+  await page.goto('/systems/demo-foundation-a/topology');
+  await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
+  const workspace = await page.getByTestId('workspace-id').innerText();
+  const topbar = page.locator('.topbar');
+  await expect(topbar.getByText('SYNTHETIC DEMO DATA', { exact: true })).toBeVisible();
+  await expect(topbar.getByLabel('Appearance', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Administrator workspace', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Open separately', { exact: true })).toHaveCount(0);
+  await expect(page.locator('.topology-edit-toolbar, .mode-strip')).toHaveCount(0);
+  await expect(page.locator('.canvas-toolbar').getByRole('button', { name: 'Undo', exact: true })).toBeVisible();
+  await expect(page.locator('.canvas-toolbar').getByRole('button', { name: 'Redo', exact: true })).toBeVisible();
+  const trigger = page.getByRole('button', { name: 'System', exact: true });
+  const menu = page.getByRole('menu', { name: 'System', exact: true });
+  await trigger.click();
+  await expect(menu).toBeVisible();
+  const actions = ['Add subsystem', 'Add server', 'Add process', 'Add flow', 'List connections', 'List Parsers', 'Import configuration', 'Export JSON', 'Export YAML'];
+  await expect(menu.getByRole('menuitem')).toHaveCount(actions.length);
+  for (const name of actions) await expect(menu.getByRole('menuitem', { name, exact: true })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: actions[0], exact: true })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(menu.getByRole('menuitem', { name: actions[1], exact: true })).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(menu.getByRole('menuitem', { name: actions.at(-1), exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(menu).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await topbar.getByText('SYNTHETIC DEMO DATA', { exact: true }).click();
+  await expect(menu).not.toBeVisible();
+  await systemAction(page, 'Add subsystem');
+  await expect(menu).not.toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Add subsystem', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
+    await page.setViewportSize(size);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
+      await expect(page.getByTestId('workspace-id')).toHaveText(workspace);
+      await expect(page.getByRole('heading', { name: 'Documented topology', exact: true })).toBeVisible();
+      const canvas = await page.locator('.reactflow-canvas').boundingBox();
+      expect(canvas).not.toBeNull();
+      expect(canvas!.y).toBeLessThan(size.height / 2);
+      expect(canvas!.height).toBeGreaterThan(size.height / 2);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+      await capture(page, `administrator-compact-${theme}-${size.width}x${size.height}`);
+      await trigger.click();
+      await expect(menu).toBeVisible();
+      await capture(page, `administrator-compact-menu-${theme}-${size.width}x${size.height}`);
+      await page.keyboard.press('Escape');
+      await page.getByRole('button', { name: 'Settings', exact: true }).click();
+      const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
+      await expect(settings.getByLabel('Appearance', { exact: true })).toBeEnabled();
+      await expect(settings.getByRole('button', { name: 'Save application settings', exact: true })).toBeVisible();
+      await capture(page, `administrator-settings-${theme}-${size.width}x${size.height}`);
+      await settings.getByRole('button', { name: 'Close', exact: true }).click();
+    }
+  }
+  const originalUrl = page.url();
+  const openedPage = page.context().waitForEvent('page');
+  await page.locator('.system-bar-title h1 a').click({ modifiers: ['Control'] });
+  const duplicate = await openedPage;
+  await expect(duplicate).toHaveURL(originalUrl);
+  await expect(duplicate.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
+  await expect(duplicate.getByTestId('workspace-id')).not.toHaveText(workspace);
+  await expect(page).toHaveURL(originalUrl);
+  await expect(page.getByTestId('workspace-id')).toHaveText(workspace);
+  await duplicate.close();
+  await page.getByRole('link', { name: 'Admin', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole('heading', { name: 'System administration', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '+ Create system', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'System', exact: true })).toHaveCount(0);
+  await expect(page.locator('.system-card').first()).toBeVisible();
+  for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
+    await page.setViewportSize(size);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
+      await capture(page, `administrator-admin-${theme}-${size.width}x${size.height}`);
+    }
+  }
+});
+
 test('administrator builds and edits a complete graph, preserves identity and round-trips configuration', async ({ page }) => {
   test.setTimeout(180000);
   await login(page, 'administrator');
@@ -89,7 +176,7 @@ test('administrator builds and edits a complete graph, preserves identity and ro
   });
   await createEntity(page, 'subsystem', 'beta', 'Processing');
   const beforeDuplicate = (await readTopology(page, id)).revision;
-  await page.getByRole('button', { name: 'Add subsystem', exact: true }).click();
+  await systemAction(page, 'Add subsystem');
   await page.getByRole('dialog').getByLabel('Name', { exact: true }).fill('Attempted replacement');
   await page.getByRole('dialog').getByLabel('Stable ID', { exact: true }).fill('alpha');
   await page.getByRole('button', { name: 'Save subsystem', exact: true }).click();
@@ -153,7 +240,7 @@ test('administrator builds and edits a complete graph, preserves identity and ro
   await expect(page.getByRole('button', { name: 'Expand Processing', exact: true })).toHaveCount(0);
   await page.getByLabel('Search this system', { exact: true }).fill('');
   const pendingDownload = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export JSON', exact: true }).click();
+  await systemAction(page, 'Export JSON');
   const download = await pendingDownload;
   const downloaded = JSON.parse(readFileSync((await download.path())!, 'utf8')) as Config;
   expect(downloaded.project.id).toBe(id);
@@ -162,7 +249,7 @@ test('administrator builds and edits a complete graph, preserves identity and ro
   downloaded.processes[0].description = 'Externally edited **documentation**.';
   downloaded.views[0].nodes[0].x += 25;
   const revisionBefore = (await readTopology(page, id)).revision;
-  await page.getByRole('button', { name: 'Import configuration', exact: true }).click();
+  await systemAction(page, 'Import configuration');
   await page.getByRole('combobox', { name: 'Configuration format', exact: true }).selectOption('json');
   await page.getByLabel('Configuration content', { exact: true }).fill(JSON.stringify(downloaded));
   await page.getByRole('button', { name: 'Preview configuration', exact: true }).click();
@@ -210,9 +297,9 @@ test('same-account pages keep selection and search private and reject stale shar
   await page.getByLabel('Search this system', { exact: true }).fill('transaction-only-page-a');
   await expect(duplicate.getByLabel('Search this system', { exact: true })).toHaveValue('');
   await expect(duplicate.getByRole('heading', { name: 'Select a process', exact: true })).toBeVisible();
-  await duplicate.getByRole('button', { name: 'Edit system details', exact: true }).click();
+  await editSystemDetails(duplicate, 'demo-foundation-a');
   await duplicate.getByRole('textbox', { name: 'Description', exact: true }).fill('Stale draft from independent page');
-  await page.getByRole('button', { name: 'Edit system details', exact: true }).click();
+  await editSystemDetails(page, 'demo-foundation-a');
   await page.getByRole('textbox', { name: 'Description', exact: true }).fill('New shared revision from page A');
   await page.getByRole('button', { name: 'Save system details', exact: true }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
@@ -220,10 +307,13 @@ test('same-account pages keep selection and search private and reject stale shar
   await expect(duplicate.getByRole('alert')).toContainText(/changed|reload/i);
   await expect(duplicate.getByRole('textbox', { name: 'Description', exact: true })).toHaveValue('Stale draft from independent page');
   await duplicate.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.goto('/systems/demo-foundation-a/topology');
+  await duplicate.goto('/systems/demo-foundation-a/topology');
+  await expect(duplicate.getByLabel('System selector')).toHaveValue('demo-foundation-a');
   await duplicate.getByLabel('System selector').selectOption('demo-foundation-b');
   await expect(duplicate).toHaveURL(/demo-foundation-b\/topology$/);
   await expect(page.getByLabel('System selector')).toHaveValue('demo-foundation-a');
-  await expect(page.getByTestId('workspace-id')).toHaveText(workspace);
+  await expect(page.getByTestId('workspace-id')).not.toHaveText(await duplicate.getByTestId('workspace-id').innerText());
   await duplicate.close();
 });
 
@@ -242,18 +332,27 @@ test('Inspector safely navigates real topology in both themes without shared mut
   expect(before.config.processes.every(process => process.log_source === undefined)).toBe(true);
   await expect(page.getByRole('button', { name: 'Add subsystem', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Import configuration', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'System', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
   const select = page.getByRole('button', { name: /^Select process / }).first();
   await select.focus();
   await page.keyboard.press('Enter');
   await expect(select).toHaveAttribute('aria-pressed', 'true');
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
-    for (const theme of ['light', 'dark']) {
-      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await expect(select).toHaveAttribute('aria-pressed', 'true');
       await capture(page, `inspector-${theme}-${size.width}x${size.height}`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+      await page.getByRole('button', { name: 'Settings', exact: true }).click();
+      const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
+      await expect(settings.getByLabel('Appearance', { exact: true })).toBeEnabled();
+      await expect(settings.getByRole('button', { name: 'Save application settings', exact: true })).toHaveCount(0);
+      await capture(page, `inspector-settings-${theme}-${size.width}x${size.height}`);
+      await settings.getByRole('button', { name: 'Close', exact: true }).click();
     }
   }
   const after = await readTopology(page, 'demo-foundation-b');
@@ -300,8 +399,17 @@ test('diagram drag and resize persist view geometry and preserve model parents',
   await page.waitForTimeout(250); // The explicit fit transition lasts 150 ms.
   const handle = group.locator('.react-flow__resize-control.bottom.right.handle');
   await expect(handle).toBeVisible();
-  await expect(handle).toBeInViewport({ ratio: 1 });
+  await expect(handle).toBeInViewport();
   const box = await handle.boundingBox();
+  const canvas = await page.locator('.reactflow-canvas').boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull(); expect(canvas).not.toBeNull(); expect(viewport).not.toBeNull();
+  // Assert full visibility directly: Chromium can report an intersection ratio
+  // of 0.9999987 for a fully contained handle transformed by fractional zoom.
+  expect(box!.x).toBeGreaterThanOrEqual(Math.max(0, canvas!.x));
+  expect(box!.y).toBeGreaterThanOrEqual(Math.max(0, canvas!.y));
+  expect(box!.x + box!.width).toBeLessThanOrEqual(Math.min(viewport!.width, canvas!.x + canvas!.width));
+  expect(box!.y + box!.height).toBeLessThanOrEqual(Math.min(viewport!.height, canvas!.y + canvas!.height));
   const resized = page.waitForResponse(response => response.request().method() === 'PUT' && response.url().endsWith(`/projects/${id}/topology`));
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
   await page.mouse.down();
@@ -325,10 +433,12 @@ test('server setup exposes SSH endpoints and saves a new profile atomically with
   await createEntity(page, 'subsystem', 'ssh-subsystem', 'Synthetic SSH subsystem');
   const baseline = await readTopology(page, id);
   expect(baseline.config.connections).toEqual([]);
-  await expect(page.getByRole('button', { name: 'Add server', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'System', exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: 'Add server', exact: true })).toBeEnabled();
+  await page.keyboard.press('Escape');
 
   async function openServerForm() {
-    await page.getByRole('button', { name: 'Add server', exact: true }).click();
+    await systemAction(page, 'Add server');
     return page.getByRole('dialog', { name: 'Add server', exact: true });
   }
   async function fillNewServer(dialog: Locator, serverId: string, name: string) {
@@ -343,9 +453,8 @@ test('server setup exposes SSH endpoints and saves a new profile atomically with
 
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
-    for (const theme of ['light', 'dark']) {
-      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
-      await expect(page.getByLabel('Appearance', { exact: true })).toBeEnabled();
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       const dialog = await openServerForm();
       await expect(dialog.getByRole('combobox', { name: 'Connection profile', exact: true })).toHaveValue('');

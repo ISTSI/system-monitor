@@ -1,6 +1,7 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { editSystemDetails, setAppearance } from './ui';
 
 type Role = 'administrator' | 'inspector';
 type Account = { username: string; password: string };
@@ -25,10 +26,20 @@ test.afterEach(async ({ context, baseURL }) => {
   const response = await context.request.get('/api/v1/auth/csrf');
   if (response.status() !== 200) return;
   const value = await response.json() as { csrf_token: string };
-  for (const workspace of createdWorkspaces.get(context) ?? []) {
-    await context.request.post(`/api/v1/projects/${workspace.project_id}/workspaces/${workspace.workspace_id}/detach`, {
-      headers: { Origin: new URL(baseURL!).origin, 'X-CSRF-Token': value.csrf_token }, data: {},
-    });
+  const headers = { Origin: new URL(baseURL!).origin, 'X-CSRF-Token': value.csrf_token };
+  try {
+    for (const workspace of createdWorkspaces.get(context) ?? []) {
+      await context.request.post(`/api/v1/projects/${workspace.project_id}/workspaces/${workspace.workspace_id}/detach`, {
+        headers, data: {},
+      });
+    }
+  } finally {
+    // Detach preserves the production reconnect grace period. End this
+    // synthetic account's session to release its leases between tests.
+    if ((await context.request.get('/api/v1/auth/session')).status() === 200) {
+      const loggedOut = await context.request.post('/api/v1/auth/logout', { headers, data: {} });
+      expect(loggedOut.status()).toBe(200);
+    }
   }
 });
 
@@ -82,12 +93,7 @@ async function screenshot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: resolve(screenshots, name + '.png'), fullPage: false, animations: 'disabled' });
 }
 
-async function appearance(page: Page, theme: 'light' | 'dark' | 'system' | 'default'): Promise<void> {
-  await expect(page.getByLabel('Appearance', { exact: true })).toBeEnabled();
-  await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
-  await expect(page.getByLabel('Appearance', { exact: true })).toBeEnabled();
-  if (theme === 'light' || theme === 'dark') await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-}
+const appearance = setAppearance;
 
 async function csrf(page: Page): Promise<string> {
   const response = await page.request.get('/api/v1/auth/csrf');
@@ -132,8 +138,9 @@ for (const role of ['administrator', 'inspector'] as const) {
         await appearance(page, theme);
         await expect(page.locator('.subsystem-card')).toHaveCount(2);
         await expect(page.getByRole('region', { name: 'Process details' })).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Edit system details', exact: true })).toHaveCount(role === 'administrator' ? 1 : 0);
-        await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(role === 'administrator' ? 1 : 0);
+        await expect(page.getByRole('button', { name: 'Edit system details', exact: true })).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(1);
+        await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(role === 'administrator' ? 1 : 0);
         await screenshot(page, `${role}-${theme}-${viewport.width}x${viewport.height}-topology-process`);
         const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
         expect(hasHorizontalOverflow).toBe(false);
@@ -146,9 +153,7 @@ for (const role of ['administrator', 'inspector'] as const) {
 test('two pages in one browser context keep different systems and searches independent', async ({ page, context }) => {
   await login(page, 'inspector');
   const firstWorkspace = await openSystem(page, systemA);
-  const separate = page.getByRole('link', { name: 'Open this system in a new tab' });
-  await expect(separate).toHaveAttribute('target', '_blank');
-  await expect(separate).toHaveAttribute('rel', 'noopener noreferrer');
+  await expect(page.getByRole('link', { name: 'Open this system in a new tab' })).toHaveCount(0);
   const second = await context.newPage();
   const secondWorkspace = await openSystem(second, systemB);
   expect(secondWorkspace).not.toBe(firstWorkspace);
@@ -182,11 +187,18 @@ test('duplicate same-system page has a fresh workspace and isolated selection; l
   await page.getByRole('button', { name: /^Select process / }).first().click();
   await expect(duplicate.getByRole('heading', { name: 'Select a process', exact: true })).toBeVisible();
   await page.getByLabel('Search this system', { exact: true }).fill('kept in this page');
-  await appearance(page, 'light');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
+  await settings.getByLabel('Appearance', { exact: true }).selectOption('light');
+  await expect(settings.getByLabel('Appearance', { exact: true })).toBeEnabled();
+  await expect(settings.getByRole('button', { name: 'Save application settings', exact: true })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(settings).not.toBeVisible();
   await expect(duplicate.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.getByTestId('workspace-id')).toHaveText(original);
   await expect(duplicate.getByTestId('workspace-id')).toHaveText(duplicateWorkspace);
   await expect(page.getByLabel('Search this system', { exact: true })).toHaveValue('kept in this page');
+  await expect(page.getByRole('button', { name: /^Select process / }).first()).toHaveAttribute('aria-pressed', 'true');
   await page.locator('.account-menu summary').click();
   await page.getByRole('button', { name: 'Sign out all windows', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
@@ -195,17 +207,15 @@ test('duplicate same-system page has a fresh workspace and isolated selection; l
   await duplicate.close();
 });
 
-test('administrator unsaved form and workspace survive theme change and keyboard focus', async ({ page, context }) => {
+test('administrator unsaved system form survives account theme change and keyboard focus', async ({ page, context }) => {
   await login(page, 'administrator');
-  const workspace = await openSystem(page, systemA);
-  await page.getByRole('button', { name: 'Edit system details', exact: true }).click();
+  await editSystemDetails(page, systemA);
   await page.getByLabel('System name', { exact: true }).fill('Unsaved synthetic draft');
   const second = await context.newPage();
   await second.goto('/');
   await appearance(second, 'dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.getByLabel('System name', { exact: true })).toHaveValue('Unsaved synthetic draft');
-  await expect(page.getByTestId('workspace-id')).toHaveText(workspace);
   await page.bringToFront();
   await page.getByLabel('System name', { exact: true }).focus();
   await page.keyboard.press('Tab');
@@ -347,7 +357,7 @@ test('old unauthorized response cannot clear a new login or its CSRF token', asy
     });
     expect(await page.evaluate(() => (window as unknown as { __stale401: { loginRendered: boolean } }).__stale401.loginRendered)).toBe(false);
     await expect(page.getByRole('heading', { name: 'Your systems, in context.' })).toBeVisible();
-    const preferenceSaved = page.waitForResponse(response => response.url().endsWith('/api/v1/me/preferences') && response.request().method() === 'PATCH');
+    const preferenceSaved = page.context().waitForEvent('response', { predicate: response => response.url().endsWith('/api/v1/me/preferences') && response.request().method() === 'PATCH' });
     await appearance(page, 'light');
     expect((await preferenceSaved).status()).toBe(200);
     expect((await page.request.get('/api/v1/projects')).status()).toBe(200);
@@ -369,7 +379,7 @@ test.describe('200 percent layout equivalent', () => {
     const settings = page.getByRole('button', { name: 'Settings', exact: true });
     await settings.focus();
     await page.keyboard.press('Enter');
-    const dialog = page.getByRole('dialog', { name: 'Application settings', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Settings', exact: true });
     await expect(dialog).toBeVisible();
     const save = page.getByRole('button', { name: 'Save application settings', exact: true });
     await save.scrollIntoViewIfNeeded();
@@ -377,10 +387,10 @@ test.describe('200 percent layout equivalent', () => {
     await expect(save).toBeFocused();
     await expect(save).toBeInViewport();
     await noHorizontalOverflow();
-    await page.keyboard.press('Escape');
-    await expect(dialog).toHaveCount(0);
     await page.getByLabel('Appearance', { exact: true }).focus();
     await expect(page.getByLabel('Appearance', { exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
     await appearance(page, 'light');
     await openSystem(page, systemA);
     const process = page.getByRole('button', { name: /^Select process / }).first();
@@ -409,6 +419,7 @@ test('Administrator creates and edits two colliding system names through real fo
   let verified = false;
   async function createThroughForm(target: Page, description: string): Promise<string> {
     await target.goto('/');
+    await target.getByRole('link', { name: 'Admin', exact: true }).click();
     await target.getByRole('button', { name: '+ Create system', exact: true }).click();
     const dialog = target.getByRole('dialog', { name: 'Create system', exact: true });
     await dialog.getByRole('textbox', { name: 'System name', exact: true }).fill(sharedName);
@@ -423,7 +434,6 @@ test('Administrator creates and edits two colliding system names through real fo
     await expect(target.getByLabel('System selector')).toHaveValue(created.project_id);
     await expect(target.getByTestId('workspace-id')).toHaveText(workspacePattern);
     await expect(target.getByRole('heading', { name: sharedName, exact: true })).toBeVisible();
-    await expect(target.locator('.workspace-heading .muted')).toHaveText(description);
     await expect(target.getByRole('heading', { name: 'Your system starts here', exact: true })).toBeVisible();
     await expect(target.locator('.subsystem-card')).toHaveCount(0);
     return created.project_id;
@@ -432,16 +442,15 @@ test('Administrator creates and edits two colliding system names through real fo
     const firstId = await createThroughForm(page, descriptionA);
     const secondId = await createThroughForm(second, descriptionB);
     expect(firstId).not.toBe(secondId);
-    await page.getByRole('button', { name: 'Edit system details', exact: true }).click();
+    await editSystemDetails(page, firstId);
     const edit = page.getByRole('dialog', { name: 'Edit system details', exact: true });
     await expect(edit.locator('.target-system code')).toHaveText(firstId);
     await edit.getByRole('textbox', { name: 'Description', exact: true }).fill(editedA);
     await edit.getByRole('button', { name: 'Save system details', exact: true }).click();
     await expect(edit).toHaveCount(0);
-    await expect(page.locator('.workspace-heading .muted')).toHaveText(editedA);
-    await expect(page.locator('.workspace-toolbar .revision')).toHaveText('Revision 2');
-    await expect(second.locator('.workspace-heading .muted')).toHaveText(descriptionB);
-    await expect(second.locator('.workspace-toolbar .revision')).toHaveText('Revision 1');
+    await expect(page.locator(`.system-card[data-project-id="${firstId}"]`)).toContainText(editedA);
+    await expect(page.locator(`.system-card[data-project-id="${firstId}"]`)).toContainText('Revision 2');
+    await page.goto(`/systems/${firstId}/topology`);
     await Promise.all([page.reload(), second.reload()]);
     for (const [target, id, description, revision] of [
       [page, firstId, editedA, 2], [second, secondId, descriptionB, 1],
@@ -449,8 +458,7 @@ test('Administrator creates and edits two colliding system names through real fo
       await expect(target.getByLabel('System selector')).toHaveValue(id);
       await expect(target.getByTestId('workspace-id')).toHaveText(workspacePattern);
       await expect(target.getByRole('heading', { name: sharedName, exact: true })).toBeVisible();
-      await expect(target.locator('.workspace-heading .muted')).toHaveText(description);
-      await expect(target.locator('.workspace-toolbar .revision')).toHaveText(`Revision ${revision}`);
+      await expect(target.locator('.revision')).toHaveText(`Revision ${revision}`);
       await expect(target).toHaveURL(new RegExp(`/systems/${id}/topology$`));
       const response = await target.request.get(`/api/v1/projects/${id}`);
       expect(response.status()).toBe(200);

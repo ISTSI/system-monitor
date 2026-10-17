@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { setAppearance, submitSignIn } from './ui';
 import type { components } from '../src/api/schema';
 
 type Query = components['schemas']['HistoricalQueryInput'];
@@ -12,7 +13,21 @@ const from = '2026-10-16T12:00:00.000000Z'; const to = '2026-10-16T12:00:02.0000
 const cases = JSON.parse(readFileSync(resolve('../fixtures/expected/query-cases.json'), 'utf8')) as { id: string; request: Query; expected_event_ids: string[] }[];
 const errors = new WeakMap<Page, string[]>();
 test.beforeEach(({ page }) => { const found: string[] = []; errors.set(page, found); page.on('pageerror', error => found.push(error.message)); });
-test.afterEach(({ page }) => { expect(errors.get(page)).toEqual([]); });
+test.afterEach(async ({ page, baseURL }) => {
+  try { expect(errors.get(page)).toEqual([]); } finally {
+    // Closing a page retains its workspace for reconnect. Authenticated logout
+    // releases only this synthetic account's leases before the next test.
+    if ((await page.request.get('/api/v1/auth/session')).status() === 200) {
+      const response = await page.request.get('/api/v1/auth/csrf');
+      expect(response.status()).toBe(200);
+      const { csrf_token } = await response.json() as { csrf_token: string };
+      const loggedOut = await page.request.post('/api/v1/auth/logout', {
+        headers: { Origin: new URL(baseURL!).origin, 'X-CSRF-Token': csrf_token }, data: {},
+      });
+      expect(loggedOut.status()).toBe(200);
+    }
+  }
+});
 
 async function login(page: Page, role: Role) {
   const filename = process.env.INSPECTOR_E2E_ACCOUNTS;
@@ -21,9 +36,7 @@ async function login(page: Page, role: Role) {
   await page.goto('/');
   await page.getByLabel('Username', { exact: true }).fill(accounts[role].username);
   await page.getByLabel('Password', { exact: true }).fill(accounts[role].password);
-  const response = page.waitForResponse(result => result.url().endsWith('/auth/login') && result.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  const result = await response;
+  const result = await submitSignIn(page);
   if (result.status() !== 200) { await page.locator('input[type="password"]').fill(''); throw new Error(`Synthetic sign-in returned ${result.status()}; protected details withheld.`); }
   await expect(page.getByRole('heading', { name: 'Your systems, in context.' })).toBeVisible();
 }
@@ -79,7 +92,7 @@ async function apply(page: Page, input: Query) {
 
 function golden(id: string) { const value = cases.find(item => item.id === id); if (!value) throw new Error('Missing fixture case.'); return value; }
 async function capture(page: Page, name: string, fullPage = false) {
-  const directory = resolve('../verification/stage-3/screenshots'); mkdirSync(directory, { recursive: true });
+  const directory = resolve(`../verification/${process.env.INSPECTOR_E2E_REPORT_STAGE ?? 'stage-3'}/screenshots`); mkdirSync(directory, { recursive: true });
   await page.screenshot({ path: resolve(directory, `${name}.png`), animations: 'disabled', fullPage });
   const metadataFile = resolve(directory, 'capture-metadata.json');
   const metadata = existsSync(metadataFile) ? JSON.parse(readFileSync(metadataFile, 'utf8')) as Record<string, unknown> : {};
@@ -158,8 +171,8 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   await expect(page.locator('.virtual-logs')).toHaveJSProperty('scrollLeft', 0);
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
-    for (const theme of ['light', 'dark']) {
-      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await page.getByRole('button', { name: 'Inspect source line 2 from ingest-instance-a', exact: true }).click();
       await expect(drawer.locator('.source-context')).toContainText('Outside time bounds');
@@ -177,8 +190,8 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   await capture(page, 'inspector-diagnostics');
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
-    for (const theme of ['light', 'dark']) {
-      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await page.getByTestId('match-count').scrollIntoViewIfNeeded();
       await capture(page, `inspector-diagnostics-${theme}-${size.width}x${size.height}`);
@@ -191,8 +204,8 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   await expect(page.locator('.virtual-logs')).toHaveJSProperty('scrollLeft', 0);
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
-    for (const theme of ['light', 'dark']) {
-      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await page.getByTestId('match-count').scrollIntoViewIfNeeded();
       await capture(page, `inspector-merged-${theme}-${size.width}x${size.height}`);
@@ -204,8 +217,8 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   await capture(page, 'inspector-five-process-panes');
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
-    for (const theme of ['light', 'dark']) {
-      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await expect(page.getByTestId('match-count')).toHaveText('18 matches');
       await capture(page, `inspector-five-panes-${theme}-${size.width}x${size.height}-full-page`, true);
@@ -254,8 +267,8 @@ test('same-account pages isolate different/same-system history and reject forged
   await expect(page.getByLabel('Contains string', { exact: true })).toHaveValue('STRASSE');
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
-    for (const theme of ['light', 'dark']) {
-      await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await page.locator('.advanced-filter').first().scrollIntoViewIfNeeded();
       await capture(page, `administrator-filter-${theme}-${size.width}x${size.height}`);
@@ -304,8 +317,8 @@ test('invalid UTC input blocks collection and topology selection opens page-loca
   await page.keyboard.press('Enter');
   await expect(page.getByRole('alert')).toContainText('earlier');
   await expect(page.getByRole('button', { name: 'Collect planned sources', exact: true })).toHaveCount(0);
-  for (const theme of ['light', 'dark']) {
-    await page.getByLabel('Appearance', { exact: true }).selectOption(theme);
+  for (const theme of ['light', 'dark'] as const) {
+    await setAppearance(page, theme);
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await page.getByRole('alert').scrollIntoViewIfNeeded();
     await capture(page, `inspector-invalid-utc-${theme}`);

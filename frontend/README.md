@@ -2,6 +2,10 @@
 
 React/TypeScript/Vite sources compile to local static assets served by FastAPI on the same HTTPS origin. No runtime npm, CDN, cloud account, fonts or Internet access is needed. The current vertical slice includes authentication, system catalogue, revisioned topology editing, account management, appearance and a virtualised historical viewer. Local fixture collection indexes real plain, ZIP and TAR.GZ events in MariaDB. Administrator SSH password storage, host-key approval and direct/single-jump connection tests are available through server details or Connections. Remote historical collection remains pending Stage 04 work.
 
+The top bar contains Systems, Administrator-only Accounts, Settings for both roles, and Administrator-only Admin, followed by the synthetic-demo label when enabled and the account menu. Personal appearance is changed only in Settings; deployment settings remain Administrator-only. Admin (`/admin`) contains system creation, metadata editing, archival and restoration.
+
+An open system uses a compact header with the System action menu and system name on the left and the system selector on the right. The Administrator menu contains Add subsystem, Add server, Add process, Add flow, List connections, List Parsers, Import configuration, Export JSON and Export YAML. Undo and Redo sit beside Documented topology. The former workspace status strip and separate topology editing button bar are removed. Use ordinary system links and the browser's tab/window actions to open another page; there is no Open separately button. Each page retains its own system and workspace state.
+
 The recorded connected-build toolchain is Node **24.22.0**, npm **11.19.1**, TypeScript **5.9.3**, React **19.3.1** and Vite **8.3.4**. The generated package-lock.json locks the full dependency tree with actual registry integrity values. TypeScript 5 is required by the API generator's declared peer dependency; the lock does not bypass peer checks. React Flow renders the editable topology; TanStack Virtual renders historical log rows.
 
 On Windows, bootstrap the official checksum-verified portable Node archive and install packages from the repository root:

@@ -14,7 +14,7 @@ Branding remains configurable, initially System Inspector, and initial UI langua
 
 ## Theme preferences and Administrator settings
 
-Provide an Appearance control accessible to both roles: Light, Dark, System, and Use application default. The application default starts as Dark — Graphite Dusk and is editable only by an Administrator. `default` follows that global default; `system` follows `prefers-color-scheme`; the other values are explicit. Account preferences are stored in MariaDB and survive login/restart. Login uses a safe public branding/theme bootstrap response without exposing inventory.
+Provide an Appearance control in Settings, accessible to both roles: Light, Dark, System, and Use application default. Theme selection is available only in Settings. The application default starts as Dark — Graphite Dusk and is editable only by an Administrator in the shared application settings section. `default` follows that global default; `system` follows `prefers-color-scheme`; the other values are explicit. Account preferences are stored in MariaDB and survive login/restart. Login uses a safe public branding/theme bootstrap response without exposing inventory.
 
 Changing theme updates CSS and control state without navigation, refresh, loss of selection, new SSH connection, changed live filter version or WebSocket reconnect. Preserve scroll anchors, unsaved Administrator forms, selections, bookmarks, time bounds and display pause. Avoid a wrong-theme flash before preference resolution. System-preference changes are observed only while the user has selected System. Changes to the global default do not overwrite explicit per-user choices.
 
@@ -22,7 +22,11 @@ Theme preference writes are personal preferences, not permission to edit system 
 
 ## Workspace
 
-Top bar: configurable product/project, File/Settings/Help menus, named view, global model search, Appearance, current user and role/session status. Keep the reference header proportions without sacrificing search. Hide shared Edit/Settings/Import/User-management actions from Inspectors; File may still contain personal investigation actions. Read-only views are explicitly labelled. Left resizable pane: searchable subsystem/server/process tree and investigation list. Centre: interactive diagram or the selected full-width investigation view. Dockable process-details panel: documentation, safe properties, current log access status and related flows. Default to below the selected subsystem/left diagram region as in the concepts when space allows, with a resizable lower log area; also allow docking at the right. Configuration editing is Administrator-only. Bottom resizable workspace: log panes/merged view, timeline controls, filters, capture status and notes. Every panel can be collapsed; the log workspace can maximise within the browser.
+Top bar: configurable product branding, Systems, Accounts (Administrator only), Settings, Admin (Administrator only), the Synthetic demo data label when enabled, and the current user/account menu. Admin follows Settings and opens a dedicated `/admin` view for system creation, metadata editing, archival and restoration. Settings remains available to both roles for personal appearance; shared application settings and account management remain Administrator-only. Do not show an Administrator workspace status strip.
+
+Below the top bar, use a compact system header: System action menu and system name on the left, system selector on the right. The floating Administrator menu contains Add subsystem, Add server, Add process, Add flow, List connections, List Parsers, Import configuration, Export JSON and Export YAML. Put Undo and Redo in the Documented topology bar alongside the existing view controls; remove the separate topology editing button bar. Read-only views remain explicitly labelled and omit shared editing actions.
+
+Left resizable pane: searchable subsystem/server/process tree and investigation list. Centre: interactive diagram or the selected full-width investigation view. Dockable process-details panel: documentation, safe properties, current log access status and related flows. Default to below the selected subsystem/left diagram region as in the concepts when space allows, with a resizable lower log area; also allow docking at the right. Configuration editing is Administrator-only. Bottom resizable workspace: log panes/merged view, timeline controls, filters, capture status and notes. Every panel can be collapsed; the log workspace can maximise within the browser.
 
 Support desktop sizes from 1280×720 through 1920×1080 and larger. At the smallest size, collapse side panels instead of shrinking all log columns beyond usability. At 200% zoom, primary actions and selected log text remain reachable. Native OS windows are not required.
 
@@ -54,7 +58,7 @@ The viewer measures its body/row height to request initial matching rows. Defaul
 
 Controls distinguish Pause display, Resume, Stop collection, Record and Load older. Pausing does not hide the accumulating/evicted count. Jump to latest never silently clears a filter. A late-arrival marker and gap row are not ordinary source log messages. Unknown timestamps appear in an explicit diagnostic lane, not incorrectly sorted among valid events.
 
-## Settings/import/test tools (Administrator only)
+## Shared configuration/import/test tools (Administrator only)
 
 Connection editor: label, target/port/user, existing credential reference or secure write-only password update, jump profile, host-key fingerprint/trust and Test access. Never return a stored password to a prefilled field. Clearing a password field without an explicit replacement action must not erase the credential.
 
@@ -75,7 +79,7 @@ Add visual regressions for open menus/dialogs/portals, selected processes, unkno
 
 ## Version 3 system selector, import and parallel-window behaviour
 
-Add a system catalogue/selector without changing the supplied light/dark palettes. Keep system name/short ID visible, use `/systems/{project_id}/...` deep links and title `System Inspector — <system> — <section>`. An ordinary Open separately link must support the browser's new-window/new-tab actions; do not make a JavaScript-only button the sole navigation mechanism. The supplied images remain style references, not evidence of system selection or automatic health features.
+Add a system catalogue/selector without changing the supplied light/dark palettes. Keep the system name visible, use `/systems/{project_id}/...` deep links and title `System Inspector — <system> — <section>`. Ordinary system links support the browser's new-window/new-tab actions; users open separate pages manually without a dedicated Open separately button. The supplied images remain style references, not evidence of system selection or automatic health features.
 
 Each page owns selected processes, time/filter/search inputs, panes/scroll and monitor controls. Switching a system in one page changes only that page and requires confirmation about its own active capture. A page for A must never draw a tooltip, search result, banner or log entry from B. Same-system shared configuration updates may prompt reload/review of that system's revision but must not retarget running sessions. Theme changes may follow the existing account preference but cannot reset these workspace states.
 
