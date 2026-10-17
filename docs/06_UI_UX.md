@@ -20,6 +20,17 @@ Changing theme updates CSS and control state without navigation, refresh, loss o
 
 Theme preference writes are personal preferences, not permission to edit system settings. Reject arbitrary fields on `/me/preferences`; a forged role, default theme, connection or cache limit is not silently accepted. A failed preference save gives a clear retry state without breaking log collection.
 
+The Administrator-only shared application settings include **Additional security
+measures**, checked by default and persisted globally. When checked, require the
+existing manual target/log-root confirmation after configuration changes,
+including path and parser changes. When unchecked, saving valid changes makes
+them available automatically for the next requested operation. Explain that
+explicit SSH host-key verification and valid credentials remain required.
+Hide the per-source confirmation checkbox/actions while manual confirmation is
+disabled, and show that the saved setting controls it. Reenabling requires a
+current valid source approval. Saving the setting does not start collection or
+change another page's system, filters or selection.
+
 ## Workspace
 
 Top bar: configurable product branding, Systems, Accounts (Administrator only), Settings, Admin (Administrator only), the Synthetic demo data label when enabled, and the current user/account menu. Admin follows Settings and opens a dedicated `/admin` view for system creation, metadata editing, archival and restoration. Settings remains available to both roles for personal appearance; shared application settings and account management remain Administrator-only. Do not show an Administrator workspace status strip.
@@ -42,9 +53,24 @@ Provide save state, undo/redo and delete impact preview. Multiple views referenc
 
 ## Historical investigation
 
-Select processes → choose explicit UTC from/to → set optional literal filter → preview candidate sources/budget → collect → inspect results. Persist a named workspace when requested. Explain end-exclusive bounds near the time control, not only in documentation. Invalid times and from ≥ to prevent collection.
+Select processes → choose explicit UTC from/to → set optional literal filter → collect → inspect automatically loaded Timestamped events. Preview candidate sources/budget is optional; display the collection-plan panel only after an explicit preview request. Direct collection performs the same bounded planning and approval checks on the backend. Persist a named workspace when requested. Explain end-exclusive bounds near the time control, not only in documentation. Invalid times and from ≥ to prevent collection.
+
+From and To fields display `YYYY-MM-DD HH:mm:ss`. Each has a calendar button
+opening date and time selectors, including seconds, with an explicit UTC label.
+Typing and selecting use UTC regardless of the browser timezone. Cancel leaves
+the current bound unchanged; applying a selection invalidates an existing plan.
+Existing retained bounds keep their exact API microseconds until edited.
 
 Show match count, scanned sources, parse issues and coverage beside the results. A failed host stays visible in the process selection/status panel; successful sources are not discarded. Show each event's original source through a details drawer. Context, bookmark, annotate, copy literal text, trace correlation and add dependency neighbours are row/context actions.
+
+Load Timestamped events automatically after collection finishes and when opening
+a retained collection. The **Log entry** column omits only the successfully parsed
+original timestamp prefix; diagnostics retain their complete visible text.
+Context shows the original line, including its timestamp. Literal filters still
+operate on the retained original text. Both roles can delete their own finished
+collections after confirming the system and collection identity; remove retained
+events, captured files and download grants. Active collections must finish or be
+cancelled first. Other collections and page workspaces remain independent.
 
 The trace view is a time-ordered table with process, timestamp, correlation field, message and observed delta. It is not a fabricated animation claiming an unobserved transfer occurred. Dependency highlighting on the diagram can accompany a trace without presenting it as proof.
 

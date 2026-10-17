@@ -148,7 +148,7 @@ export default function App() {
     </header>
     {appearanceError && dialog !== 'settings' && <div className="page-notice"><ErrorNotice retry={retryAppearance}>{appearanceError}</ErrorNotice></div>}
     <div className="session-boundary">{sessionError && <div className="page-notice"><ErrorNotice>{sessionError} Protected requests require a ready server. Retrying automatically.</ErrorNotice></div>}</div>
-    {projectId ? <SystemWorkspace key={projectId} projectId={projectId} session={session} navigate={navigate} branding={bootstrap.branding} section={section} investigationId={investigationId} />
+    {projectId ? <SystemWorkspace key={projectId} projectId={projectId} session={session} navigate={navigate} branding={bootstrap.branding} historicalDemoEnabled={bootstrap.historical_demo_enabled} section={section} investigationId={investigationId} />
       : adminView && !administrator ? <main className="catalogue-page"><ErrorNotice>Administrator access is required to manage systems.</ErrorNotice><a href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>Back to systems</a></main>
         : <Catalogue key={adminView ? 'admin' : 'systems'} session={session} navigate={navigate} branding={bootstrap.branding} manage={adminView} />}
     <footer className="app-footer"><span>{bootstrap.branding} · Historical investigation</span><span>All times UTC · Offline at runtime</span></footer>

@@ -50,6 +50,7 @@ async def start(client, project_id, processes=None):
     assert workspace.status_code == 201, workspace.text
     payload = {
         "workspace_id": workspace.json()["workspace_id"],
+        "transport": "local_demo",
         "process_ids": processes or CASES[0]["request"]["process_ids"],
         "from": FROM,
         "to": TO,

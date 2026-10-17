@@ -39,18 +39,21 @@ class SettingsResponse(StrictModel):
     revision: int = Field(ge=1)
     branding: str = Field(min_length=1, max_length=128)
     default_theme_mode: Theme
+    additional_security_measures: bool
 
 
 class SettingsInput(StrictModel):
     expected_revision: int = Field(ge=1)
     branding: str = Field(min_length=1, max_length=128, pattern=r"\S")
     default_theme_mode: Theme
+    additional_security_measures: bool = Field(default=True, strict=True)
 
 
 class BootstrapResponse(StrictModel):
     branding: str
     default_theme_mode: Theme
     demo_mode: bool
+    historical_demo_enabled: bool = False
 
 
 class DemoProcess(StrictModel):
@@ -95,6 +98,7 @@ async def initialize_settings(session: AsyncSession, config: Config) -> Applicat
             revision=1,
             branding="System Inspector",
             default_theme_mode=config.default_theme_mode,
+            additional_security_measures=True,
         )
         session.add(settings)
         await session.flush()
@@ -102,7 +106,7 @@ async def initialize_settings(session: AsyncSession, config: Config) -> Applicat
 
 
 async def settings_value(session: AsyncSession) -> ApplicationSetting:
-    settings = await session.get(ApplicationSetting, 1)
+    settings = await session.get(ApplicationSetting, 1, populate_existing=True)
     if settings is None:
         raise DomainError("NOT_READY", "Application settings are unavailable.", 503)
     return settings
@@ -113,6 +117,7 @@ def settings_response(settings: ApplicationSetting) -> dict:
         "revision": settings.revision,
         "branding": settings.branding,
         "default_theme_mode": settings.default_theme_mode,
+        "additional_security_measures": settings.additional_security_measures,
     }
 
 
@@ -180,6 +185,8 @@ async def update_settings(session: AsyncSession, actor: Principal, payload: Sett
         raise DomainError("REVISION_CONFLICT", "Settings changed; reload and retry.", 409)
     value.branding = payload.branding.strip()
     value.default_theme_mode = payload.default_theme_mode
+    if "additional_security_measures" in payload.model_fields_set:
+        value.additional_security_measures = payload.additional_security_measures
     value.revision += 1
     _audit(session, "settings.write", services.utc_now_us(), principal=actor)
     await session.flush()

@@ -6,6 +6,8 @@ import { ErrorNotice, Modal } from './Common';
 
 type Access = components['schemas']['AccessResponse'];
 type Inspection = components['schemas']['InspectResponse'];
+type SourceAccess = components['schemas']['SourceAccessResponse'];
+type PathTest = components['schemas']['SourcePathTestResponse'];
 
 export default function ConnectionAccess({ config, connection, onClose, onJump }: {
   config: Config; connection: Connection; onClose: () => void; onJump: (id: string) => void;
@@ -13,20 +15,28 @@ export default function ConnectionAccess({ config, connection, onClose, onJump }
   const [access, setAccess] = useState<Access | null>(null);
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [verified, setVerified] = useState(false);
+  const [sourceAccess, setSourceAccess] = useState<SourceAccess | null>(null);
+  const [rootsVerified, setRootsVerified] = useState(false);
+  const [pathTest, setPathTest] = useState<PathTest | null>(null);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const base = `/projects/${encodeURIComponent(config.project.id)}/connections/${encodeURIComponent(connection.id)}`;
   const load = useCallback(async () => {
-    setAccess(null); setInspection(null); setVerified(false); setError('');
+    setAccess(null); setInspection(null); setVerified(false); setSourceAccess(null); setRootsVerified(false); setPathTest(null); setError('');
     try {
-      const current = await request<Access>(`${base}/access`);
-      if (current.config_revision !== config.project.revision) throw new Error('System configuration changed. Close this dialog and reload the system before testing.');
-      setAccess(current);
+      const [current, sources] = await Promise.all([request<Access>(`${base}/access`), request<SourceAccess>(`${base}/source-access`)]);
+      if (current.config_revision !== config.project.revision || sources.config_revision !== config.project.revision) throw new Error('System configuration changed. Close this dialog and reload the system before testing.');
+      setAccess(current); setSourceAccess(sources);
     }
     catch (cause) { setError(message(cause)); }
   }, [base, config.project.revision]);
   useEffect(() => { void load(); }, [load]);
+
+  async function refreshSources() {
+    setRootsVerified(false); setPathTest(null);
+    setSourceAccess(await request<SourceAccess>(`${base}/source-access`));
+  }
 
   async function savePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,6 +51,7 @@ export default function ConnectionAccess({ config, connection, onClose, onJump }
         expected_credential_revision: access.credential.revision, password,
       }, 'PUT'));
       setInspection(null); setVerified(false);
+      await refreshSources();
       setNotice('SSH password saved. The password field has been cleared.');
     } catch (cause) { setError(message(cause)); }
     finally { setBusy(''); }
@@ -53,6 +64,7 @@ export default function ConnectionAccess({ config, connection, onClose, onJump }
       const revision = { expected_config_revision: access.config_revision };
       if (kind === 'inspect') {
         setInspection(null); setVerified(false);
+        await refreshSources();
         setInspection(await request<Inspection>(`${base}/host-key/inspect`, { method: 'POST', body: JSON.stringify(revision), signal: AbortSignal.timeout(35000) }));
       } else if (kind === 'approve') {
         if (!inspection || !verified) return;
@@ -61,16 +73,37 @@ export default function ConnectionAccess({ config, connection, onClose, onJump }
           inspection_token: inspection.inspection_token, verified: true,
         }));
         setInspection(null); setVerified(false);
+        await refreshSources();
         setNotice('Host key approved for this saved connection.');
       } else if (kind === 'revoke') {
         setAccess(await write<Access>(`${base}/revoke`, {
           ...revision, expected_trust_revision: access.host_key.revision,
         }));
         setInspection(null); setVerified(false);
+        await refreshSources();
         setNotice('Host-key approval revoked. Connection tests are blocked until a key is approved.');
       } else {
         const result = await request<components['schemas']['TestResponse']>(`${base}/test`, { method: 'POST', body: JSON.stringify(revision), signal: AbortSignal.timeout(35000) });
         if (result.ssh && result.sftp) setNotice('Connection test passed: SSH authentication and SFTP are available. Configured log paths have not been checked.');
+      }
+    } catch (cause) { setError(message(cause)); }
+    finally { setBusy(''); }
+  }
+
+  async function sourceAction(kind: 'approve' | 'revoke' | 'test') {
+    if (!sourceAccess || (kind === 'approve' && !rootsVerified)) return;
+    setBusy(`source-${kind}`); setError(''); setNotice(''); setPathTest(null);
+    try {
+      const revision = { expected_config_revision: sourceAccess.config_revision };
+      if (kind === 'test') {
+        setPathTest(await request<PathTest>(`${base}/source-access/test`, { method: 'POST', body: JSON.stringify(revision), signal: AbortSignal.timeout(65000) }));
+      } else {
+        setSourceAccess(await write<SourceAccess>(`${base}/source-access/${kind}`, {
+          ...revision, expected_approval_revision: sourceAccess.approval.revision,
+          ...(kind === 'approve' ? { verified: true } : {}),
+        }));
+        setRootsVerified(false);
+        setNotice(kind === 'approve' ? 'Configured target and log roots approved for collection in this system.' : 'Source approval revoked. New remote collection is blocked for this connection.');
       }
     } catch (cause) { setError(message(cause)); }
     finally { setBusy(''); }
@@ -109,6 +142,19 @@ export default function ConnectionAccess({ config, connection, onClose, onJump }
         <button className="primary" disabled={!!busy || !access.vault_available || !access.credential.configured || !access.host_key.approved} onClick={() => { void action('test'); }}>{busy === 'test' ? 'Testing connection…' : 'Test connection'}</button>
         {(!access.credential.configured || !access.host_key.approved) && <p className="field-help">Save an SSH password and approve the host key to enable the test.</p>}
       </section>
+      {sourceAccess && <section aria-label="Configured source approval">
+        <h3>{sourceAccess.manual_confirmation_required ? 'Approve target and log roots' : 'Configured target and log roots'}</h3>
+        {sourceAccess.manual_confirmation_required ? <p>Review the configured target and roots for <strong>{config.project.name}</strong>. Approval applies only to this system and saved configuration. Changing credentials, trust, routing or source definitions requires a new approval.</p> : <p>Additional security measures are disabled. Saved changes to paths and parsers apply automatically. SSH host keys still require explicit verification.</p>}
+        <p className="source-approval-state" data-testid="source-approval-status">{sourceAccess.manual_confirmation_required ? sourceAccess.approval.approved ? 'Approved for remote collection.' : 'Remote collection is blocked until this target and its roots are approved.' : sourceAccess.approval.approved ? 'Ready for remote collection. Manual source confirmation is disabled.' : 'Remote collection requires stored credentials and explicitly verified SSH host keys.'}</p>
+        {sourceAccess.approval.approved && sourceAccess.approval.expires_us && <p>Approval expires {new Date(Number(BigInt(sourceAccess.approval.expires_us) / 1000n)).toISOString()} UTC.</p>}
+        <dl className="source-approval-details"><dt>Target</dt><dd><code>{connection.host}:{connection.port}</code>{jump && <span> via {jump.name}</span>}</dd><dt>Configured log roots</dt><dd>{sourceAccess.roots.length ? <ul>{sourceAccess.roots.map(root => <li key={root}><code>{root}</code></li>)}</ul> : 'No log roots configured.'}</dd><dt>Configured sources</dt><dd>{sourceAccess.process_ids.length ? <ul>{sourceAccess.process_ids.map(id => { const process = config.processes.find(item => item.id === id); return <li key={id}>{process?.name ?? id}<code>{process?.log_source?.active_path ?? id}</code></li>; })}</ul> : 'This connection has no configured log sources.'}</dd></dl>
+        {sourceAccess.roots.length > 0 && sourceAccess.process_ids.length > 0 && <>
+          {sourceAccess.manual_confirmation_required && !sourceAccess.approval.approved && <label className="checkbox-label"><input type="checkbox" checked={rootsVerified} disabled={!!busy} onChange={event => setRootsVerified(event.target.checked)} />I verified this target and these configured log roots and authorize read-only collection for this system.</label>}
+          <div className="connection-actions">{sourceAccess.manual_confirmation_required && (sourceAccess.approval.approved ? <button disabled={!!busy} onClick={() => { void sourceAction('revoke'); }}>Revoke source approval</button> : <button disabled={!!busy || !rootsVerified || !access.credential.configured || !access.host_key.approved} onClick={() => { void sourceAction('approve'); }}>{busy === 'source-approve' ? 'Approving sources…' : 'Approve target and log roots'}</button>)}<button className="primary" disabled={!!busy || !sourceAccess.approval.approved} onClick={() => { void sourceAction('test'); }}>{busy === 'source-test' ? 'Checking configured paths…' : 'Test configured log paths'}</button></div>
+          {(!access.credential.configured || !access.host_key.approved) && <p className="field-help">Save the password and approve the host key before testing configured log paths.</p>}
+        </>}
+        {pathTest && <div className="source-path-results" role="status"><strong>Configured path checks · {config.project.name}</strong>{pathTest.processes.map(result => <div key={result.process_id}><strong>{config.processes.find(item => item.id === result.process_id)?.name ?? result.process_id}</strong><span>{result.accessible ? 'Accessible' : 'Access failed'} · {result.candidate_count} candidates · {result.estimated_bytes} estimated bytes</span>{result.warning && <p className={result.accessible ? 'field-help' : 'history-warning'}>{result.warning}</p>}</div>)}</div>}
+      </section>}
     </div>}
     <div className="form-actions"><button disabled={!!busy} onClick={onClose}>Close</button></div>
   </Modal>;

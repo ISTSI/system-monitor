@@ -174,9 +174,12 @@ async def _route(
 
 
 @asynccontextmanager
-async def _bounded_operation() -> AsyncIterator[None]:
+async def _bounded_operation(*, timeout_seconds: float | None = None) -> AsyncIterator[None]:
     try:
-        async with asyncio.timeout(_TIMEOUT_SECONDS), _SLOTS:
+        async with (
+            asyncio.timeout(_TIMEOUT_SECONDS if timeout_seconds is None else timeout_seconds),
+            _SLOTS,
+        ):
             yield
     except DomainError:
         raise
@@ -200,6 +203,58 @@ async def _bounded_operation() -> AsyncIterator[None]:
         raise DomainError(
             "SSH_CONNECT_FAILED", "The SSH endpoint could not be reached or negotiated.", 422
         ) from None
+
+
+@asynccontextmanager
+async def sftp_session(
+    target: Endpoint,
+    jump: Endpoint | None = None,
+    *,
+    allow_loopback: bool = False,
+    timeout_seconds: float = 120.0,
+) -> AsyncIterator[asyncssh.SFTPClient]:
+    """Reuse one pinned route only within an authorized caller's operation.
+
+    No global cache can cross project, owner or configuration-revision boundaries.
+    The semaphore, route, SFTP channel and both connections are released on error,
+    deadline or cancellation. Callers must revalidate their access lease before
+    dispatch; this layer never supplies authorization from a cached connection.
+    """
+    if not 0 < timeout_seconds <= 3600:
+        raise ValueError("SSH operation timeout must be between zero and 3600 seconds")
+    async with _bounded_operation(timeout_seconds=timeout_seconds):
+        async with _route(target, jump, allow_loopback, authenticate_target=True) as route:
+            address, jump_connection, target_key = route
+            assert target_key is not None
+            connection = await _authenticate(target, address, target_key, jump_connection)
+            try:
+                try:
+                    sftp = await connection.start_sftp_client()
+                except (asyncssh.SFTPError, asyncssh.ChannelOpenError):
+                    raise DomainError(
+                        "SSH_SFTP_FAILED",
+                        "SSH authenticated, but the SFTP subsystem is unavailable.",
+                        422,
+                    ) from None
+                cancelled = False
+                try:
+                    yield sftp
+                except asyncio.CancelledError:
+                    cancelled = True
+                    connection.abort()
+                    if jump_connection:
+                        jump_connection.abort()
+                    raise
+                finally:
+                    sftp.exit()
+                    if not cancelled:
+                        try:
+                            async with asyncio.timeout(_CLOSE_TIMEOUT_SECONDS):
+                                await sftp.wait_closed()
+                        except (TimeoutError, asyncssh.Error, OSError):
+                            connection.abort()
+            finally:
+                await _close(connection)
 
 
 async def inspect_key(

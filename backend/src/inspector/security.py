@@ -166,6 +166,8 @@ _ADMIN_ACTIONS = frozenset(
         "credential.manage",
         "host_trust.manage",
         "connection.test",
+        "source_access.manage",
+        "source.test",
     }
 )
 _OWN_ACTIONS = frozenset(
@@ -178,6 +180,7 @@ _OWN_ACTIONS = frozenset(
         "collection.read",
         "collection.cancel",
         "investigation.read",
+        "investigation.delete",
         "download.read",
     }
 )

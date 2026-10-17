@@ -121,8 +121,12 @@ def test_role_denials_unknown_actions_and_private_owner_checks() -> None:
     authorize(inspector, "system.list")
     authorize(inspector, "workspace.read", owner_user_id=inspector.user_id)
     for principal in (inspector, admin):
+        authorize(principal, "investigation.delete", owner_user_id=principal.user_id)
         with pytest.raises(DomainError) as error:
             authorize(principal, "workspace.read", owner_user_id="another-user")
+        assert error.value.status == 404
+        with pytest.raises(DomainError) as error:
+            authorize(principal, "investigation.delete", owner_user_id="another-user")
         assert error.value.status == 404
     for action in ("system.create", "users.manage", "invented.future.action"):
         with pytest.raises(DomainError) as error:

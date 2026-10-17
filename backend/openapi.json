@@ -1801,6 +1801,55 @@
         "x-permission": "collection.cancel"
       }
     },
+    "/api/v1/projects/{project_id}/investigations/{investigation_id}": {
+      "delete": {
+        "summary": "Delete Investigation",
+        "operationId": "delete_investigation_api_v1_projects__project_id__investigations__investigation_id__delete",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "investigation.delete"
+      }
+    },
     "/api/v1/projects/{project_id}/investigations/{job_id}/query": {
       "post": {
         "summary": "Query",
@@ -2386,6 +2435,232 @@
         },
         "x-permission": "host_trust.manage"
       }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/source-access": {
+      "get": {
+        "summary": "Access",
+        "operationId": "access_api_v1_projects__project_id__connections__connection_id__source_access_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceAccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "source_access.manage"
+      }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/source-access/approve": {
+      "post": {
+        "summary": "Approve",
+        "operationId": "approve_api_v1_projects__project_id__connections__connection_id__source_access_approve_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceApprovalInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceAccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "source_access.manage"
+      }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/source-access/revoke": {
+      "post": {
+        "summary": "Revoke",
+        "operationId": "revoke_api_v1_projects__project_id__connections__connection_id__source_access_revoke_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceRevisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceAccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "source_access.manage"
+      }
+    },
+    "/api/v1/projects/{project_id}/connections/{connection_id}/source-access/test": {
+      "post": {
+        "summary": "Test",
+        "operationId": "test_api_v1_projects__project_id__connections__connection_id__source_access_test_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceTestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcePathTestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "source.test"
+      }
     }
   },
   "components": {
@@ -2579,6 +2854,11 @@
           "demo_mode": {
             "type": "boolean",
             "title": "Demo Mode"
+          },
+          "historical_demo_enabled": {
+            "type": "boolean",
+            "title": "Historical Demo Enabled",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -3240,6 +3520,30 @@
         ],
         "title": "HistoricalCoverage"
       },
+      "HistoricalDeleteResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "investigation_id": {
+            "type": "string",
+            "title": "Investigation Id"
+          },
+          "cache_cleanup_pending": {
+            "type": "boolean",
+            "title": "Cache Cleanup Pending",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "investigation_id"
+        ],
+        "title": "HistoricalDeleteResponse"
+      },
       "HistoricalDownloadResponse": {
         "properties": {
           "project_id": {
@@ -3789,6 +4093,21 @@
             "type": "string",
             "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
             "title": "Workspace Id"
+          },
+          "transport": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ssh",
+                  "local_demo"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport"
           },
           "process_ids": {
             "items": {
@@ -4478,6 +4797,11 @@
               "system"
             ],
             "title": "Default Theme Mode"
+          },
+          "additional_security_measures": {
+            "type": "boolean",
+            "title": "Additional Security Measures",
+            "default": true
           }
         },
         "additionalProperties": false,
@@ -4510,6 +4834,10 @@
               "system"
             ],
             "title": "Default Theme Mode"
+          },
+          "additional_security_measures": {
+            "type": "boolean",
+            "title": "Additional Security Measures"
           }
         },
         "additionalProperties": false,
@@ -4517,9 +4845,232 @@
         "required": [
           "revision",
           "branding",
-          "default_theme_mode"
+          "default_theme_mode",
+          "additional_security_measures"
         ],
         "title": "SettingsResponse"
+      },
+      "SourceAccessResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "connection_id": {
+            "type": "string",
+            "title": "Connection Id"
+          },
+          "config_revision": {
+            "type": "integer",
+            "title": "Config Revision"
+          },
+          "manual_confirmation_required": {
+            "type": "boolean",
+            "title": "Manual Confirmation Required"
+          },
+          "approval": {
+            "$ref": "#/components/schemas/SourceApprovalStatus"
+          },
+          "roots": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roots"
+          },
+          "process_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Process Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "connection_id",
+          "config_revision",
+          "manual_confirmation_required",
+          "approval",
+          "roots",
+          "process_ids"
+        ],
+        "title": "SourceAccessResponse"
+      },
+      "SourceApprovalInput": {
+        "properties": {
+          "expected_config_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Config Revision"
+          },
+          "expected_approval_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Approval Revision"
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified"
+          },
+          "expires_seconds": {
+            "type": "integer",
+            "maximum": 2592000.0,
+            "minimum": 60.0,
+            "title": "Expires Seconds",
+            "default": 86400
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_config_revision",
+          "expected_approval_revision",
+          "verified"
+        ],
+        "title": "SourceApprovalInput"
+      },
+      "SourceApprovalStatus": {
+        "properties": {
+          "approved": {
+            "type": "boolean",
+            "title": "Approved"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "expires_us": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires Us"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "approved",
+          "revision",
+          "expires_us"
+        ],
+        "title": "SourceApprovalStatus"
+      },
+      "SourcePathResult": {
+        "properties": {
+          "process_id": {
+            "type": "string",
+            "title": "Process Id"
+          },
+          "accessible": {
+            "type": "boolean",
+            "title": "Accessible"
+          },
+          "candidate_count": {
+            "type": "integer",
+            "title": "Candidate Count"
+          },
+          "estimated_bytes": {
+            "type": "integer",
+            "title": "Estimated Bytes"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "process_id",
+          "accessible",
+          "candidate_count",
+          "estimated_bytes",
+          "warning"
+        ],
+        "title": "SourcePathResult"
+      },
+      "SourcePathTestResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "connection_id": {
+            "type": "string",
+            "title": "Connection Id"
+          },
+          "config_revision": {
+            "type": "integer",
+            "title": "Config Revision"
+          },
+          "processes": {
+            "items": {
+              "$ref": "#/components/schemas/SourcePathResult"
+            },
+            "type": "array",
+            "title": "Processes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "connection_id",
+          "config_revision",
+          "processes"
+        ],
+        "title": "SourcePathTestResponse"
+      },
+      "SourceRevisionInput": {
+        "properties": {
+          "expected_config_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Config Revision"
+          },
+          "expected_approval_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Approval Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_config_revision",
+          "expected_approval_revision"
+        ],
+        "title": "SourceRevisionInput"
+      },
+      "SourceTestInput": {
+        "properties": {
+          "expected_config_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Config Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_config_revision"
+        ],
+        "title": "SourceTestInput"
       },
       "TestResponse": {
         "properties": {

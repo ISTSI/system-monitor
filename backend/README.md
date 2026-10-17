@@ -9,10 +9,10 @@ scoped topology entities and constraints, shared documentation, flows, named
 views, revisioned editing/undo/redo, scoped search and safe YAML/JSON import
 preview/commit/export. Stage 03 adds local historical collection, bounded archive
 parsing, exact microsecond event indexing in MariaDB, literal filtering, source
-context and owner/project-bound snapshot pagination. The SSH setup slice adds
-encrypted passwords, explicit host-key approval and read-only SSH/SFTP connection
-tests. Remote historical collection, saved analysis tools and Ansible inventory
-reconciliation remain later work.
+context and owner/project-bound snapshot pagination. Stage 04 adds encrypted
+passwords, independent host-key and target/root approval, configured path checks,
+and bounded direct/single-jump SSH/SFTP historical collection. Live following,
+saved analysis tools and Ansible inventory reconciliation remain later work.
 
 To configure a server as an Administrator, add a subsystem, then choose **Add
 server**. Its **SSH connection** section shows the selected profile's host and
@@ -22,6 +22,14 @@ log roots directly in the server form. Saving creates the server and profile in
 one revision; cancelling saves neither. Existing profiles are reusable. Select a
 server and use **Edit SSH connection**, or use **Connections**, to edit a profile;
 changes affect every server using that profile.
+
+When moving logs to another directory, keep the existing proposed log roots and
+add the new directory on a separate line first. Save the profile, update each
+affected process's active log path, rotated patterns and archive paths, then
+remove any obsolete root. The connection editor lists the dependent paths across
+all servers using the profile and marks paths outside the proposed roots.
+For example, synthetic sources under `/var/log/demo` still need that root while
+adding `/tmp/log`. Changing roots never moves files or grants source approval.
 
 Select the server and choose **Password & connection test** (also available in
 **Connections**). The credential reference is a safe label, not a password.
@@ -34,7 +42,8 @@ configuration, written to browser storage, or shown again after saving.
 Next choose **Inspect host key**, compare its fingerprint against an independent
 trusted source, check the verification statement, then **Approve host key**.
 **Test connection** checks password authentication and the SFTP handshake without
-opening a shell or writing files. It does not check log paths or retrieve logs.
+opening a shell or writing files. Use the separate configured-source check below
+to test log paths.
 For one jump host, first configure its own password and approve its independent
 key. Unknown or changed keys fail closed. The application server must resolve
 and reach the target/jump; laptop-only VPN access is insufficient.
@@ -44,10 +53,57 @@ exactly 32 raw random bytes, owned by the Linux service user with mode 0600 or
 0400. The key stays outside MariaDB and exports. Back it up separately: changing
 or losing it makes existing credentials undecryptable. Automated key rotation is
 not implemented in this slice. Missing/invalid keys leave ordinary topology and
-local history usable but disable SSH password storage/testing.
+local history usable but disable SSH password storage/testing/collection.
+
+Administrators control manual source confirmation through **Settings →
+Additional security measures**. It starts checked to preserve the existing
+policy. When checked, review **Approve target and log roots**, confirm
+authorization for the displayed system, target and roots, then approve. Approval
+expires after 24 hours by default; the API allows an explicit 60-second to
+30-day duration. Configuration, password, trust or route changes require
+reapproval. Imports and host-key approvals never create source approval.
+
+When unchecked and saved, paths and parsers apply automatically without a
+separate source-confirmation checkbox. Credentials and explicit target/jump
+host-key verification are still required. **Test configured log paths** checks
+only that connection's configured sources, active/rotated/archive readability
+and root confinement. Inspectors cannot change the setting, manage approvals or
+submit path tests. Reenabling the setting requires a valid current approval.
+The change adds migration `0008_security_setting`; existing running apps need
+that migration and the rebuilt application before the setting appears.
+
+In **Log history**, select processes and UTC bounds, then **Collect sources**.
+**Preview collection plan** is optional and opens the plan panel only when
+requested. Completed and reopened collections automatically load Timestamped
+events. **Log entry** omits the parsed timestamp prefix; **Context** preserves
+the full original line. **Delete collection** removes your finished collection,
+its events and captured files after confirmation. An active collection must
+finish or be cancelled first. Production uses approved SSH/SFTP. The explicitly enabled local
+demo additionally offers a labelled synthetic-fixture transport selector; it
+does not approve SSH targets. Plans scan configured candidates irrespective of
+filename dates. Remote files stream to generated private cache names with
+actual-byte, listing, probe, candidate, timeout and cancellation limits. ZIP and
+TAR.GZ members use the same bounded Stage 03 reader without extraction.
+
+Jobs retain immutable configuration/source snapshots. Access is checked before
+network dispatch and every 250 ms during work, with bounded database checks;
+revocation, login/credential/approval expiry and database/supervisor failure stop
+collection. One operation reuses a connection for compatible configured sources,
+then closes both hops. Separate jobs, owners and systems share no SSH connection
+or mutable filter. Changing a historical filter reads retained data without SSH.
+
+Active logs freeze their byte boundary during planning. Appends during planning,
+configured-path checks or collection do not interrupt retrieval or increase its
+budget; later entries belong to another capture. Probes check the same captured
+prefix before and after copying. Observed truncation, replacement, prefix changes
+and equal-size metadata changes still fail visibly. Rotated files and archives
+remain immutable and reject appends too.
+SFTP v3 cannot prove absence of every same-size rewrite or path race;
+dedicated account permissions remain essential. Symlinks are rejected. A
+successful scan describes its candidates, not continuous or exactly-once history.
 
 The current local development app remains **https://localhost:8445**, using the
-existing Stage 03 schema/accounts/configuration upgraded to `0006_ssh_access`.
+existing Stage 03 schema/accounts/configuration upgraded to `0008_security_setting`.
 `scripts/stage4_local.py prepare` adds isolated SSH fixtures and a protected master
 key under ignored `.secrets/stage4-ssh/`; it never resets existing data. Its
 container wrapper copies the mounted key to
@@ -58,10 +114,23 @@ restarts use `stage4_local.py up`; no package downloads or connections occur at
 startup. Fixture host keys/passwords are synthetic and are not application-wide
 default credentials. The named non-root Linux account is required by AsyncSSH.
 
-This completes connection setup/testing only. The remaining Stage 04 source/root
-approvals, remote planning, path/permission checks, bounded historical retrieval
-and collection integration are still pending. Current historical collection uses
-only the explicitly enabled synthetic local fixture transport.
+The 17 October collection-viewer update is installed from the isolated artifact
+at `.state/stage4-ssh/collection-ui/backend`, mounted into `runtime-stage3` as
+`/workspace/backend`. It includes automatic results, direct collection, Log entry
+and owned collection deletion, and preserves the active-log append fix. Schema
+remains `0008_security_setting`. Keep that directory for restarts; normal
+restarts use `scripts/stage4_local.py up`, and future source updates require a
+fresh artifact. The previous `.state/stage4-ssh/active-append-fix/backend` and
+`.state/stage4-ssh/installed-0008/backend` artifacts remain available for rollback.
+The shared repository bundle used by the retained 8444 app is intact. Consistent
+pre-install database/cache and previous-backend/deployment backups are protected
+under `.secrets/stage4-ssh/pre-collection-ui/`; older append-fix and migration
+backups remain in their existing protected directories.
+
+`scripts/verify_stage4.py integration` runs the real MariaDB/SSH gate in a fresh
+disposable local schema; `upgrade` checks populated additive migration and
+`checks` records unit, contract, lint, type, generated API and build results.
+These tests use synthetic targets only and never try configured user hosts.
 
 Historical result pages and context are capped at 8 MiB of raw text. A page can
 contain fewer rows than requested; its cursor continues from the last emitted

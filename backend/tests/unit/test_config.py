@@ -44,6 +44,40 @@ def test_local_history_demo_requires_explicit_server_opt_in_and_preserves_caps()
             parse(sample(), {"SI_LOCAL_HISTORY_DEMO": value})
 
 
+@pytest.mark.parametrize(
+    "field,default",
+    [
+        ("max_source_files_per_collection", 1000),
+        ("max_source_listing_entries", 10_000),
+        ("max_source_listing_bytes", 4_194_304),
+        ("max_source_probe_bytes", 33_554_432),
+    ],
+)
+def test_source_scan_limits_are_optional_and_preserve_explicit_lower_custom_values(field, default):
+    document = sample()
+    document["limits"].pop(field, None)
+    assert parse(document).history_limits[field] == default
+    document["limits"][field] = 1
+    assert parse(document).history_limits[field] == 1
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "max_source_files_per_collection",
+        "max_source_listing_entries",
+        "max_source_listing_bytes",
+        "max_source_probe_bytes",
+    ],
+)
+@pytest.mark.parametrize("value", [0, -1, True, "100", 1.5, None])
+def test_source_scan_limits_reject_invalid_nonpositive_or_noninteger_values(field, value):
+    document = sample()
+    document["limits"][field] = value
+    with pytest.raises(ConfigurationError):
+        parse(document)
+
+
 def test_duplicate_unknown_alias_and_oversize_rejected():
     for raw in (
         b"database: 1\ndatabase: 2",

@@ -36,6 +36,7 @@ class CacheEntry:
     bytes: int
     expires: float
     leases: int = 0
+    invalidated: bool = False
 
 
 class HistoricalReadCache:
@@ -46,6 +47,22 @@ class HistoricalReadCache:
         self.ttl_seconds = ttl_seconds
         self.used_bytes = 0
         self.entries: OrderedDict[Hashable, CacheEntry] = OrderedDict()
+        self.generation = 0
+
+    def invalidate(self, project_id: str, job_id: str) -> None:
+        """Retire all snapshots of one deleted capture, including leased rows."""
+        self.generation += 1
+        for key, entry in list(self.entries.items()):
+            if (
+                isinstance(key, tuple)
+                and len(key) > 2
+                and key[0] == project_id
+                and key[2] == job_id
+            ):
+                self.entries.pop(key)
+                entry.invalidated = True
+                if not entry.leases:
+                    self.used_bytes -= entry.bytes
 
     def _remove(self, entry: CacheEntry) -> None:
         self.entries.pop(entry.key, None)
@@ -78,6 +95,8 @@ class HistoricalReadCache:
         finally:
             if entry is not None:
                 entry.leases -= 1
+                if entry.invalidated and not entry.leases:
+                    self.used_bytes -= entry.bytes
 
     def builder(self, key: Hashable) -> "CacheBuilder":
         return CacheBuilder(self, key)
@@ -86,6 +105,7 @@ class HistoricalReadCache:
 class CacheBuilder:
     def __init__(self, cache: HistoricalReadCache, key: Hashable) -> None:
         self.cache, self.key = cache, key
+        self.generation = cache.generation
         self.rows: list[tuple] = []
         self.pool: dict[str, str] = {}
         self.bytes = (
@@ -146,6 +166,9 @@ class CacheBuilder:
 
     def publish(self) -> None:
         if not self.active:
+            return
+        if self.generation != self.cache.generation:
+            self.abort()
             return
         # Reserve the immutable container while the builder still owns its list.
         extra = sys.getsizeof(tuple()) + len(self.rows) * 8

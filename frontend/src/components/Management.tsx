@@ -22,7 +22,7 @@ export function SettingsDialog({ administrator, appearance, appearanceBusy, appe
   useEffect(() => { void load(); }, [load]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!settings) return; const data = new FormData(event.currentTarget); setBusy(true); setError(''); setSaved(false);
-    try { const result = await write<Settings>('/admin/settings', { branding: String(data.get('branding')), default_theme_mode: String(data.get('default_theme_mode')), expected_revision: settings.revision }, 'PATCH'); setSettings(result); setSaved(true); onSaved(result); }
+    try { const result = await write<Settings>('/admin/settings', { branding: String(data.get('branding')), default_theme_mode: String(data.get('default_theme_mode')), additional_security_measures: data.has('additional_security_measures'), expected_revision: settings.revision }, 'PATCH'); setSettings(result); setSaved(true); onSaved(result); }
     catch (cause) { setError(message(cause)); } finally { setBusy(false); }
   }
   return <Modal title="Settings" onClose={onClose}>
@@ -32,7 +32,20 @@ export function SettingsDialog({ administrator, appearance, appearanceBusy, appe
       <label>Appearance<select aria-label="Appearance" value={appearance} disabled={appearanceBusy} onChange={(event) => onAppearanceChange(event.target.value as ThemeMode)}><option value="default">Application default</option><option value="light">Light · Cool Slate</option><option value="dark">Dark · Graphite Dusk</option><option value="system">System</option></select></label>
       <p className="field-help" role="status">{appearanceBusy ? 'Saving appearance…' : 'Changes save automatically.'}</p>
     </section>
-    {administrator && <section className="settings-section" aria-label="Shared application settings"><h3>Application settings</h3><p className="muted">Administrator changes apply to the deployment. Explicit personal appearance choices stay unchanged.</p>{error && <ErrorNotice retry={() => { void load(); }}>{error}</ErrorNotice>}{saved && <p className="notice success" role="status">Application settings saved.</p>}{settings ? <form onSubmit={(event) => { void submit(event); }}><label>Product name<input name="branding" required maxLength={128} defaultValue={settings.branding} /></label><label>Application default appearance<select name="default_theme_mode" defaultValue={settings.default_theme_mode}><option value="dark">Dark · Graphite Dusk</option><option value="light">Light · Cool Slate</option><option value="system">Follow browser system preference</option></select></label><p className="field-help">People using “Application default” follow this choice.</p><div className="read-only-settings"><h3>Database · server managed</h3><p>The database endpoint and secret files are set in deployment configuration. Changing them requires an operator-managed restart.</p>{diagnostics && <dl>{Object.entries(diagnostics).filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value)).map(([key, value]) => <div key={key}><dt>{key.replaceAll('_', ' ')}</dt><dd>{String(value)}</dd></div>)}</dl>}</div><div className="form-actions"><span className="muted">Revision {settings.revision}</span><button className="primary" disabled={busy}>{busy ? 'Saving…' : 'Save application settings'}</button></div></form> : !error && <p role="status">Loading application settings…</p>}</section>}
+    {administrator && <section className="settings-section" aria-label="Shared application settings">
+      <h3>Application settings</h3><p className="muted">Administrator changes apply to the deployment. Explicit personal appearance choices stay unchanged.</p>
+      {error && <ErrorNotice retry={() => { void load(); }}>{error}</ErrorNotice>}
+      {saved && <p className="notice success" role="status">Application settings saved.</p>}
+      {settings ? <form onSubmit={(event) => { void submit(event); }}>
+        <label>Product name<input name="branding" required maxLength={128} defaultValue={settings.branding} /></label>
+        <label>Application default appearance<select name="default_theme_mode" defaultValue={settings.default_theme_mode}><option value="dark">Dark · Graphite Dusk</option><option value="light">Light · Cool Slate</option><option value="system">Follow browser system preference</option></select></label>
+        <p className="field-help">People using “Application default” follow this choice.</p>
+        <label className="checkbox-label"><input type="checkbox" name="additional_security_measures" checked={settings.additional_security_measures} onChange={event => { const checked = event.target.checked; setSettings(current => current ? { ...current, additional_security_measures: checked } : current); setSaved(false); }} aria-describedby="additional-security-help" disabled={busy} />Additional security measures</label>
+        <p id="additional-security-help" className="field-help">Require Administrator confirmation of the target and log roots after configuration changes, including paths and parsers. When unchecked, saved changes apply automatically. SSH host keys always require explicit verification.</p>
+        <div className="read-only-settings"><h3>Database · server managed</h3><p>The database endpoint and secret files are set in deployment configuration. Changing them requires an operator-managed restart.</p>{diagnostics && <dl>{Object.entries(diagnostics).filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value)).map(([key, value]) => <div key={key}><dt>{key.replaceAll('_', ' ')}</dt><dd>{String(value)}</dd></div>)}</dl>}</div>
+        <div className="form-actions"><span className="muted">Revision {settings.revision}</span><button className="primary" disabled={busy}>{busy ? 'Saving…' : 'Save application settings'}</button></div>
+      </form> : !error && <p role="status">Loading application settings…</p>}
+    </section>}
     <div className="form-actions"><button type="button" onClick={onClose}>Close</button></div>
   </Modal>;
 }

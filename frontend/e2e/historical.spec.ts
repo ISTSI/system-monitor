@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { setAppearance, submitSignIn } from './ui';
+import { serveBuiltAssets, setAppearance, submitSignIn } from './ui';
 import type { components } from '../src/api/schema';
 
 type Query = components['schemas']['HistoricalQueryInput'];
@@ -10,9 +10,15 @@ type Results = components['schemas']['HistoricalQueryResponse'];
 type Role = 'administrator' | 'inspector';
 const systemA = 'stage3-fixture-a'; const systemB = 'stage3-fixture-b';
 const from = '2026-10-16T12:00:00.000000Z'; const to = '2026-10-16T12:00:02.000000Z';
+const displayUtc = (value: string) => value.slice(0, 19).replace('T', ' ');
 const cases = JSON.parse(readFileSync(resolve('../fixtures/expected/query-cases.json'), 'utf8')) as { id: string; request: Query; expected_event_ids: string[] }[];
+const events = JSON.parse(readFileSync(resolve('../fixtures/expected/events.json'), 'utf8')) as components['schemas']['HistoricalQueryResponse']['items'];
+const timestampedEvents = events.filter(event => event.timestamp_utc !== null && event.timestamp_utc >= from && event.timestamp_utc < to);
 const errors = new WeakMap<Page, string[]>();
-test.beforeEach(({ page }) => { const found: string[] = []; errors.set(page, found); page.on('pageerror', error => found.push(error.message)); });
+test.beforeEach(async ({ page, context, baseURL }) => {
+  const found: string[] = []; errors.set(page, found); page.on('pageerror', error => found.push(error.message));
+  if (process.env.INSPECTOR_E2E_LOCAL_ASSETS === '1') await serveBuiltAssets(context, baseURL!);
+});
 test.afterEach(async ({ page, baseURL }) => {
   try { expect(errors.get(page)).toEqual([]); } finally {
     // Closing a page retains its workspace for reconnect. Authenticated logout
@@ -47,26 +53,39 @@ async function open(page: Page, id = systemA) {
   await expect(page.getByRole('heading', { name: 'Historical investigation', exact: true })).toBeVisible();
 }
 
-async function collect(page: Page) {
+async function collect(page: Page, preview = true) {
   const processes = page.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox');
   expect(await processes.count()).toBe(5);
   for (const process of await processes.all()) await process.check();
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(from);
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(to);
-  await page.getByRole('button', { name: 'Preview collection plan', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('SYNTHETIC LOCAL FIXTURES');
-  await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('zip');
-  await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('tar.gz');
-  await page.getByRole('button', { name: 'Collect planned sources', exact: true }).click();
+  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(from));
+  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(to));
+  await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
+  if (preview) {
+    await page.getByRole('button', { name: 'Preview collection plan', exact: true }).click();
+    await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('SYNTHETIC LOCAL FIXTURES');
+    await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('zip');
+    await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('tar.gz');
+  }
+  const loaded = page.waitForResponse(result => result.url().endsWith('/query') && result.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Collect sources', exact: true }).click();
   await expect(page.getByTestId('collection-state')).toHaveText('completed', { timeout: 30000 });
+  const response = await loaded;
+  expect(response.status()).toBe(200);
+  const results = await response.json() as Results;
+  expect(results.matched_count).toBe(timestampedEvents.length);
+  expect(results.items.map(event => event.event_id).sort()).toEqual(timestampedEvents.map(event => event.event_id).sort());
+  await expect(page.getByRole('button', { name: 'Timestamped events', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('match-count')).toHaveText(`${timestampedEvents.length} matches`);
+  await expect(page.locator('.virtual-logs .log-event').first()).toBeVisible();
+  if (!preview) await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Collection progress', exact: true })).toContainText('complete_for_scanned_candidates');
   await expect(page).toHaveURL(/\/investigations\/[^/]+$/);
   return await page.getByTestId('investigation-id').innerText();
 }
 
 async function apply(page: Page, input: Query) {
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(input.from);
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(input.to);
+  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(input.from));
+  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(input.to));
   await page.getByLabel('Contains string', { exact: true }).fill(input.filter?.include?.[0] ?? '');
   const advanced = page.locator('.advanced-filter').first();
   if (!(await advanced.evaluate(element => element.hasAttribute('open')))) await advanced.locator('summary').click();
@@ -157,6 +176,8 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   await expect(page.getByRole('button', { name: 'Inspect source line 2 from ingest-instance-a', exact: true })).toBeInViewport();
   await page.getByRole('button', { name: 'Inspect source line 2 from ingest-instance-a', exact: true }).click();
   const drawer = page.getByRole('dialog', { name: 'Event provenance and source context' });
+  const accepted = events.find(event => event.process_id === 'p-ingest-a' && event.source.line_number === 2 && event.source.archive_member === null)!;
+  await expect(drawer.locator('.event-raw')).toHaveText(accepted.raw_line);
   await expect(drawer).toContainText('byte [66, 146)');
   await expect(drawer.locator('.source-context')).toContainText('Outside time bounds');
   await expect(drawer.locator('.source-context')).toContainText('Outside literal filter');
@@ -230,7 +251,9 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
     }
   }
   await page.reload(); await expect(page.getByTestId('investigation-id')).toHaveText(investigation);
-  await expect(page.getByLabel('From UTC (inclusive)', { exact: true })).toHaveValue(from);
+  await expect(page.getByTestId('match-count')).toHaveText(`${timestampedEvents.length} matches`);
+  await expect(page.locator('.virtual-logs .log-event').first()).toBeVisible();
+  await expect(page.getByLabel('From UTC (inclusive)', { exact: true })).toHaveValue(displayUtc(from));
   await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
   await expect(page.getByRole('button', { name: 'Preview collection plan', exact: true })).toBeEnabled();
   expect(external).toEqual([]);
@@ -282,6 +305,86 @@ test('same-account pages isolate different/same-system history and reject forged
   await expect(page.getByTestId('investigation-id')).toHaveText(first);
 });
 
+test('direct collection loads log entries, reopens retained results, and deletes only the confirmed collection', async ({ page, context }) => {
+  test.setTimeout(180000);
+  await login(page, 'inspector'); await open(page);
+  let previews = 0;
+  const countPreview = (request: { url: () => string }) => { if (request.url().endsWith('/collections/plan')) previews += 1; };
+  page.on('request', countPreview);
+  const first = await collect(page, false);
+  expect(previews).toBe(0);
+  await expect(page.getByRole('columnheader', { name: 'Log entry', exact: true })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Original text', exact: true })).toHaveCount(0);
+  const accepted = events.find(event => event.process_id === 'p-ingest-a' && event.source.line_number === 2 && event.source.archive_member === null)!;
+  const inspect = page.getByRole('button', { name: 'Inspect source line 2 from ingest-instance-a', exact: true });
+  const row = page.getByRole('row').filter({ has: inspect });
+  expect(await row.locator('.log-message').textContent()).toBe(accepted.raw_line.slice(accepted.timestamp_original!.length));
+  await inspect.click();
+  const source = page.getByRole('dialog', { name: 'Event provenance and source context', exact: true });
+  await expect(source.locator('.event-raw')).toHaveText(accepted.raw_line);
+  await source.getByRole('button', { name: 'Close dialog', exact: true }).click();
+
+  // A second page shares the account and system but owns independent results.
+  const other = await context.newPage();
+  const otherErrors: string[] = []; other.on('pageerror', error => otherErrors.push(error.message));
+  try {
+    await open(other);
+    const second = await collect(other, false);
+    expect(second).not.toBe(first);
+    const otherWorkspace = await other.getByTestId('workspace-id').innerText();
+    await apply(other, golden('unicode-casefold').request);
+    await expect(other.getByTestId('match-count')).toHaveText('1 matches');
+
+    await open(page);
+    await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
+    await page.getByLabel('Open your retained collection', { exact: true }).selectOption(first);
+    await expect(page.getByTestId('investigation-id')).toHaveText(first);
+    await expect(page.getByTestId('match-count')).toHaveText(`${timestampedEvents.length} matches`);
+    await expect(page.locator('.virtual-logs .log-event').first()).toBeVisible();
+    expect(previews).toBe(0);
+
+    const remove = page.getByRole('region', { name: 'Collection progress', exact: true }).getByRole('button', { name: 'Delete collection', exact: true });
+    await remove.click();
+    const confirmation = page.getByRole('dialog', { name: 'Delete retained collection', exact: true });
+    await expect(confirmation).toContainText(systemA);
+    await expect(confirmation).toContainText(first);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
+      await expect(confirmation).toBeVisible();
+      await capture(page, `inspector-delete-collection-confirmation-${theme}`);
+    }
+    await confirmation.getByRole('button', { name: 'Keep collection', exact: true }).click();
+    await expect(confirmation).toHaveCount(0);
+    expect((await page.request.get(`/api/v1/projects/${systemA}/investigations/${first}`)).status()).toBe(200);
+    await expect(page.getByTestId('match-count')).toHaveText(`${timestampedEvents.length} matches`);
+
+    await remove.click();
+    const deletion = page.waitForResponse(response => response.url().endsWith(`/investigations/${first}`) && response.request().method() === 'DELETE');
+    await confirmation.getByRole('button', { name: 'Delete collection', exact: true }).click();
+    const deleted = await deletion;
+    expect(deleted.status()).toBe(200);
+    expect(await deleted.json()).toEqual({ project_id: systemA, investigation_id: first, cache_cleanup_pending: false });
+    await expect(confirmation).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`/systems/${systemA}/logs$`));
+    await expect(page.getByTestId('investigation-id')).toHaveCount(0);
+    await expect(page.getByTestId('match-count')).toHaveCount(0);
+    await expect(page.getByLabel('Open your retained collection', { exact: true }).locator(`option[value="${first}"]`)).toHaveCount(0);
+    expect((await page.request.get(`/api/v1/projects/${systemA}/investigations/${first}`)).status()).toBe(404);
+    expect((await page.request.get(`/api/v1/projects/${systemA}/investigations/${second}`)).status()).toBe(200);
+    await expect(other.getByTestId('workspace-id')).toHaveText(otherWorkspace);
+    await expect(other.getByTestId('investigation-id')).toHaveText(second);
+    await expect(other.getByLabel('Contains string', { exact: true })).toHaveValue('STRASSE');
+    await expect(other.getByTestId('match-count')).toHaveText('1 matches');
+    await apply(other, golden('duplicate-text-retained').request);
+    await expect(other.getByTestId('match-count')).toHaveText('2 matches');
+    expect(otherErrors).toEqual([]);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
+      await capture(page, `inspector-deleted-collection-${theme}`);
+    }
+  } finally { page.off('request', countPreview); await other.close(); }
+});
+
 test('invalid UTC input blocks collection and topology selection opens page-local historical scope', async ({ page }) => {
   await login(page, 'inspector');
   await page.goto(`/systems/${systemA}/topology`);
@@ -304,30 +407,163 @@ test('invalid UTC input blocks collection and topology selection opens page-loca
   await expect(page).toHaveURL(new RegExp(`/systems/${systemA}/logs$`));
   await expect(page.getByTestId('workspace-id')).toHaveText(workspace);
   await expect(page.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox', { checked: true })).toHaveCount(1);
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill('2026-02-30T12:00:00.000000Z');
+  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill('2026-02-30 12:00:00');
   await page.getByLabel('To UTC (exclusive)', { exact: true }).focus();
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Preview collection plan', exact: true })).toBeFocused();
+  await tabTo('Preview collection plan');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('alert')).toContainText('invalid');
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(to);
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(from);
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Preview collection plan', exact: true })).toBeFocused();
+  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(to));
+  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(from));
+  await tabTo('Preview collection plan');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('alert')).toContainText('earlier');
-  await expect(page.getByRole('button', { name: 'Collect planned sources', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Collect sources', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('earlier');
+  await expect(page.getByTestId('collection-state')).toHaveCount(0);
   for (const theme of ['light', 'dark'] as const) {
     await setAppearance(page, theme);
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await page.getByRole('alert').scrollIntoViewIfNeeded();
     await capture(page, `inspector-invalid-utc-${theme}`);
   }
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(from);
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(to);
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Preview collection plan', exact: true })).toBeFocused();
+  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(from));
+  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(to));
+  await tabTo('Preview collection plan');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('/var/log/inspector-demo/ingest/app.log');
   await expect(page.getByTestId('workspace-id')).toHaveText(workspace);
+});
+
+test.describe('UTC date and time controls', () => {
+  test.use({ timezoneId: 'America/Los_Angeles' });
+
+  test('manual seconds and date/time selectors keep UTC bounds and plans local to each page', async ({ page, context }) => {
+    test.setTimeout(120000);
+    await login(page, 'inspector'); await open(page);
+    expect(await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone)).toBe('America/Los_Angeles');
+    const start = page.getByLabel('From UTC (inclusive)', { exact: true });
+    const end = page.getByLabel('To UTC (exclusive)', { exact: true });
+    await expect(start).toHaveValue(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    await expect(end).toHaveValue(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    await expect(page.locator('.history-time-help').first()).toContainText('To is excluded');
+    await page.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox').first().check();
+    await start.fill('2026-10-16 11:59:59'); await end.fill('2026-10-16 12:00:03');
+
+    const duplicate = await context.newPage();
+    const duplicateErrors: string[] = []; duplicate.on('pageerror', error => duplicateErrors.push(error.message));
+    try {
+      await open(duplicate);
+      expect(await duplicate.getByTestId('workspace-id').innerText()).not.toBe(await page.getByTestId('workspace-id').innerText());
+      const duplicateStart = await duplicate.getByLabel('From UTC (inclusive)', { exact: true }).inputValue();
+      const duplicateEnd = await duplicate.getByLabel('To UTC (exclusive)', { exact: true }).inputValue();
+      await expect(duplicate.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox', { checked: true })).toHaveCount(0);
+
+      for (const [bound, time, expected] of [['From', '12:00:00', displayUtc(from)], ['To', '12:00:02', displayUtc(to)]] as const) {
+        await page.getByRole('button', { name: `Choose ${bound} UTC date and time`, exact: true }).click();
+        const picker = page.getByRole('dialog', { name: `Choose ${bound} UTC date and time`, exact: true });
+        const date = picker.getByLabel(`${bound} UTC date`, { exact: true });
+        const clock = picker.getByLabel(`${bound} UTC time`, { exact: true });
+        await expect(date).toHaveAttribute('type', 'date'); await expect(clock).toHaveAttribute('type', 'time');
+        await expect(clock).toHaveAttribute('step', '1');
+        await date.fill('2026-10-16'); await clock.fill(time);
+        await picker.getByRole('button', { name: 'Use date and time', exact: true }).click();
+        await expect(bound === 'From' ? start : end).toHaveValue(expected);
+      }
+
+      async function previewBounds(expectedFrom: string, expectedTo: string) {
+        const pending = page.waitForResponse(result => result.url().endsWith('/collections/plan') && result.request().method() === 'POST');
+        await page.getByRole('button', { name: 'Preview collection plan', exact: true }).click();
+        const result = await pending; expect(result.status()).toBe(200);
+        expect(result.request().postDataJSON()).toMatchObject({ from: expectedFrom, to: expectedTo, transport: 'local_demo' });
+        await expect(page.getByRole('button', { name: 'Collect sources', exact: true })).toBeVisible();
+        await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toBeVisible();
+      }
+      await previewBounds(from, to);
+
+      await page.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
+      let picker = page.getByRole('dialog', { name: 'Choose From UTC date and time', exact: true });
+      await picker.getByLabel('From UTC time', { exact: true }).fill('12:00:01');
+      await picker.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await expect(start).toHaveValue(displayUtc(from));
+      await expect(page.getByRole('button', { name: 'Collect sources', exact: true })).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Choose From UTC date and time', exact: true })).toBeFocused();
+      await page.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
+      picker = page.getByRole('dialog', { name: 'Choose From UTC date and time', exact: true });
+      await picker.getByLabel('From UTC time', { exact: true }).fill('12:00:01');
+      await picker.getByRole('button', { name: 'Use date and time', exact: true }).click();
+      await expect(start).toHaveValue('2026-10-16 12:00:01');
+      await expect(page.getByRole('button', { name: 'Collect sources', exact: true })).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
+      await expect(duplicate.getByLabel('From UTC (inclusive)', { exact: true })).toHaveValue(duplicateStart);
+      await expect(duplicate.getByLabel('To UTC (exclusive)', { exact: true })).toHaveValue(duplicateEnd);
+      await expect(duplicate.getByRole('dialog')).toHaveCount(0);
+      await expect(duplicate.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
+
+      let invalidPlans = 0;
+      const countPlan = (request: { url: () => string }) => { if (request.url().endsWith('/collections/plan')) invalidPlans += 1; };
+      page.on('request', countPlan);
+      try {
+        for (const [invalid, reason] of [['2026-02-30 12:00:00', 'invalid'], ['2026-10-16 24:00:00', 'invalid'], [displayUtc(to), 'earlier'], ['2026-10-16 12:00:03', 'earlier']]) {
+          await start.fill(invalid);
+          await page.getByRole('button', { name: 'Preview collection plan', exact: true }).click();
+          await expect(page.getByRole('alert')).toContainText(reason);
+          await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
+        }
+        expect(invalidPlans).toBe(0);
+      } finally { page.off('request', countPlan); }
+
+      // Existing canonical values remain usable when pasted; displaying seconds
+      // does not discard an untouched precise API bound.
+      const preciseFrom = '2026-10-16T12:00:00.123456Z'; const preciseTo = '2026-10-16T12:00:02.987654Z';
+      await start.fill(preciseFrom); await end.fill(preciseTo);
+      await expect(start).toHaveValue(displayUtc(from)); await expect(end).toHaveValue(displayUtc(to));
+      await previewBounds(preciseFrom, preciseTo);
+      await page.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
+      picker = page.getByRole('dialog', { name: 'Choose From UTC date and time', exact: true });
+      await picker.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await previewBounds(preciseFrom, preciseTo);
+      for (const bound of ['From', 'To']) {
+        await page.getByRole('button', { name: `Choose ${bound} UTC date and time`, exact: true }).click();
+        await page.getByRole('dialog', { name: `Choose ${bound} UTC date and time`, exact: true }).getByRole('button', { name: 'Use date and time', exact: true }).click();
+        await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
+      }
+      await previewBounds(from, to);
+      await start.fill('2026-10-16 11:59:59'); await end.fill('2026-10-16 12:00:03');
+      await start.fill(displayUtc(from)); await end.fill(displayUtc(to));
+      await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
+
+      for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
+        await page.setViewportSize(size);
+        for (const theme of ['light', 'dark'] as const) {
+          await setAppearance(page, theme);
+          await start.scrollIntoViewIfNeeded();
+          await capture(page, `inspector-utc-seconds-${theme}-${size.width}x${size.height}`);
+          await page.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
+          picker = page.getByRole('dialog', { name: 'Choose From UTC date and time', exact: true });
+          await expect(picker.getByLabel('From UTC date', { exact: true })).toHaveValue('2026-10-16');
+          await capture(page, `inspector-utc-picker-${theme}-${size.width}x${size.height}`);
+          expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+          await page.keyboard.press('Escape');
+          await expect(picker).not.toBeVisible();
+          await expect(start).toHaveValue(displayUtc(from));
+        }
+      }
+      await page.setViewportSize({ width: 640, height: 720 });
+      for (const theme of ['light', 'dark'] as const) {
+        await setAppearance(page, theme);
+        await page.getByRole('button', { name: 'Choose To UTC date and time', exact: true }).click();
+        const narrowPicker = page.getByRole('dialog', { name: 'Choose To UTC date and time', exact: true });
+        await expect(narrowPicker).toBeVisible();
+        expect(await narrowPicker.evaluate(element => {
+          const bounds = element.getBoundingClientRect();
+          return bounds.left >= 0 && bounds.right <= window.innerWidth && element.scrollWidth <= element.clientWidth;
+        })).toBe(true);
+        await capture(page, `inspector-utc-picker-${theme}-640x720`);
+        await narrowPicker.getByRole('button', { name: 'Cancel', exact: true }).click();
+      }
+      expect(duplicateErrors).toEqual([]);
+    } finally { await duplicate.close(); }
+  });
 });

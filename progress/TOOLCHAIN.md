@@ -54,3 +54,17 @@ previous daemon blocker. The VM MariaDB **12.3.3** is retained independently and
 passes the broader runtime-identity API/browser checks. Exact app image digest,
 restart/offline results and platform limits are recorded in STATUS.md; Ubuntu/
 Rocky host and full release validation remain separate.
+
+Stage 04 historical collection (17 October 2026) retains the existing locks and
+AsyncSSH 2.24.1; no dependency or paid library was added. Actual tests use Python
+3.13.16 and MariaDB 11.8.9 in the local non-root Linux runner, plus Node 24.22.0
+and the pinned Playwright Chromium on Windows. The independently keyed
+synthetic target/jump support password-only authentication, pinned Ed25519 keys,
+SFTP protocol 3 and one `direct-tcpip` jump. Read-only OPEN/READ/CLOSE,
+LSTAT/FSTAT, REALPATH and directory listing were exercised; target exec and file
+mutation counters remain zero. Tested data includes plain/rotated files, ZIP
+and TAR.GZ archives. SFTP v3 lacks portable atomic open-beneath/inode guarantees;
+snapshot metadata/probes detect observed changes without promising every race
+can be detected. Actual CentOS/Rocky OpenSSH distributions and production SSH
+endpoints were not contacted. Full offline/platform release qualification remains
+Stage 08. See STATUS.md and verification/stage-4 for executed checks.

@@ -39,7 +39,7 @@ Only Administrators write the shared semantic model and named view geometry. Ins
 
 Check unique IDs and names, existing references, single ownership, valid connection chains and no jump cycles. The current release permits at most one jump hop: a target may reference a jump profile whose own jump ID is null. A jump profile need not correspond to a diagram server.
 
-Paths must be absolute Linux paths within approved roots. Reject NUL/control characters, traversal components and expansion syntax. Allow glob metacharacters only in the explicitly typed pattern fields; do not expand shell expressions or environment variables. Validate symlink policy and canonical paths at access time, not only during import. Approved roots and target enablement must be stored as local Administrator approvals, not accepted automatically from an imported file.
+Paths must be absolute Linux paths within configured roots. Reject NUL/control characters, traversal components and expansion syntax. Allow glob metacharacters only in the explicitly typed pattern fields; do not expand shell expressions or environment variables. Validate symlink policy and canonical paths at access time, not only during import. With **Additional security measures** enabled, roots and target enablement require local Administrator approval, which an imported file cannot supply. With that global setting disabled, saved path/parser definitions are usable without separate source confirmation; credentials, explicit host-key trust and root confinement still apply. Import starts no connection and creates no approval record.
 
 Every process references an existing parser. Unsupported encodings, timestamp formats, future schema versions, unknown mandatory fields and unsafe Markdown assets produce useful line/field errors. Parse YAML with a safe loader, duplicate-key detection and depth/size/alias limits. Do not resolve YAML tags into objects, evaluate Jinja or merge arbitrary Python objects.
 
@@ -60,6 +60,11 @@ See `docs/10_ANSIBLE_IMPORT.md` for inventory-specific mapping and `docs/07_SECU
 ## Additional version 2 entities
 
 `User`: immutable ID, normalized unique username, display name, Argon2 password hash, role (`administrator` or `inspector`), enabled state, force-password-change flag, authentication version, created/updated times. `UserPreference`: user ID, revision, theme mode (`default`, `light`, `dark`, `system`), personal viewport/pane settings; never shared topology. `ApplicationSetting`: revisioned global appearance/defaults and permitted runtime policy, changed only by an Administrator. `AuthSession`: user ID, verifier hash, auth version, expiry/revocation. `AuditEvent`: actor ID/role snapshot, action, safe target IDs and result; no secrets/raw log/filter values.
+
+The persisted `ApplicationSetting.additional_security_measures` boolean defaults
+to true. It controls manual source confirmation across systems, stays outside
+project interchange and personal preferences, and is rechecked during remote
+operations. It never retargets an existing source snapshot.
 
 Jobs, import previews, downloads and bundles also carry server-assigned ownership. User deletion is disabled in the first release; deactivation preserves audit/investigation ownership. Administrators can stop a user's jobs for operational reasons but cannot silently read or edit that user's personal investigation contents. Table access rules are in document 13.
 

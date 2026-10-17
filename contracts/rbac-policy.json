@@ -93,6 +93,16 @@
       "ownership": "none",
       "description": "Shared configuration or protected administrative operation."
     },
+    "source_access.manage": {
+      "roles": ["administrator"],
+      "ownership": "none",
+      "description": "Explicit local approval/revocation of configured targets and log roots, scoped to system and configuration revision."
+    },
+    "source.test": {
+      "roles": ["administrator"],
+      "ownership": "none",
+      "description": "Bounded SFTP access check of configured, approved process sources; no arbitrary browser hosts or paths."
+    },
     "credential.manage": {
       "roles": [
         "administrator"

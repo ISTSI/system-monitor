@@ -122,3 +122,20 @@ was upgraded, and no existing database was downgraded to manufacture evidence.
 Ansible file/bundle import remains Stage 07, distinct from implemented project
 configuration import. Stop at the Stage 02 review gate; Stage 03 requires its
 separate prompt before historical/log-engine implementation.
+
+## Stage 04 review gate - 17 October 2026
+
+Stage 03 historical parsing/index/query and Stage 04 approved SSH collection are
+implemented. Direct and single-jump SFTP download the complete golden fixtures
+into the same bounded engine. Local source/root approval remains separate from
+configuration import and host-key trust; every remote job binds its owner,
+project, login, configuration and current access versions. Same-account browser
+pages keep separate workspaces, captures and filters. The final Stage 04 Linux
+MariaDB run passes 89 cases, with 23 distinct passing browser scenarios across
+the SSH and regression suites. Actual commands, unit counts, failures corrected,
+platform limits and the local additive migration/backup are in STATUS.md.
+
+Stop at this review gate. The next authorized stage must be
+`prompts/05_LIVE_MONITORING.md`; no live following, reconnect loop, live socket,
+live buffer or viewport seed implementation was added in Stage 04. Full saved
+analysis, Ansible import and offline release remain their separate stages.

@@ -1,8 +1,7 @@
-"""Approved local captures, MariaDB historical indexes and private snapshot queries.
+"""Approved SSH captures, MariaDB indexes and private historical snapshot queries.
 
-The transport in this stage is an explicitly enabled synthetic local adapter. Its
-manifest is data: configured paths, roots, identities and checksums are validated
-before bytes enter the production parser. A browser cannot provide a local path.
+The labelled local adapter requires a deployment opt-in. Both transports feed
+the same bounded parser; requests select configured processes, never paths.
 """
 
 import asyncio
@@ -13,6 +12,7 @@ import json
 import time
 from collections.abc import AsyncIterator, Callable
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal
@@ -87,6 +87,7 @@ def format_time(value: int) -> str:
 
 class HistoricalScopeInput(StrictInput):
     workspace_id: str = Field(pattern=ID_PATTERN)
+    transport: Literal["ssh", "local_demo"] | None = None
     process_ids: list[Annotated[str, Field(pattern=ID_PATTERN)]] = Field(
         min_length=1, max_length=200
     )
@@ -254,6 +255,12 @@ class HistoricalDownloadResponse(StrictInput):
     url: str
 
 
+class HistoricalDeleteResponse(StrictInput):
+    project_id: str
+    investigation_id: str
+    cache_cleanup_pending: bool = False
+
+
 class HistoricalAdministrativeCancelResponse(StrictInput):
     project_id: str
     job_id: str
@@ -279,7 +286,7 @@ async def checked_job(
         HistoryJob.owner_user_id == actor.user_id,
     )
     if lock:
-        query = query.with_for_update()
+        query = query.with_for_update().execution_options(populate_existing=True)
     job = await session.scalar(query)
     if job is None:
         raise not_found()
@@ -304,7 +311,7 @@ async def job_response(session: AsyncSession, job: HistoryJob) -> dict:
         **{"from": format_time(job.from_us)},
         to=format_time(job.to_us),
         status=job.status,
-        demo_mode=True,
+        demo_mode=all(s.manifest.get("transport", "local_demo") == "local_demo" for s in sources),
         source_snapshot_revision=job.snapshot_revision,
         source_count=len(sources),
         scanned_sources=sum(s.status in {"completed", "failed", "partial"} for s in sources),
@@ -422,6 +429,8 @@ async def planning_context(
     project_id: str,
     payload: HistoricalScopeInput,
     config: Config,
+    remote: Any = None,
+    session_hash: str | None = None,
 ) -> tuple[Project, dict, list[dict]]:
     actor = await services.current_actor(session, actor)
     authorize(actor, "collection.create")
@@ -438,21 +447,64 @@ async def planning_context(
     state = await session.get(TopologyState, project_id)
     if state is None:
         raise not_found()
-    candidates = await asyncio.to_thread(
-        approved_candidates, config, state.config, payload.process_ids
+    document = copy.deepcopy(state.config)
+    revision = project.revision
+    use_demo = payload.transport == "local_demo" or (
+        payload.transport is None and config.local_history_demo
     )
+    if use_demo:
+        candidates = await asyncio.to_thread(
+            approved_candidates, config, document, payload.process_ids
+        )
+    else:
+        # End the request transaction before DNS, SSH, directory scans or reads.
+        await session.commit()
+        if remote is None:
+            raise DomainError("SSH_UNAVAILABLE", "SSH collection is unavailable.", 503)
+        candidates = await remote.plan(
+            actor, project_id, revision, document, payload.process_ids, session_hash
+        )
+        actor = await services.current_actor(session, actor)
+        project = await services.project_in_context(
+            session, ProjectContext(project_id, actor.user_id), lock=True
+        )
+        await session.refresh(project)
+        if project.revision != revision or project.archived:
+            raise DomainError("REVISION_CONFLICT", "System changed during source planning.", 409)
+        workspace = await session.get(
+            Workspace, (project_id, payload.workspace_id), populate_existing=True
+        )
+        if workspace is None or workspace.owner_user_id != actor.user_id:
+            raise not_found()
+        if workspace.state != "active" or workspace.expires_us <= services.utc_now_us():
+            raise DomainError("WORKSPACE_EXPIRED", "Reload this page to open a new workspace.", 409)
+        # Revalidate under the reservation transaction, so an approval change
+        # cannot race a successfully accepted plan/start.
+        for connection_id in dict.fromkeys(item["connection_id"] for item in candidates):
+            snapshot = await remote.access.prepare_in_transaction(
+                session, actor, project_id, connection_id, revision, session_hash
+            )
+            if any(
+                item["access_signature"] != snapshot.signature
+                for item in candidates
+                if item["connection_id"] == connection_id
+            ):
+                raise DomainError(
+                    "REVISION_CONFLICT", "Source access changed during planning.", 409
+                )
     maximum = config.history_limits.get("max_download_bytes_per_collection", 536_870_912)
     if sum(s["estimated_bytes"] for s in candidates) > maximum:
         raise DomainError(
             "DOWNLOAD_LIMIT", "The collection exceeds the configured download budget.", 413
         )
-    return project, state.config, candidates
+    return project, document, candidates
 
 
 def plan_response(project_id: str, payload: HistoricalScopeInput, candidates: list[dict]) -> dict:
+    demo = all(s.get("transport", "local_demo") == "local_demo" for s in candidates)
     return dict(
         project_id=project_id,
-        demo_mode=True,
+        demo_mode=demo,
         process_ids=payload.process_ids,
         **{"from": payload.from_},
         to=payload.to,
@@ -469,8 +521,11 @@ def plan_response(project_id: str, payload: HistoricalScopeInput, candidates: li
             for s in candidates
         ],
         warnings=[
-            "Synthetic local fixture transport. No SSH connection is opened.",
+            "Synthetic local fixture transport. No SSH connection is opened."
+            if demo
+            else "Read-only SSH/SFTP. Candidates are pinned snapshots; changed files fail visibly. SFTP cannot prove all same-size replacements or continuous coverage.",
             "All configured candidates are scanned regardless of filename dates; observed timestamp boundaries do not prove continuous coverage.",
+            *dict.fromkeys(warning for s in candidates for warning in s.get("warnings", [])),
         ],
     )
 
@@ -1061,15 +1116,125 @@ class HistoryManager:
     """Two bounded file workers with bounded batches and DB dispatch checks."""
 
     def __init__(
-        self, config: Config, sessions: async_sessionmaker[AsyncSession], supervisor: Any
+        self,
+        config: Config,
+        sessions: async_sessionmaker[AsyncSession],
+        supervisor: Any,
+        source_access: Any = None,
     ) -> None:
         self.config, self.sessions, self.supervisor = config, sessions, supervisor
+        from inspector.history_remote import RemoteHistory
+
+        self.remote = RemoteHistory(source_access, config) if source_access else None
         workers = min(2, config.history_limits.get("concurrent_archive_tasks", 2))
         self.executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="history")
         self.slots = asyncio.Semaphore(workers)
         self.tasks: dict[tuple[str, str], asyncio.Task] = {}
         self.tokens: dict[tuple[str, str], Any] = {}
+        self.resource_locks: dict[tuple[str, str], tuple[asyncio.Lock, int]] = {}
         self.closed = False
+
+    @asynccontextmanager
+    async def use_capture(self, project_id: str, job_id: str) -> AsyncIterator[None]:
+        """Serialize capture deletion against bounded local reads, never SSH work."""
+        key = (project_id, job_id)
+        lock, users = self.resource_locks.get(key, (asyncio.Lock(), 0))
+        self.resource_locks[key] = lock, users + 1
+        try:
+            async with lock:
+                yield
+        finally:
+            _, users = self.resource_locks[key]
+            if users == 1:
+                self.resource_locks.pop(key)
+            else:
+                self.resource_locks[key] = lock, users - 1
+
+    async def delete_capture(
+        self, session: AsyncSession, actor: Principal, project_id: str, job_id: str
+    ) -> dict:
+        # Authentication may have opened a transaction before waiting for the
+        # capture guard. Release its locks before another query checks auth.
+        await session.commit()
+        operation = asyncio.create_task(self._delete_capture(session, actor, project_id, job_id))
+        try:
+            return await asyncio.shield(operation)
+        except asyncio.CancelledError:
+            # Renaming runs in a thread. Finish commit/restore and unlink before
+            # the request dependency closes this session, even on disconnect.
+            while not operation.done():
+                try:
+                    await asyncio.shield(operation)
+                except asyncio.CancelledError:
+                    continue
+            operation.result()
+            raise
+
+    async def _delete_capture(
+        self, session: AsyncSession, actor: Principal, project_id: str, job_id: str
+    ) -> dict:
+        from inspector.history_retention import stage_cache
+
+        async with self.use_capture(project_id, job_id):
+            job = await checked_job(session, actor, project_id, job_id, lock=True)
+            authorize(actor, "investigation.delete", owner_user_id=job.owner_user_id)
+            if job.status not in TERMINAL:
+                raise DomainError(
+                    "COLLECTION_ACTIVE", "Stop the collection before deleting it.", 409
+                )
+            path = self.cache_path(project_id, job_id, "unused").parent
+            source_count = await session.scalar(
+                select(func.count())
+                .select_from(HistorySource)
+                .where(HistorySource.project_id == project_id, HistorySource.job_id == job_id)
+            )
+            staged = await asyncio.to_thread(
+                stage_cache, path, Path(self.config.cache_dir), max(1, (source_count or 0) * 2)
+            )
+            try:
+                # Scoped SQL deletes avoid materializing each retained event.
+                for model in (HistoryDownload, HistoryCursor, HistoryEvent, HistorySource):
+                    await session.execute(
+                        delete(model).where(model.project_id == project_id, model.job_id == job_id)
+                    )
+                await session.execute(
+                    delete(HistoryJob).where(
+                        HistoryJob.project_id == project_id,
+                        HistoryJob.id == job_id,
+                        HistoryJob.owner_user_id == actor.user_id,
+                    )
+                )
+                services.audit(
+                    session,
+                    actor,
+                    "investigation.delete",
+                    project_id,
+                    job_id,
+                    services.utc_now_us(),
+                )
+                await session.commit()
+            except BaseException:
+                try:
+                    await session.rollback()
+                finally:
+                    if staged is not None:
+                        await asyncio.to_thread(staged.restore)
+                raise
+            READ_CACHE.invalidate(project_id, job_id)
+            cleanup_pending = False
+            if staged is not None:
+                try:
+                    await asyncio.to_thread(staged.remove)
+                except (OSError, DomainError):
+                    # The private index and original path have been removed.
+                    # Report remaining detached bytes without presenting this
+                    # committed deletion as a retryable failed operation.
+                    cleanup_pending = True
+            return dict(
+                project_id=project_id,
+                investigation_id=job_id,
+                cache_cleanup_pending=cleanup_pending,
+            )
 
     async def launch(self, project_id: str, job_id: str) -> None:
         if not self.closed:
@@ -1172,11 +1337,27 @@ class HistoryManager:
                         )
                     ).all()
                     manifests = [(s.id, s.cache_name, copy.deepcopy(s.manifest)) for s in sources]
-                for source_id, cache_name, manifest in manifests:
-                    token.check()
-                    await self._source(
-                        project_id, job_id, source_id, cache_name, manifest, document, token
+                    owner = await session.get(User, job.owner_user_id)
+                    assert owner is not None
+                    actor = Principal(owner.id, owner.role, job.auth_version)
+                    revision, session_hash = job.config_revision, job.auth_session_hash
+                if manifests and manifests[0][2].get("transport") == "ssh":
+                    await self._remote_sources(
+                        project_id,
+                        job_id,
+                        manifests,
+                        document,
+                        token,
+                        actor,
+                        revision,
+                        session_hash,
                     )
+                else:
+                    for source_id, cache_name, manifest in manifests:
+                        token.check()
+                        await self._source(
+                            project_id, job_id, source_id, cache_name, manifest, document, token
+                        )
                 async with self.sessions.begin() as session:
                     job = await self._dispatch(session, *key)
                     job.status = "partial" if job.errors else "completed"
@@ -1213,6 +1394,90 @@ class HistoryManager:
         finally:
             self.tokens.pop(key, None)
 
+    async def _remote_sources(
+        self,
+        project_id: str,
+        job_id: str,
+        manifests: list,
+        document: dict,
+        token: Any,
+        actor: Principal,
+        revision: int,
+        session_hash: str | None,
+    ) -> None:
+        from inspector.ssh_files import open_files
+
+        assert self.remote is not None
+        remote_history = self.remote
+        groups: dict[str, list] = {}
+        for item in manifests:
+            groups.setdefault(item[2]["connection_id"], []).append(item)
+        for connection_id, group in groups.items():
+            snapshot = await remote_history.access.prepare(
+                actor, project_id, connection_id, revision, session_hash
+            )
+            if any(manifest["access_signature"] != snapshot.signature for _, _, manifest in group):
+                raise DomainError(
+                    "REVISION_CONFLICT", "Source approval changed before dispatch.", 409
+                )
+
+            async def operation(snapshot: Any = snapshot, group: list = group) -> None:
+                async with (
+                    remote_history.host_slots,
+                    open_files(
+                        snapshot.target,
+                        snapshot.jump,
+                        allow_loopback=self.config.ssh_allow_loopback,
+                        # Per-operation cap includes every file and parsing/indexing.
+                        timeout_seconds=self.config.history_limits.get(
+                            "archive_task_timeout_seconds", 120
+                        ),
+                        **remote_history.file_limits(),
+                    ) as remote,
+                ):
+                    for source_id, cache_name, manifest in group:
+                        token.check()
+                        await self._source(
+                            project_id,
+                            job_id,
+                            source_id,
+                            cache_name,
+                            manifest,
+                            document,
+                            token,
+                            remote=remote,
+                        )
+
+            async def guarded_operation() -> None:
+                async def watch_job() -> None:
+                    while True:
+                        token.check()
+                        async with asyncio.timeout(1), self.sessions.begin() as session:
+                            await self._dispatch(session, project_id, job_id)
+                        await asyncio.sleep(0.25)
+
+                work, watch = asyncio.create_task(operation()), asyncio.create_task(watch_job())
+                try:
+                    done, _ = await asyncio.wait((work, watch), return_when=asyncio.FIRST_COMPLETED)
+                    if watch in done:
+                        await watch
+                    await work
+                finally:
+                    for task in (work, watch):
+                        if not task.done():
+                            task.cancel()
+                    await asyncio.gather(work, watch, return_exceptions=True)
+
+            await remote_history.access.watched(
+                actor,
+                project_id,
+                connection_id,
+                revision,
+                session_hash,
+                snapshot,
+                guarded_operation,
+            )
+
     async def _source(
         self,
         project_id: str,
@@ -1222,6 +1487,7 @@ class HistoryManager:
         manifest: dict,
         document: dict,
         token: Any,
+        remote: Any = None,
     ) -> None:
         from inspector.log_engine import (
             CorrelationMarker,
@@ -1266,6 +1532,56 @@ class HistoryManager:
             wall_seconds=self.config.history_limits.get("archive_task_timeout_seconds", 120),
         )
         progress = ScanProgress()
+        captured_checksum = None
+        captured_bytes = 0
+        if remote is not None:
+            from inspector.ssh_files import RemoteFile
+
+            temporary = destination.with_suffix(".part")
+            destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            try:
+                if remaining_download <= 0 or remaining_expanded <= 0:
+                    raise DomainError(
+                        "COLLECTION_BUDGET", "The remaining collection budget is exhausted.", 413
+                    )
+                with temporary.open("xb") as outgoing:
+                    temporary.chmod(0o600)
+                    result = await remote.copy(
+                        RemoteFile(**manifest["remote_file"]),
+                        outgoing,
+                        max_bytes=max(0, remaining_download),
+                    )
+                captured_checksum, captured_bytes = result.checksum, result.bytes
+                temporary.replace(destination)
+            except BaseException as error:
+                copied_bytes = temporary.stat().st_size if temporary.exists() else 0
+                temporary.unlink(missing_ok=True)
+                try:
+                    async with asyncio.timeout(0.5), self.sessions.begin() as cleanup:
+                        stopped_job = await cleanup.get(
+                            HistoryJob, (project_id, job_id), with_for_update=True
+                        )
+                        stopped_source = await cleanup.get(
+                            HistorySource, (project_id, job_id, source_id), with_for_update=True
+                        )
+                        if stopped_job is not None and stopped_source is not None:
+                            code = getattr(
+                                error,
+                                "code",
+                                "CANCELLED"
+                                if isinstance(error, asyncio.CancelledError)
+                                else "SOURCE_UNAVAILABLE",
+                            )
+                            stopped_source.downloaded_bytes = copied_bytes
+                            stopped_source.error_code = code
+                            stopped_source.status = "failed"
+                            stopped_job.downloaded_bytes += copied_bytes
+                            stopped_job.errors = list(dict.fromkeys([*stopped_job.errors, code]))
+                except Exception:
+                    pass
+                if isinstance(error, DomainError):
+                    return  # A per-source SFTP failure remains visible; other files can be scanned.
+                raise
         queue: asyncio.Queue = asyncio.Queue(maxsize=2)
         loop = asyncio.get_running_loop()
 
@@ -1286,26 +1602,30 @@ class HistoryManager:
 
         def worker() -> None:
             temporary = destination.with_suffix(".part")
-            copied = 0
+            copied = captured_bytes if remote is not None else 0
             try:
                 destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-                origin = Path(manifest["local_path"])
                 # Capture immutable fixture bytes into a separate generated project/job namespace.
                 digest = hashlib.sha256()
                 if remaining_download <= 0 or remaining_expanded <= 0:
                     raise EngineError("COLLECTION_BUDGET")
-                with origin.open("rb") as incoming, temporary.open("xb") as outgoing:
-                    temporary.chmod(0o600)
-                    while block := incoming.read(65_536):
-                        token.check()
-                        copied += len(block)
-                        if copied > remaining_download:
-                            raise EngineError("DOWNLOAD_LIMIT")
-                        digest.update(block)
-                        outgoing.write(block)
-                if digest.hexdigest() != manifest["file_sha256"]:
-                    raise EngineError("SOURCE_CHANGED")
-                temporary.replace(destination)
+                if remote is None:
+                    origin = Path(manifest["local_path"])
+                    with origin.open("rb") as incoming, temporary.open("xb") as outgoing:
+                        temporary.chmod(0o600)
+                        while block := incoming.read(65_536):
+                            token.check()
+                            copied += len(block)
+                            if copied > remaining_download:
+                                raise EngineError("DOWNLOAD_LIMIT")
+                            digest.update(block)
+                            outgoing.write(block)
+                    if digest.hexdigest() != manifest["file_sha256"]:
+                        raise EngineError("SOURCE_CHANGED")
+                    temporary.replace(destination)
+                else:
+                    copied = captured_bytes
+                    progress.source_sha256 = captured_checksum
                 source = LocalSource(
                     project_id=project_id,
                     process_id=process["id"],
@@ -1320,6 +1640,7 @@ class HistoryManager:
                     server_name=server["name"],
                     parser=ParserConfig(**parser["timestamp"]),
                     encoding=process["log_source"]["encoding"],
+                    member_globs=tuple(manifest.get("member_patterns") or ["*"]),
                     correlation_markers=tuple(
                         CorrelationMarker(**marker)
                         for marker in parser.get("correlation_markers", [])
@@ -1414,7 +1735,7 @@ class HistoryManager:
                     source.expanded_bytes = expanded
                     last_download, last_expanded = downloaded, expanded
                     job.snapshot_revision += 1
-            await future
+            await asyncio.shield(future)
             async with self.sessions.begin() as session:
                 job = await self._dispatch(session, project_id, job_id)
                 source = await session.get(
@@ -1437,13 +1758,13 @@ class HistoryManager:
                 if source_error:
                     job.errors = list(dict.fromkeys([*job.errors, source_error]))
                 job.snapshot_revision += 1
-        except Exception:
+        except BaseException:
             token.cancel()
-            await future
+            await asyncio.shield(future)
             try:
                 # Cleanup records actual captured bytes even when the protected
                 # dispatch was revoked before its first complete event batch.
-                async with self.sessions.begin() as cleanup:
+                async with asyncio.timeout(0.5), self.sessions.begin() as cleanup:
                     stopped_job = await cleanup.get(
                         HistoryJob, (project_id, job_id), with_for_update=True
                     )
@@ -1493,7 +1814,13 @@ def build_history_router(
         session: Session,
     ) -> dict:
         _project, _document, candidates = await planning_context(
-            session, actor, project_id, payload, request.app.state.config
+            session,
+            actor,
+            project_id,
+            payload,
+            request.app.state.config,
+            request.app.state.history.remote,
+            token_hash(request.cookies.get("__Host-si-session", "")),
         )
         return plan_response(project_id, payload, candidates)
 
@@ -1513,7 +1840,13 @@ def build_history_router(
     ) -> dict:
         config = request.app.state.config
         project, document, candidates = await planning_context(
-            session, actor, project_id, payload, config
+            session,
+            actor,
+            project_id,
+            payload,
+            config,
+            request.app.state.history.remote,
+            token_hash(request.cookies.get("__Host-si-session", "")),
         )
         # current_actor's security lock serializes reservation with every start/revocation.
         active = select(HistoryJob).where(HistoryJob.status.in_(NONTERMINAL))
@@ -1558,7 +1891,11 @@ def build_history_router(
             downloaded_bytes=0,
             expanded_bytes=0,
             created_us=services.utc_now_us(),
-            errors=[],
+            errors=list(
+                dict.fromkeys(
+                    warning for candidate in candidates for warning in candidate.get("warnings", [])
+                )
+            ),
         )
         session.add(job)
         await session.flush()
@@ -1654,6 +1991,22 @@ def build_history_router(
             return dict(project_id=project_id, job_id=job_id, status=job.status)
         return await job_response(session, job)
 
+    @router.delete(
+        "/investigations/{investigation_id}",
+        response_model=HistoricalDeleteResponse,
+        openapi_extra={"x-permission": "investigation.delete"},
+    )
+    async def delete_investigation(
+        project_id: str,
+        investigation_id: str,
+        request: Request,
+        actor: Writer,
+        session: Session,
+    ) -> dict:
+        return await request.app.state.history.delete_capture(
+            session, actor, project_id, investigation_id
+        )
+
     @router.post(
         "/investigations/{job_id}/query",
         response_model=HistoricalQueryResponse,
@@ -1669,16 +2022,20 @@ def build_history_router(
     ) -> dict:
         from inspector.app import SESSION_COOKIE
 
-        return await historical_query(
-            session,
-            actor,
-            project_id,
-            job_id,
-            payload,
-            supervisor=request.app.state.supervisor,
-            login_hash=token_hash(request.cookies.get(SESSION_COOKIE, "")),
-            idle_timeout_us=request.app.state.config.idle_timeout_us,
-        )
+        await session.commit()
+        async with request.app.state.history.use_capture(project_id, job_id):
+            result = await historical_query(
+                session,
+                actor,
+                project_id,
+                job_id,
+                payload,
+                supervisor=request.app.state.supervisor,
+                login_hash=token_hash(request.cookies.get(SESSION_COOKIE, "")),
+                idle_timeout_us=request.app.state.config.idle_timeout_us,
+            )
+            await session.commit()
+            return result
 
     @router.post(
         "/investigations/{job_id}/events/{event_id}/context",
@@ -1690,10 +2047,15 @@ def build_history_router(
         job_id: str,
         event_id: str,
         payload: HistoricalContextInput,
+        request: Request,
         actor: Writer,
         session: Session,
     ) -> dict:
-        return await historical_context(session, actor, project_id, job_id, event_id, payload)
+        await session.commit()
+        async with request.app.state.history.use_capture(project_id, job_id):
+            result = await historical_context(session, actor, project_id, job_id, event_id, payload)
+            await session.commit()
+            return result
 
     @router.post(
         "/investigations/{job_id}/sources/{source_id}/download",
@@ -1705,8 +2067,22 @@ def build_history_router(
         job_id: str,
         source_id: str,
         payload: EmptyInput,
+        request: Request,
         actor: Writer,
         session: Session,
+    ) -> dict:
+        await session.commit()
+        async with request.app.state.history.use_capture(project_id, job_id):
+            result = await create_download_grant(project_id, job_id, source_id, actor, session)
+            await session.commit()
+            return result
+
+    async def create_download_grant(
+        project_id: str,
+        job_id: str,
+        source_id: str,
+        actor: Principal,
+        session: AsyncSession,
     ) -> dict:
         job = await checked_job(session, actor, project_id, job_id)
         source = await session.get(HistorySource, (project_id, job_id, source_id))
@@ -1763,20 +2139,26 @@ def build_history_router(
         if not path.is_file() or path.is_symlink():
             raise DomainError("SOURCE_EXPIRED", "The captured source is unavailable.", 410)
         from inspector.app import SESSION_COOKIE
+        from inspector.history_retention import read_download_chunk
 
         login_hash = token_hash(request.cookies.get(SESSION_COOKIE, ""))
+        job_id, grant_hash = grant.job_id, grant.token_hash
+        await session.commit()
 
         async def chunks() -> AsyncIterator[bytes]:
             # Revalidate in separate short transactions; do not retain a grant through logout/outage.
-            with path.open("rb") as stream:
-                while True:
+            offset = 0
+            while True:
+                async with request.app.state.history.use_capture(project_id, job_id):
                     async with request.app.state.sessions.begin() as check:
                         now = services.utc_now_us()
                         login = await check.get(AuthSession, login_hash or "")
                         user = await check.get(User, actor.user_id)
+                        retained_grant = await check.get(HistoryDownload, grant_hash)
                         if (
                             login is None
                             or user is None
+                            or retained_grant is None
                             or not user.enabled
                             or user.auth_version != actor.auth_version
                             or login.expires_us <= now
@@ -1784,10 +2166,16 @@ def build_history_router(
                             or not await request.app.state.supervisor.healthy()
                         ):
                             return
-                    data = await asyncio.to_thread(stream.read, 65_536)
-                    if not data:
-                        break
-                    yield data
+                    # Close each bounded read before releasing the guard. A
+                    # deletion can then unlink safely on Windows or Linux and
+                    # the next iteration observes the removed download grant.
+                    data = await asyncio.to_thread(
+                        read_download_chunk, path, Path(request.app.state.config.cache_dir), offset
+                    )
+                if not data:
+                    break
+                offset += len(data)
+                yield data
 
         return StreamingResponse(
             chunks(),

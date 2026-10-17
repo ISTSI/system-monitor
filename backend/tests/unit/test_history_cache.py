@@ -90,3 +90,29 @@ def test_lru_eviction_expiry_and_leases_share_one_global_budget(monkeypatch):
     with cache.lease(key(project="b")) as expired:
         assert expired is None
     assert cache.used_bytes == sum(e.bytes for e in cache.entries.values())
+
+
+def test_capture_invalidation_preserves_other_scopes_and_retires_leased_accounting():
+    cache = HistoricalReadCache(100_000)
+    populate(cache, key(), [row()])
+    populate(cache, key(revision=2), [row(1)])
+    populate(cache, key(project="b"), [row()])
+    populate(cache, key(owner="bob"), [row()])
+    other_bytes = cache.entries[key(project="b")].bytes
+    with cache.lease(key()) as leased:
+        assert leased is not None
+        cache.invalidate("a", "job")
+        assert list(cache.entries) == [key(project="b")]
+        assert cache.used_bytes == other_bytes + leased.bytes
+        with cache.lease(key()) as deleted:
+            assert deleted is None
+    assert cache.used_bytes == other_bytes
+
+
+def test_invalidated_pending_build_cannot_republish_deleted_rows():
+    cache = HistoricalReadCache(100_000)
+    builder = cache.builder(key())
+    builder.add(row())
+    cache.invalidate("a", "job")
+    builder.publish()
+    assert not cache.entries and cache.used_bytes == 0

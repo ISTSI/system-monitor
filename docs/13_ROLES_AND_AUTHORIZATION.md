@@ -20,6 +20,7 @@ The existing accepted features remain available to Inspectors: saved investigati
 | Edit shared topology/docs/flows/log paths/parsers/named views | Yes | No |
 | Import/export active project configuration; import Ansible | Yes | No |
 | Manage SSH profiles, credentials, allowed roots, host-key trust | Yes | No |
+| Approve/revoke current system target and log roots; test configured source access | Yes | No |
 | Test/edit a connection or parser configuration | Yes | No; normal collection reports its own access errors |
 | Change shared settings, global default theme, retention/limits | Yes, within deployment ceilings | No |
 | Create/disable users, assign roles, reset credentials, revoke sessions | Yes | No |
@@ -28,6 +29,17 @@ The existing accepted features remain available to Inspectors: saved investigati
 | Stop another user's job/live session for operational reasons | Yes, audited | No |
 | Change database bootstrap endpoint or keys from browser | No; server deployment action | No |
 | Modify target hosts, run commands, mount Docker socket | No | No |
+
+The user-requested **Additional security measures** option is an
+Administrator-only global shared setting, not an Inspector preference or a
+per-window active-system value. Its default is enabled. Enabled requires the
+existing manual source target/root confirmation for the current revision;
+disabled allows saved path/parser changes to be used without that extra
+confirmation. Inspectors retain normal collection access under the effective
+policy and never gain configuration, approval, credential or host-key write
+permissions. SSH host-key approval and valid project-bound credentials remain
+required in both modes. Turning the option on again requires a valid current
+source approval; turning it off does not manufacture one.
 
 `contracts/rbac-policy.json` defines stable action identifiers and ownership modes. It is not a production authorization implementation. Bind every API/service operation to one action. A route missing a permission declaration must fail tests rather than inherit permissive access.
 

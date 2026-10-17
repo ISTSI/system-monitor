@@ -32,6 +32,9 @@ Prefix all routes with `/api/v1`. Use same-origin HTTPS with server-side cookie 
 | `POST /credentials`, `PUT/DELETE /credentials/{id}` | Write-only SSH credential management | Administrator |
 | `POST /projects/{project_id}/connections/{id}/test` | Approved connection/access test | Administrator |
 | `POST /projects/{project_id}/connections/{id}/host-key/inspect`, `/host-key/approve` | Fingerprint inspection and explicit trust approval | Administrator |
+| `GET /projects/{project_id}/connections/{id}/source-access` | Safe configured-root/source approval status | Administrator |
+| `POST /projects/{project_id}/connections/{id}/source-access/approve`, `/source-access/revoke` | Explicit configuration/route/credential/trust-bound target and root approval | Administrator |
+| `POST /projects/{project_id}/connections/{id}/source-access/test` | Bounded configured path and archive-readability check; no replacement path payload | Administrator |
 | `POST /projects/{project_id}/parsers/test` | Bounded sample parsing, no executable definitions | Administrator |
 | `POST /projects/{project_id}/collections/plan`, `POST /projects/{project_id}/collections` | Preview/start collection against configured approved sources | Both; owner assigned server-side |
 | `GET /projects/{project_id}/jobs/{id}` | Progress/coverage/errors | Both, own |
@@ -54,6 +57,43 @@ Prefix all routes with `/api/v1`. Use same-origin HTTPS with server-side cookie 
 | `GET /health/live`, `GET /health/ready` | Minimal process/readiness; DB failure is 503 readiness | Public minimal or proxy-restricted |
 
 Do not implement a route that accepts an arbitrary shell command, filesystem path, URL or SSH hostname for execution. Operational routes take approved entity IDs. Config creation/editing is Administrator-authorized and has a preview/trust/target-approval boundary. Inspector collection requests take process IDs only, never a replacement host/path/credential/parser. A denied request must have zero side effects. Use 202 plus a job/session ID for long operations, 409 for revision conflicts, 422 for invalid payloads, 413 for limits, and a structured partial result for per-source failures.
+
+Stage 04 collection scope optionally accepts `transport: ssh|local_demo`. Omission
+uses SSH in production; only the deployment opt-in enables/defaults the labelled
+local demo. Plan and job `demo_mode` describes the actual transport. Source
+approval writes require expected configuration and approval revisions, and
+approval additionally requires `verified: true` with a bounded expiry duration.
+Every remote dispatch revalidates the current source-confirmation policy,
+credentials, host trust, login and configuration; retained historical queries
+need no SSH approval.
+
+Collection creation does not require a preceding `/collections/plan` request;
+`POST /collections` performs the same bounded planning and authorization itself.
+`DELETE /projects/{project_id}/investigations/{id}` deletes an owned, terminal
+historical collection and returns `{project_id, investigation_id,
+cache_cleanup_pending}`. Both roles
+can delete only their own resources. Active jobs return 409; missing resources,
+wrong-system references and another owner's collection return 404. Delete
+requires the normal CSRF protection, invalidates retained cursors/download grants
+and removes the collection's event/source records and managed captured files.
+Deletion is serialized with local queries/context/download reads. If final
+captured-file cleanup fails after the database commit, deletion still succeeds
+with `cache_cleanup_pending: true`; the UI removes the deleted collection and
+shows the cleanup warning. Deleting a retained collection never dispatches SSH
+work.
+
+The 17 October 2026 user-requested **Additional security measures** setting
+controls the separate manual target/root confirmation. When enabled (the
+default), the revision-bound, expiring approval above is required. When disabled,
+saved path/parser changes are available for subsequent requested operations
+without that confirmation. Credential bindings, credential expiry, explicit
+target/jump host-key trust, configured-root validation and permissions still
+apply. Saving configuration or importing data starts no connection. The
+source-access response reports `manual_confirmation_required`; its
+`approval.approved` indicates current eligibility under that policy, not a newly
+created approval record. Disabling the policy creates no approval row or expiry;
+reenabling it requires a valid approval for the current configuration. Policy
+changes invalidate pending guarded remote operations.
 
 ## Revisions, queries and errors
 
@@ -100,6 +140,13 @@ Record precise transitions in tests. Do not treat HTTP 200 with a text error str
 `/auth/session` returns only the current user's safe ID/name/role, preference revision/resolved mode and permitted action identifiers; no password hash, encrypted credentials or session verifier. An Inspector-visible project projection includes IDs, display names, documentation, geometry, data flows and approved display source/status information. It excludes connection usernames, credential references, jump routing, trust/approval material, database configuration and administrative policy. The full `project.schema.json` is an Administrator interchange contract, not an Inspector response model. Generate explicit separate Pydantic read/write models and schema tests; do not serialize ORM objects wholesale.
 
 Appearance PATCH input contains `expected_revision` and `theme_mode` only. Global defaults are changed through Administrator settings, not `/me/preferences`. Account role values are exactly `administrator` and `inspector`; account mutation inputs have explicit allowed fields and reject extra keys. Record user/settings/account writes and enforce revision/invariant constraints in MariaDB transactions. All owner fields in responses are server-derived; reject owner fields in create/update requests rather than trusting them.
+
+Administrator settings responses include the global boolean
+`additional_security_measures`. The revisioned, CSRF-protected settings PATCH
+accepts a strict boolean for that field; omission preserves the saved value.
+It is Administrator-only policy for every system, not a personal preference,
+project-import field or public bootstrap value. Record changes in the settings
+audit; stale revisions return 409.
 
 ## Appearance payloads
 

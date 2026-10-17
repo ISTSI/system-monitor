@@ -31,6 +31,7 @@ from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
 from inspector.history import NONTERMINAL, HistoryManager, build_history_router
 from inspector.security import issue_token, require_admin, token_hash
+from inspector.source_access import SourceAccess, build_source_access_router
 from inspector.ssh_access import SSHAccess, build_ssh_access_router
 from inspector.topology import build_topology_router, initialize_legacy_documents
 
@@ -199,8 +200,11 @@ def create_app(config: Config | None = None) -> FastAPI:
                             .where(HistorySource.status.in_(["queued", "collecting"]))
                             .values(status="partial", error_code="BACKEND_RESTART")
                         )
-                    app.state.history = HistoryManager(config, app.state.sessions, supervisor)
                     app.state.ssh_access = SSHAccess(config, app.state.sessions, supervisor)
+                    app.state.source_access = SourceAccess(app.state.ssh_access)
+                    app.state.history = HistoryManager(
+                        config, app.state.sessions, supervisor, app.state.source_access
+                    )
                     try:
                         yield
                     finally:
@@ -571,7 +575,10 @@ def create_app(config: Config | None = None) -> FastAPI:
         openapi_extra={"x-permission": "public.bootstrap"},
     )
     async def bootstrap(session: Session) -> dict:
-        return await foundation.bootstrap(session)
+        return {
+            **await foundation.bootstrap(session),
+            "historical_demo_enabled": config.local_history_demo,
+        }
 
     @app.get(
         "/api/v1/me/preferences",
@@ -665,6 +672,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.include_router(build_topology_router(transaction, authenticated, protected_write))
     app.include_router(build_history_router(transaction, authenticated, protected_write))
     app.include_router(build_ssh_access_router(transaction, authenticated, protected_write))
+    app.include_router(build_source_access_router(transaction, authenticated, protected_write))
     bundled = Path(__file__).parent / "web"
     frontend = (
         bundled

@@ -11,6 +11,13 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator
 
+SOURCE_SCAN_DEFAULTS = {
+    "max_source_files_per_collection": 1000,
+    "max_source_listing_entries": 10_000,
+    "max_source_listing_bytes": 4_194_304,
+    "max_source_probe_bytes": 33_554_432,
+}
+
 
 class ConfigurationError(ValueError):
     pass
@@ -220,7 +227,10 @@ def parse_config(
         default_theme_mode=data["bootstrap_settings"]["default_theme_mode"],
         config_upload_bytes=limits["config_upload_bytes"],
         cache_dir=data["deployment"]["cache_dir"],
-        history_limits={key: value for key, value in limits.items() if isinstance(value, int)},
+        history_limits={
+            **SOURCE_SCAN_DEFAULTS,
+            **{key: value for key, value in limits.items() if isinstance(value, int)},
+        },
         local_history_demo=env.get("SI_LOCAL_HISTORY_DEMO", "0") == "1",
         vault_key_file=data["deployment"]["vault_key_file"],
         ssh_allow_loopback=env.get("SI_SSH_ALLOW_LOOPBACK", "0") == "1",

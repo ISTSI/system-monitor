@@ -329,6 +329,26 @@
           "type": "integer",
           "minimum": 1
         },
+        "max_source_files_per_collection": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000
+        },
+        "max_source_listing_entries": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10000
+        },
+        "max_source_listing_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4194304
+        },
+        "max_source_probe_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 33554432
+        },
         "max_expanded_member_bytes": {
           "type": "integer",
           "minimum": 1

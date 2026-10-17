@@ -32,6 +32,21 @@ The initial transport uses direct read permissions, without sudo. Read permissio
 
 Approved targets and log roots are local Administrator approvals. Importing a config proposes them but cannot automatically activate a connection. Reject loopback/link-local/metadata targets by default unless a deployment administrator explicitly authorises a legitimate local test target; private LAN addresses are expected and are not categorically blocked. Resolve/validate destinations on connect and after changes, with explicit jump-target routing rather than arbitrary URL fetching.
 
+The explicit 17 October 2026 user request makes the separate per-revision
+target/root confirmation conditional on the global Administrator setting
+**Additional security measures** (`additional_security_measures`, default true).
+When true, the existing verified, expiring source approval is required. When
+false, saved configuration changes, including paths and parsers, are eligible
+for requested operations without that manual checkbox. This overrides the
+unconditional manual-source-approval rule above; imports still start no network
+operation, create no credential binding and grant no host-key trust. In either
+mode enforce valid bound credentials, credential expiry, explicit target/jump
+host-key trust, destination checks, configured-root/path validation, source
+limits, RBAC, ownership and CSRF. Never create a synthetic approval when the
+setting is off. Turning it back on requires a valid current approval. Include
+the effective setting in guarded remote-operation snapshots so a policy change
+cancels pending work rather than continuing under an outdated decision.
+
 Use SFTP path operations, not a shell string. Reject traversal/control characters and revalidate canonical paths/symlinks against approved roots. Symlinks are disabled by default; an explicit profile option may permit a resolved regular file only within approved roots, with race/continuity limitations exposed. A target account's filesystem permissions remain an essential boundary.
 
 Archive validation/streaming limits are in the engine contract. Generate local cache filenames independently of remote/member names. No `extractall`, `pickle`, `eval`, uploaded scripts, executable plugins or Jinja/lookup evaluation. The inventory importer accepts safe static data or canonical JSON output generated externally. Uploaded `ansible.cfg`, inventory plugins and executable inventory scripts are not run.

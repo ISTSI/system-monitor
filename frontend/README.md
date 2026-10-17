@@ -1,8 +1,20 @@
 # System Inspector web application
 
-React/TypeScript/Vite sources compile to local static assets served by FastAPI on the same HTTPS origin. No runtime npm, CDN, cloud account, fonts or Internet access is needed. The current vertical slice includes authentication, system catalogue, revisioned topology editing, account management, appearance and a virtualised historical viewer. Local fixture collection indexes real plain, ZIP and TAR.GZ events in MariaDB. Administrator SSH password storage, host-key approval and direct/single-jump connection tests are available through server details or Connections. Remote historical collection remains pending Stage 04 work.
+React/TypeScript/Vite sources compile to local static assets served by FastAPI on the same HTTPS origin. No runtime npm, CDN, cloud account, fonts or Internet access is needed. The current vertical slice includes authentication, system catalogue, revisioned topology editing, account management, appearance and a virtualised historical viewer. Local fixture collection indexes real plain, ZIP and TAR.GZ events in MariaDB. Administrator SSH password storage, host-key approval and direct/single-jump connection tests are available through server details or Connections. Stage 04 adds explicit system-scoped target/root approval, configured path checks and historical SSH/SFTP retrieval. Log history labels the actual SSH or explicitly enabled local-demo transport; live following remains Stage 05.
 
 The top bar contains Systems, Administrator-only Accounts, Settings for both roles, and Administrator-only Admin, followed by the synthetic-demo label when enabled and the account menu. Personal appearance is changed only in Settings; deployment settings remain Administrator-only. Admin (`/admin`) contains system creation, metadata editing, archival and restoration.
+
+Historical From/To inputs display `YYYY-MM-DD HH:mm:ss` in UTC. Type a value or
+use the adjacent calendar button to choose the date and time, including seconds.
+ISO timestamps remain accepted on paste; retained collections preserve exact
+stored bounds until edited. The From bound is inclusive and To is exclusive.
+
+**Collect sources** works directly; **Preview collection plan** is optional.
+The plan panel appears only after preview is requested. Finished and reopened
+collections automatically load Timestamped events. **Log entry** displays the
+line without its parsed timestamp prefix; **Context** retains the original.
+Both roles can delete their own finished collection with **Delete collection**
+and the confirmation dialog. Deletion removes that collection's retained data.
 
 An open system uses a compact header with the System action menu and system name on the left and the system selector on the right. The Administrator menu contains Add subsystem, Add server, Add process, Add flow, List connections, List Parsers, Import configuration, Export JSON and Export YAML. Undo and Redo sit beside Documented topology. The former workspace status strip and separate topology editing button bar are removed. Use ordinary system links and the browser's tab/window actions to open another page; there is no Open separately button. Each page retains its own system and workspace state.
 

@@ -558,3 +558,102 @@ test('server setup exposes SSH endpoints and saves a new profile atomically with
   expect(reused.config.servers).toHaveLength(2);
   expect(reused.config.servers.every(server => server.connection_id === profile.id)).toBe(true);
 });
+
+test('connection root edits explain dependent paths across shared servers and preserve valid sources', async ({ page }) => {
+  test.setTimeout(90000);
+  await login(page, 'administrator');
+  const origin = new URL(page.url()).origin;
+  const csrf = await page.request.get('/api/v1/auth/csrf');
+  const headers = { Origin: origin, 'X-CSRF-Token': (await csrf.json() as { csrf_token: string }).csrf_token };
+  const created = await page.request.post('/api/v1/projects', {
+    headers, data: { name: `Connection roots ${Date.now()}`, description: 'Synthetic shared-profile root validation.' },
+  });
+  expect(created.status()).toBe(201);
+  const id = (await created.json() as { project_id: string }).project_id;
+  const { config } = await readTopology(page, 'demo-foundation-b');
+  config.project = { ...config.project, id, name: 'Synthetic connection root validation', revision: 1 };
+  expect(config.servers).toHaveLength(2);
+  expect(config.processes).toHaveLength(2);
+  const profile = config.connections![0];
+  profile.allowed_log_roots = ['/var/log/demo', '/var/log/demo-other'];
+  config.servers.forEach(server => { server.connection_id = profile.id; });
+  const first = config.processes.find(process => process.server_id === config.servers[0].id)!;
+  const second = config.processes.find(process => process.server_id === config.servers[1].id)!;
+  first.log_source = { ...first.log_source!, active_path: '/var/log/demo/gateway.log', rotated_patterns: ['/var/log/demo/gateway.log.*'], archives: [{ path_pattern: '/var/log/demo/archive/*.zip', member_patterns: ['logs/*.log'] }] };
+  second.log_source = { ...second.log_source!, active_path: '/var/log/demo-other/processing.log', rotated_patterns: [], archives: [] };
+  const seeded = await page.request.put(`/api/v1/projects/${id}/topology`, { headers, data: { expected_revision: 1, config } });
+  expect(seeded.status()).toBe(200);
+  const baseline = await readTopology(page, id);
+  await page.goto(`/systems/${id}/topology`);
+  await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
+  await page.getByRole('button', { name: `Select server ${config.servers[0].name}`, exact: true }).click();
+  await page.locator('.process-details').getByRole('button', { name: 'Edit SSH connection', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Edit connection', exact: true });
+  const paths = dialog.getByRole('region', { name: 'Configured log paths using this profile', exact: true });
+  await expect(paths.getByRole('listitem')).toHaveCount(4);
+  for (const [process, server, kind, path] of [
+    [first, config.servers[0], 'Active log', first.log_source.active_path],
+    [first, config.servers[0], 'Rotated files', first.log_source.rotated_patterns[0]],
+    [first, config.servers[0], 'Archive', first.log_source.archives[0].path_pattern],
+    [second, config.servers[1], 'Active log', second.log_source.active_path],
+  ] as const) {
+    const row = paths.getByRole('listitem').filter({ has: page.getByText(path, { exact: true }) });
+    await expect(row).toContainText(`${process.name} on ${server.name}`);
+    await expect(row).toContainText(kind);
+  }
+  await expect(paths.getByText('Outside proposed roots', { exact: true })).toHaveCount(0);
+  const writes: string[] = [];
+  page.on('request', request => {
+    if (request.method() === 'PUT' && new URL(request.url()).pathname === `/api/v1/projects/${id}/topology`) writes.push(request.url());
+  });
+  const roots = dialog.getByLabel(/Proposed log roots/);
+  await dialog.getByLabel('SSH host', { exact: true }).fill('192.0.2.45');
+  await roots.fill('/tmp/log');
+  await expect(roots).toHaveAttribute('aria-invalid', 'true');
+  await expect(paths.getByText('Outside proposed roots', { exact: true })).toHaveCount(4);
+  await dialog.getByRole('button', { name: 'Save connection', exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('alert')).toContainText(/These log roots exclude 4 configured log paths/);
+  await expect(dialog.getByRole('alert')).toContainText('Keep the current roots and add the new root on another line');
+  expect(writes).toEqual([]);
+  expect(await readTopology(page, id)).toEqual(baseline);
+
+  for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
+    await page.setViewportSize(size);
+    for (const theme of ['light', 'dark'] as const) {
+      await setAppearance(page, theme);
+      await expect(dialog).toBeVisible();
+      await expect(roots).toHaveValue('/tmp/log');
+      await expect(roots).toHaveAttribute('aria-invalid', 'true');
+      await expect(dialog.getByLabel('SSH host', { exact: true })).toHaveValue('192.0.2.45');
+      await expect(dialog.getByRole('alert')).toContainText(/These log roots exclude 4 configured log paths/);
+      await expect(paths.getByText('Outside proposed roots', { exact: true })).toHaveCount(4);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
+      expect(await dialog.evaluate(element => element.scrollWidth > element.clientWidth)).toBe(false);
+      await roots.scrollIntoViewIfNeeded();
+      await capture(page, `administrator-${theme}-${size.width}x${size.height}-connection-roots-invalid`);
+      await paths.scrollIntoViewIfNeeded();
+      await capture(page, `administrator-${theme}-${size.width}x${size.height}-connection-roots-paths`);
+    }
+  }
+  expect(writes).toEqual([]);
+
+  await roots.fill('/var/log/demo');
+  await expect(roots).toHaveAttribute('aria-invalid', 'true');
+  await expect(paths.getByText('Outside proposed roots', { exact: true })).toHaveCount(1);
+  await expect(paths.getByRole('listitem').filter({ hasText: second.log_source.active_path })).toContainText('Outside proposed roots');
+  await dialog.getByRole('button', { name: 'Save connection', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText(/These log roots exclude 1 configured log path/);
+  expect(writes).toEqual([]);
+
+  await roots.fill('/var/log/demo\n/var/log/demo-other\n/tmp/log');
+  await expect(paths.getByText('Outside proposed roots', { exact: true })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Save connection', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const saved = await readTopology(page, id);
+  expect(writes).toHaveLength(1);
+  expect(saved.revision).toBe(baseline.revision + 1);
+  expect(saved.config.connections!.find(connection => connection.id === profile.id)).toMatchObject({ host: '192.0.2.45', allowed_log_roots: ['/var/log/demo', '/var/log/demo-other', '/tmp/log'] });
+  expect(saved.config.processes).toEqual(baseline.config.processes);
+  expect(saved.config.servers).toEqual(baseline.config.servers);
+});

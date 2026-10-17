@@ -149,10 +149,18 @@ async def table_snapshot(session: AsyncSession, model: Any, *order: Any) -> list
 
 
 async def original_state(session: AsyncSession) -> dict:
+    # Snapshot only columns present in Stage 01. The current ORM model also has
+    # columns introduced by later migrations and cannot query the old schema.
+    settings = await session.execute(
+        text(
+            "SELECT id, revision, branding, default_theme_mode "
+            "FROM application_settings ORDER BY id"
+        )
+    )
     return {
         "users": await table_snapshot(session, User, User.id),
         "preferences": await table_snapshot(session, UserPreference, UserPreference.user_id),
-        "settings": await table_snapshot(session, ApplicationSetting, ApplicationSetting.id),
+        "settings": copy.deepcopy([dict(row) for row in settings.mappings()]),
         "projects": await table_snapshot(session, Project, Project.id),
         "revisions": await table_snapshot(
             session, ProjectRevision, ProjectRevision.project_id, ProjectRevision.revision
@@ -189,13 +197,20 @@ async def seed_stage_one(config: Config) -> tuple[dict, dict[str, str]]:
                 [
                     UserPreference(user_id=admin.id, revision=5, theme_mode="light"),
                     UserPreference(user_id=inspector.id, revision=9, theme_mode="system"),
-                    ApplicationSetting(
-                        id=1,
-                        revision=4,
-                        branding="Retained Synthetic Inspector",
-                        default_theme_mode="light",
-                    ),
                 ]
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO application_settings "
+                    "(id, revision, branding, default_theme_mode) "
+                    "VALUES (:id, :revision, :branding, :default_theme_mode)"
+                ),
+                {
+                    "id": 1,
+                    "revision": 4,
+                    "branding": "Retained Synthetic Inspector",
+                    "default_theme_mode": "light",
+                },
             )
             now = time.time_ns() // 1000
             for label in ("A", "B"):
@@ -255,6 +270,8 @@ async def verify_upgraded(config: Config, before: dict, passwords: dict[str, str
             await check_schema(connection)
         async with sessions() as session:
             assert await session.scalar(select(func.count()).select_from(TopologyState)) == 0
+            settings = await session.get(ApplicationSetting, 1)
+            assert settings is not None and settings.additional_security_measures is True
         with tempfile.TemporaryDirectory(prefix="si-s2-upgrade-") as state_dir:
             app = create_app(replace(config, state_dir=state_dir))
             async with app.router.lifespan_context(app):
@@ -269,6 +286,8 @@ async def verify_upgraded(config: Config, before: dict, passwords: dict[str, str
                         "demos",
                     ):
                         assert after[key] == before[key]
+                    settings = await session.get(ApplicationSetting, 1)
+                    assert settings is not None and settings.additional_security_measures is True
                     expected_workspaces = copy.deepcopy(before["workspaces"])
                     for workspace in expected_workspaces:
                         workspace.update(state="detached", revision=workspace["revision"] + 1)
@@ -347,6 +366,7 @@ async def verify_upgraded(config: Config, before: dict, passwords: dict[str, str
             "scoped_counts": counts,
             "password_verification_preserved": True,
             "preferences_preserved": True,
+            "setting_default_preserved": True,
             "metadata_and_documentation_preserved": True,
         }
     finally:

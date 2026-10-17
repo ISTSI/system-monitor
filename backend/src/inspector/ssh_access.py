@@ -205,7 +205,11 @@ class SSHAccess:
         actor = await services.current_actor(session, actor)
         authorize(actor, action)
         # Recheck the actual login too: logout deletes it without changing auth_version.
-        login = await session.get(AuthSession, session_hash) if session_hash else None
+        login = (
+            await session.get(AuthSession, session_hash, populate_existing=True)
+            if session_hash
+            else None
+        )
         now = services.utc_now_us()
         if (
             login is None
@@ -256,9 +260,15 @@ class SSHAccess:
         self, session: AsyncSession, project_id: str, profile: dict[str, Any]
     ) -> SSHCredential | None:
         binding = await session.get(
-            ProjectCredentialBinding, (project_id, profile["credential_ref"])
+            ProjectCredentialBinding,
+            (project_id, profile["credential_ref"]),
+            populate_existing=True,
         )
-        return await session.get(SSHCredential, binding.credential_id) if binding else None
+        return (
+            await session.get(SSHCredential, binding.credential_id, populate_existing=True)
+            if binding
+            else None
+        )
 
     async def _status(
         self,
@@ -334,6 +344,8 @@ class SSHAccess:
                     row.id, payload.password.get_secret_value(), row.key_version
                 )
                 row.revision += 1
+            # Explicit replacement renews an expired password record.
+            row.expires_us = None
             services.audit(
                 session,
                 actor,
@@ -360,7 +372,9 @@ class SSHAccess:
         versions: list[dict[str, Any]] = []
         for index, profile in enumerate(route):
             hop_route = route if index == 0 else [profile]
-            trust = await session.get(SSHHostTrust, (project_id, profile["id"]))
+            trust = await session.get(
+                SSHHostTrust, (project_id, profile["id"]), populate_existing=True
+            )
             valid = bool(trust and trust.approved and trust.route_digest == route_digest(hop_route))
             credential = await self._credential(session, project_id, profile)
             needs_auth = not inspect or index > 0
@@ -376,6 +390,17 @@ class SSHAccess:
                     "Save an SSH password for this connection before testing.",
                     409,
                 )
+            if (
+                needs_auth
+                and credential
+                and credential.expires_us is not None
+                and credential.expires_us <= services.utc_now_us()
+            ):
+                raise DomainError(
+                    "SSH_CREDENTIAL_EXPIRED",
+                    "The SSH credential expired; ask an Administrator to replace it.",
+                    410,
+                )
             endpoints.append(
                 ssh_transport.Endpoint(
                     host=profile["host"],
@@ -389,6 +414,7 @@ class SSHAccess:
                 dict(
                     credential_id=credential.id if credential else None,
                     credential_revision=credential.revision if credential else 0,
+                    credential_expires_us=credential.expires_us if credential else None,
                     trust_revision=trust.revision if trust else 0,
                 )
             )

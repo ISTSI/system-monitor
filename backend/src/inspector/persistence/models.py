@@ -104,6 +104,9 @@ class ApplicationSetting(Base):
         CheckConstraint(
             "default_theme_mode IN ('light', 'dark', 'system')", name="default_theme_mode"
         ),
+        CheckConstraint(
+            "additional_security_measures IN (0, 1)", name="additional_security_measures"
+        ),
         TABLE_OPTIONS,
     )
 
@@ -112,6 +115,9 @@ class ApplicationSetting(Base):
     branding: Mapped[str] = mapped_column(binary_text(128))
     default_theme_mode: Mapped[str] = mapped_column(
         VARCHAR(16, charset="ascii", collation="ascii_bin")
+    )
+    additional_security_measures: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=text("1")
     )
 
 
@@ -395,6 +401,7 @@ class SSHCredential(Base):
     key_version: Mapped[int] = mapped_column(Integer)
     nonce: Mapped[bytes] = mapped_column(VARBINARY(12))
     ciphertext: Mapped[bytes] = mapped_column(VARBINARY(1040))
+    expires_us: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
 
 class ProjectCredentialBinding(Base):
@@ -474,6 +481,46 @@ class SSHKeyInspection(Base):
     public_key: Mapped[str] = mapped_column(binary_text(8192))
     algorithm: Mapped[str] = mapped_column(binary_text(64))
     fingerprint: Mapped[str] = mapped_column(binary_text(128))
+    expires_us: Mapped[int] = mapped_column(BigInteger)
+
+
+class SourceAccessApproval(Base):
+    """Local approval, separate from imported configuration and SSH host-key trust."""
+
+    __tablename__ = "source_access_approvals"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "connection_id", name="pk_source_access_approvals"),
+        ForeignKeyConstraint(
+            ["project_id", "connection_id", "connection_kind"],
+            ["entity_identities.project_id", "entity_identities.id", "entity_identities.kind"],
+            name="fk_source_access_scoped_connection",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "config_revision"],
+            ["project_revisions.project_id", "project_revisions.revision"],
+            name="fk_source_access_config_revision",
+        ),
+        ForeignKeyConstraint(["approved_by_user_id"], ["users.id"], name="fk_source_access_actor"),
+        CheckConstraint("connection_kind = 'connection'", name="connection_kind"),
+        CheckConstraint("revision >= 1 AND config_revision >= 1", name="revisions"),
+        CheckConstraint("approved IN (0, 1)", name="approved"),
+        CheckConstraint("expires_us > approved_us", name="expiry"),
+        Index("ix_source_access_project_expiry", "project_id", "expires_us"),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    connection_id: Mapped[str] = mapped_column(identifier())
+    connection_kind: Mapped[str] = mapped_column(
+        VARCHAR(16, charset="ascii", collation="ascii_bin"), default="connection"
+    )
+    revision: Mapped[int] = mapped_column(Integer)
+    approved: Mapped[bool] = mapped_column(Boolean)
+    config_revision: Mapped[int] = mapped_column(Integer)
+    route_digest: Mapped[str] = mapped_column(verifier())
+    roots_digest: Mapped[str] = mapped_column(verifier())
+    network_signature: Mapped[str] = mapped_column(verifier())
+    approved_by_user_id: Mapped[str] = mapped_column(identifier())
+    approved_us: Mapped[int] = mapped_column(BigInteger)
     expires_us: Mapped[int] = mapped_column(BigInteger)
 
 

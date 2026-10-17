@@ -9,7 +9,7 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy.exc import OperationalError
 
-from inspector.database import Supervisor, local_state_lock
+from inspector.database import Supervisor, _release, local_state_lock
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[3]
 async def test_concurrent_supervisor_probes_serialize_and_loss_never_reacquires():
     class ProbeConnection:
         engine = SimpleNamespace(url=SimpleNamespace(database="inspector_test_unit"))
+        closed = invalidated = False
 
         def __init__(self):
             self.busy = False
@@ -28,6 +29,7 @@ async def test_concurrent_supervisor_probes_serialize_and_loss_never_reacquires(
             self.busy = True
             self.calls += 1
             await asyncio.sleep(0)
+            self.busy = False
             return self.owner
 
         async def commit(self):
@@ -43,6 +45,143 @@ async def test_concurrent_supervisor_probes_serialize_and_loss_never_reacquires(
     calls = connection.calls
     assert not await supervisor.healthy()
     assert connection.calls == calls
+
+
+async def test_cancelled_probe_waiter_does_not_cancel_shared_driver_operation():
+    started, release, driver_cancelled = asyncio.Event(), asyncio.Event(), asyncio.Event()
+
+    class ProbeConnection:
+        engine = SimpleNamespace(url=SimpleNamespace(database="inspector_test_unit"))
+        closed = invalidated = False
+        calls = commits = 0
+
+        async def scalar(self, statement, *_args):
+            self.calls += 1
+            if "IS_USED_LOCK" in str(statement):
+                started.set()
+                try:
+                    await release.wait()
+                except asyncio.CancelledError:
+                    self.invalidated = True
+                    driver_cancelled.set()
+                    raise
+            return 73
+
+        async def commit(self):
+            self.commits += 1
+
+    connection = ProbeConnection()
+    supervisor = Supervisor(connection)
+    supervisor.connection_id = 73
+    first = asyncio.create_task(supervisor.healthy())
+    await asyncio.wait_for(started.wait(), 1)
+    second = asyncio.create_task(supervisor.healthy())
+    first.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await first
+    release.set()
+    assert await asyncio.wait_for(second, 1)
+    assert not driver_cancelled.is_set()
+    assert connection.calls == 2 and connection.commits == 1
+    assert not supervisor.failed and not connection.invalidated
+    await supervisor.drain()
+    assert not await supervisor.healthy()  # Closing never starts another query.
+    assert connection.calls == 2
+
+
+async def test_probe_has_its_own_timeout_and_does_not_reconnect_after_failure(monkeypatch):
+    from inspector import database
+
+    monkeypatch.setattr(database, "_PROBE_TIMEOUT_SECONDS", 0.03)
+
+    class ProbeConnection:
+        engine = SimpleNamespace(url=SimpleNamespace(database="inspector_test_unit"))
+        closed = invalidated = False
+        calls = 0
+
+        async def scalar(self, *_args):
+            self.calls += 1
+            try:
+                await asyncio.Event().wait()
+            finally:
+                self.invalidated = True
+
+    connection = ProbeConnection()
+    supervisor = Supervisor(connection)
+    supervisor.connection_id = 73
+    assert not await asyncio.wait_for(supervisor.healthy(), 0.5)
+    assert supervisor.failed and connection.invalidated
+    assert not await supervisor.healthy()
+    assert connection.calls == 1
+    await supervisor.drain()
+    assert supervisor._probe_task.done()
+
+
+async def test_shutdown_drains_probe_after_its_request_was_cancelled():
+    started, release = asyncio.Event(), asyncio.Event()
+
+    class ProbeConnection:
+        engine = SimpleNamespace(url=SimpleNamespace(database="inspector_test_unit"))
+        closed = invalidated = False
+
+        async def scalar(self, *_args):
+            started.set()
+            await release.wait()
+            return 73
+
+        async def commit(self):
+            pass
+
+    supervisor = Supervisor(ProbeConnection())
+    supervisor.connection_id = 73
+    caller = asyncio.create_task(supervisor.healthy())
+    await asyncio.wait_for(started.wait(), 1)
+    caller.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await caller
+    closing = asyncio.create_task(supervisor.drain())
+    await asyncio.sleep(0)
+    assert not closing.done()
+    release.set()
+    await asyncio.wait_for(closing, 1)
+    assert supervisor._probe_task.done() and not supervisor.failed
+
+
+@pytest.mark.parametrize("invalidated,closed", [(True, False), (False, True)])
+async def test_invalidated_or_closed_lock_connection_is_never_queried_or_released(
+    invalidated, closed
+):
+    class Connection:
+        async def scalar(self, *_args):
+            pytest.fail("Lost dedicated connection was silently reconnected")
+
+    connection = Connection()
+    connection.invalidated, connection.closed = invalidated, closed
+    supervisor = Supervisor(connection)
+    supervisor.connection_id = 73
+    assert not await supervisor.healthy()
+    await _release(connection, "synthetic-supervisor-lock")
+
+
+async def test_changed_physical_connection_id_cannot_reuse_original_lock_owner():
+    class Connection:
+        engine = SimpleNamespace(url=SimpleNamespace(database="inspector_test_unit"))
+        closed = invalidated = False
+        calls = 0
+
+        async def scalar(self, statement, *_args):
+            self.calls += 1
+            return 73 if "IS_USED_LOCK" in str(statement) else 74
+
+        async def commit(self):
+            pass
+
+    connection = Connection()
+    supervisor = Supervisor(connection)
+    supervisor.connection_id = 73
+    assert not await supervisor.healthy()
+    assert supervisor.failed
+    assert not await supervisor.healthy() and connection.calls == 2
 
 
 def test_local_lock_excludes_second_process_handle_and_can_reopen(tmp_path):

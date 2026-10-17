@@ -12,7 +12,7 @@ separately control at the user's request. Browser coverage in
 `ssh.spec.ts` checks menu actions, themes, roles, manual new-tab navigation and
 same-context isolation. Actual results are recorded in `progress/STATUS.md`.
 
-Actual Stage 00–02 evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Authentication, appearance, scoped topology/configuration and independent browser workspaces have executable unit, MariaDB and browser coverage. SSH, historical/live logs, investigations, inventory import and the complete offline release remain later-stage gates. Passing a subset does not complete an entire acceptance target.
+Actual stage evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Authentication, appearance, scoped topology/configuration, independent browser workspaces, historical indexing and approved SSH collection have executable unit, MariaDB and browser coverage. Live following, full saved investigations, inventory import and the complete offline release remain later-stage gates. Passing a subset does not complete an entire acceptance target.
 
 The authorized temporary VM now supplies actual MariaDB evidence for part of R42/R44/R46/R48/R56: the initial migration, binary identities, owner/role/scope behavior, composite FK rejection, exact BIGINT values and named migration locks pass in `backend/tests/vm/test_vm_mariadb.py`. Those rollback-only checks also prove the supplied migration account is refused for serving. They do not replace restricted-runtime/API/browser or disposable-schema integration targets.
 
@@ -199,3 +199,85 @@ running local development schema was separately backed up before migration.
 See [current status](../progress/STATUS.md) for commands, failures corrected and
 unrun gates. This is a user-requested connection setup slice, not a passed full
 Stage 04 historical collection gate.
+
+## Stage 04 approved historical SSH collection - 17 October 2026
+
+| Requirements / targets | Implemented evidence | Limits |
+|---|---|---|
+| R13/R35, AT24/AT25/AT46 | Existing vault/trust checks plus explicit project/configuration/route/credential/root-bound source approvals in [source access](../backend/src/inspector/source_access.py); independent target/jump keys, expired credentials and revoked approvals tested | Imports never approve targets. Automatic vault-key rotation/recovery and real distribution interoperability remain release work |
+| R14/R15/R19, AT26/AT27 | [SFTP tests](../backend/tests/unit/test_ssh_files.py) cover configured candidates, canonical roots, regular files, permissions, traversal/symlink rejection and byte/count/time limits. Inspector setup requests fail; normal approved collection succeeds | Dedicated read credentials remain required. Symlinks are rejected. No general command, arbitrary test path or target-write API |
+| R16/R17/R18/R24/R31/R32, AT28 | [Real SSH/MariaDB tests](../backend/tests/integration/test_history_ssh.py) download all 21 golden sources directly and through one jump and compare all query results, exact UTC/time/filter behavior, raw text, checksums and byte/member provenance with Stage 03; 38 events and one unknown-timestamp diagnostic | Captures receive new snapshot/event identities; existing fixture event IDs are unchanged. Snapshot probes cannot prove every transient or same-size rewrite |
+| R13/R27/R39/R40/R47-R49, AT29 | One compatible route is reused per guarded operation and closed on completion/failure/cancel; no cross-system/owner/job connection sharing. [Approval tests](../backend/tests/integration/test_source_access.py) cover revocation/expiry/configuration changes and final reservation freshness | Live subscriptions, reconnect and reference-counted live capture reuse remain Stage 05 |
+| R42/R44/R48 | Migration 0007 adds scoped approval composite FKs and nullable credential expiry. Populated 0002-to-0007 migration preserves systems/accounts/preferences/immutable entities. [Supervisor cancellation tests](../backend/tests/integration/test_supervisor_cancellation.py) verify cancellation preserves the dedicated lock connection and lost ownership fails closed | No production migration or full backup-restore/release qualification |
+| R34/R38/R47-R49 | [SSH browser suite](../frontend/e2e/ssh.spec.ts) exercises real configured-path checks and Inspector jump-host history with two pages in one browser context; both themes/sizes preserve workspace, capture and filters | No live monitoring or latency claim |
+
+The full Linux MariaDB integration run passed **89 tests** without skips. Linux
+unit tests passed **463**, with one Windows-only DACL skip. Four SSH browser
+scenarios passed. Commands, final regression results, preserved failures and
+qualification limits are recorded in [STATUS.md](../progress/STATUS.md).
+
+The 17 October connection-editor follow-up adds R13/R15/R19 setup diagnostics:
+active, rotated and archive paths are labelled with their process/server across
+a shared profile, and excluded paths explain how to add a root before moving
+sources. The focused browser case in `frontend/e2e/topology.spec.ts` verifies
+rejected saves leave configuration/revision unchanged, component boundaries,
+successful root additions preserving sources, and both-theme draft/layout
+behaviour. Backend validation and explicit source approvals remain enforced;
+the running app bundle was not replaced by this source-only follow-up.
+
+The UTC-control follow-up covers R17/R18/R34/R49 in
+`frontend/e2e/historical.spec.ts`: second-precision space-separated entry and
+date/time selectors send canonical UTC bounds even from a non-UTC browser;
+invalid dates/times and empty or reversed intervals stop before dispatch.
+Selector edits invalidate collection plans; Cancel and Escape preserve bounds,
+and duplicated same-context pages retain independent drafts. Existing precise
+API bounds retain microseconds until edited. Both-theme desktop and narrow
+picker captures exercise the actual component with the real local API. See
+`progress/STATUS.md` for executed checks and results.
+
+## Conditional manual source confirmation - 17 October 2026
+
+The explicit user request adds the global Administrator setting **Additional
+security measures** (`additional_security_measures`, default true). It makes
+the Stage 04 manual target/root confirmation conditional: when disabled, saved
+path/parser changes are usable automatically for subsequently requested
+operations. This updates the manual-confirmation rule; explicit target/jump
+host-key trust, valid project-bound credentials, root/path validation, imports
+without network activity, ownership, RBAC and CSRF continue to apply.
+
+| Requirements / targets | Implementation and focused coverage | Limits |
+|---|---|---|
+| R13/R19/R35/R39, AT24/AT25/AT26/AT73 | Revisioned Administrator-only settings and source snapshots enforce the saved policy; [security setting tests](../backend/tests/integration/test_security_setting.py) cover both modes, source revisions, credential/trust failures, policy-change cancellation and denied writes | Disabled mode creates no synthetic approval; reenabling requires a valid current source approval |
+| R42/R44 | Migration `0008_security_setting` persists a checked non-null boolean with an enabled default, retaining existing settings/approval rows | No production migration or release qualification is implied |
+| R34/R38/R47-R49 | Settings and configured-source access controls explain the effective policy and preserve page-local system/filter state; `frontend/e2e/ssh.spec.ts` covers persisted off/on modes, actual path/parser edits, SSH collection and mandatory host-key verification | Browser coverage and actual command results are recorded in [STATUS.md](../progress/STATUS.md); live monitoring remains Stage 05 |
+
+## Active-log append correction - 17 October 2026
+
+R16/R19/R31/R32 and AT26/AT27/AT28 use the active-file snapshot contract in
+document 04: freeze a byte boundary and collect that prefix while later entries
+continue arriving. [SFTP regression tests](../backend/tests/unit/test_ssh_files.py)
+cover appends before open, during planning, between connections, during path
+checks and every copy/probe read, including empty files and unterminated lines.
+They verify unchanged byte budgets and checksums, and retained rejection of
+truncation, replacement after observed growth, prefix rewrites, equal-size
+metadata changes and changes to rotated/archive sources.
+[SSH/MariaDB integration](../backend/tests/integration/test_history_ssh.py)
+checks exact cached bytes, indexed rows, offsets and coverage across simultaneous
+appends, then retrieves the new rows with another collection while the earlier
+investigation stays unchanged. This does not add live following or prove absence
+of every transient rewrite/path race; the SFTP v3 limitations remain explicit.
+Actual verification results are recorded in [STATUS.md](../progress/STATUS.md).
+
+The table identifies the scope and test locations, not a passing test report.
+
+## Historical collection usability and deletion - 17 October 2026
+
+| Requirements | Implementation and behavior coverage |
+|---|---|
+| R16/R17/R18/R19/R24/R31/R34 | HistoricalViewer loads Timestamped events after collection and retained reopen, supports direct collection with optional preview, and displays Log entry without its parsed timestamp. Original raw text remains in Context and literal predicates. `frontend/e2e/historical.spec.ts` asserts the golden event IDs, exact remaining text, raw Context and absence of preview requests on direct collection. |
+| R35/R41/R42/R44/R48 | Owned terminal deletion removes scoped SQL events/sources/cursors/grants/job, invalidates cached snapshots, safely removes captured files, and audits the action. `backend/tests/integration/test_history_deletion.py` tests both roles, ownership/project/CSRF denial, active jobs, stale resources, concurrent queries/downloads, cancellation, rollback and cleanup failures against MariaDB. Unit tests cover cache accounting, filesystem boundaries and rollback-error restoration. |
+| R38/R47/R49 | Browser tests use two pages in one context/account/system: deleting one collection preserves the other's workspace, results and filters. Light/dark captures cover the Log entry table and deletion confirmation. |
+
+Actual commands, test results, initial corrected failures, prepared artifact and
+installation status are recorded in [STATUS.md](../progress/STATUS.md). This
+follow-up stays within historical collection; Stage 05 remains the next gate.

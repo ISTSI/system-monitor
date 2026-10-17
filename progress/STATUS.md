@@ -1,6 +1,11 @@
 # Implementation status — version 3
 
-**Current: Stage 03 historical investigation is complete at its review gate.** The local Stage 03 Docker app is running at `https://localhost:8445`. Stage 02 data and the service on port 8444 are retained. The Stage 01 app on port 8443 remains stopped at the user's request; its VM database, SSH tunnel and data are preserved. Exact results and remaining later-stage gates are recorded below. Earlier blockers remain as dated history.
+**Current: Stage 04 approved SSH historical collection is complete at its review gate.** The updated local Docker app is running at `https://localhost:8445`, with the existing Stage 03 data preserved. Stage 02 data and the service on port 8444 are retained. The Stage 01 app on port 8443 remains stopped at the user's request; its VM database, SSH tunnel and data are preserved. Stage 05 has not started. Exact results and later-stage gates are recorded below; earlier blockers remain as dated history.
+
+The UTC controls and **Additional security measures** follow-ups are now
+installed on 8445 at schema `0008_security_setting`. The checkbox defaults to
+checked; installation preserved the existing data and security policy. See the
+installation entry at the end of this file.
 
 **Starting point: specification package only.** The dated entries preserve the inspection and implementation history.
 
@@ -10,7 +15,7 @@
 | 01 — Foundation | Complete | 127 units, 23 VM API tests, 19 Linux DB tests, 10 browser cases, container lifecycle |
 | 02 — Topology/config | Complete; review gate | 253 units, 30 Linux DB tests, populated upgrade, topology/foundation browser tests; evidence below |
 | 03 — Historical log engine | Complete; review gate | 321 units, 47 Linux DB tests, 17 browser cases, populated upgrade; 20 MiB ingest 9.72 s and warmed query p95 at most 240.307 ms on the recorded development machine |
-| 04 — SSH and collection | Not started | — |
+| 04 — SSH and collection | Complete; review gate | 463 Linux units (one platform skip), 89 real Linux DB/SSH tests, 23 distinct browser cases, populated upgrade and inspected UI; final evidence below |
 | 05 — Live monitoring | Not started | — |
 | 06 — Investigation tools | Not started | — |
 | 07 — Import and UI completion | Not started | — |
@@ -19,7 +24,7 @@
 For each stage record changed files, requirement IDs, exact commands run, actual results, unexecuted checks and reasons, unresolved blockers and the next stage. Keep a distinction between a unit-tested adapter, an SSH integration tested in a local fixture environment, and a deployment verified on a real target OS.
 
 
-Package handoff baseline: version 3 supplied scope/import contracts and synthetic helpers. Implementation evidence is in the dated entries below. Live-controller/SSH and production Ansible import remain later stages.
+Package handoff baseline: version 3 supplied scope/import contracts and synthetic helpers. Implementation evidence is in the dated entries below. Live controllers/following and Ansible import remain later stages.
 
 ## 17 October 2026 — upgrade inspection and first backend review slice
 
@@ -782,3 +787,587 @@ collection, later live/investigation/import work and release qualification remai
 pending. No production host, real SSH credential, infrastructure deployment or
 remote repository operation was used. Next stage scope remains
 `prompts/04_SSH_COLLECTION.md`.
+
+## 17 October 2026 - Stage 04: approved SSH historical collection
+
+Completed the remaining scope of `prompts/04_SSH_COLLECTION.md`. The earlier SSH
+setup slice now feeds real historical collection through direct or one-jump
+AsyncSSH/SFTP. Stage 05 live following has not started.
+
+Administrators separately approve the configured target and log roots after
+password/key setup. Imports never create this approval. It binds project,
+connection, complete configuration revision, route, roots and credential/trust
+versions, with a default 24-hour expiry (bounded API: 60 seconds to 30 days).
+Nullable credential expiry fails closed; existing credentials retain their prior
+indefinite lifetime. Inspectors can collect approved configured process sources
+and see safe diagnostics, while approval and path-test endpoints reject them.
+
+Remote planning validates canonical roots, regular files and configured
+active/rotated/archive patterns; symlinks and expansion/traversal are rejected.
+Listing entries/bytes, probe traffic, candidates, download/expanded bytes, time
+and cancellation are bounded. One guarded operation reuses a pinned route for
+compatible sources and closes both hops afterward. Jobs, systems and owners do
+not share connections or mutable filters. There is no shell, target exec/write,
+discovery or agent capability. Captures use generated private project/job cache
+paths and the unchanged Stage 03 parser/archive/query engine.
+
+Both direct and single-jump collection download all 21 golden sources, index 38
+events including one unknown timestamp, and reproduce every golden query's raw
+text, UTC/filter results, checksum and member/byte provenance. New immutable
+captures get new snapshot/event identities; original fixture IDs are unchanged.
+Observed append/truncate/replace changes reject a snapshot. Missing configured
+sources remain visible in reopened partial coverage. Parser budget failures
+retain accurate actual byte/checksum counts and stop further downloads.
+
+Dispatch and reservation check current project/owner/login/configuration/access
+state. A 250-ms watcher with bounded fresh persistence checks cancels work after
+revocation/expiry, account logout, changed credentials/configuration or DB/
+supervisor failure. Cancellation of a health-check caller now preserves the
+shared, independently bounded supervisor probe; actual lost ownership still
+fails closed without reconnection/reacquisition.
+
+Changed files/groups:
+
+- Backend: new `ssh_files.py`, `history_remote.py`, `source_access.py`; updated
+  `history.py`, SSH transport/access, app/bootstrap, config, database supervisor,
+  security and persistence models. New additive migration `0007_source_access`.
+- Contracts: optional deployment scan ceilings in authoritative/bundled schemas,
+  Administrator source actions in RBAC, generated OpenAPI and frontend types.
+- UI: ConnectionAccess configured-root approval/revoke and path checks;
+  HistoricalViewer actual SSH/demo transport selection/labels and scoped errors;
+  App/SystemWorkspace bootstrap wiring and shared semantic styles.
+- Tests: real SSH file unit cases, approval/config/supervisor unit cases, new
+  MariaDB SSH history/source approval/supervisor cancellation suites, explicit
+  demo selection in the existing history fixture helper, preserved package role
+  assertions for the new Admin actions, and expanded SSH browser tests.
+- Tooling/docs: `scripts/verify_stage4.py` with guarded Linux unit verification;
+  README/backend/frontend setup, docs 05/12/13/14, toolchain/slice plan and status.
+  Exact changed paths are retained in Stage 04 verification evidence.
+
+Commands actually run (host Python below means
+`backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `python scripts/verify_stage4.py integration --suffix s4_collect_final1017` | **89 passed in 120.46 s**, zero skips, real Linux MariaDB 11.8.9/Python 3.13.16. Includes actual direct/jump golden retrieval, cancellation/revocation during a blocked SFTP read, missing-source coverage, exhausted parse-budget accounting, scoped FKs, retained-ORM reservation races and supervisor cancellation/loss. |
+| `python scripts/verify_stage4.py linux-unit` | **463 passed, one Windows-only DACL test skipped**, 15.42 s. Linux symlink and POSIX vault-permission tests ran. Only a disposable non-root runner was started, with read-only authoritative test mounts. |
+| `python scripts/verify_stage4.py checks` | Windows units **462 passed, two skipped**, 13.77 s (POSIX vault permissions and privileged filesystem symlink creation; covered on Linux). Package suite **128 run, 119 passed, nine POSIX permission skips**. Package/schema/deployment validators, Ruff, mypy, frontend lint/types, generated API check and bundled build passed. One formatting follow-up was required as recorded below. |
+| `python -m pytest backend/tests/unit/test_history_workers.py backend/tests/unit/test_history_event_storage.py backend/tests/unit/test_history_cache.py -q` | Final history follow-up **6 passed in 0.86 s** after the coverage/accounting fixes. Final Ruff check/format and `cd backend; .venv/Scripts/python.exe -m mypy src` pass (93 formatted files, 26 typed sources). |
+| `python scripts/verify_stage4.py upgrade --suffix s2_upgrade_s4c1017` | PASS: populated **0002-to-0007** upgrade retains two systems/accounts, password verification, preferences, immutable topology IDs, metadata/documentation; old workspaces detach. Fresh disposable schema only. |
+| `python scripts/frontend.py e2e ssh.spec.ts --max-failures=1` | **4 passed in 38.0 s** against local HTTPS/MariaDB and real synthetic SSH endpoints. Administrator approval/path checks, Inspector forged-request denials, jump history, golden results and independent same-context captures/filters. Report `browser-stage4-ssh-final.json`. |
+| `python scripts/frontend.py e2e foundation.spec.ts topology.spec.ts historical.spec.ts --max-failures=2` | **19 passed in 2.3 min**. One real 429 triggered the existing bounded 60-second login retry; application limits were preserved. Report `browser-stage4-regressions-final.json`. |
+| `python scripts/frontend.py e2e ssh.spec.ts -g 'approved jump-host' --max-failures=1` | Final backend restart smoke **1 passed in 27.6 s**, including both themes/sizes and retained same-context filter/capture identity. Report `browser-stage4-final-smoke.json`. Together the main suites cover **23 distinct scenarios**. |
+| `python .cache/stage4_final_evidence.py` | Final format and real frontend/wheel/sdist build PASS. **41 packaged files** match current source/migrations/contracts/web; served index and two assets match the frontend build. TLS certificate/hostname-verified readiness HTTP **200** at `https://localhost:8445`. |
+| `python scripts/audit_local_secrets.py --output verification/stage-4/collection-secret-audit.json` | PASS: **78 distinct private values** compared with **1,254 source/log/wheel entries**, including 46 wheel members; zero matches. Values/ciphertexts were not printed. |
+| `git diff --check` | PASS; existing LF/CRLF conversion advisories remain non-fatal. |
+
+Browser commands used `INSPECTOR_E2E_URL=https://localhost:8445`, protected
+`.secrets/stage3-browser/accounts.json`, and report stage `stage-4`. The new
+approval/path/results captures cover both themes at 1280x720 and 1920x1080;
+representative light/dark source approval, path results and Inspector history
+views were visually inspected. The final screenshot manifest retains 113 PNGs.
+No page errors or external browser requests occurred in the SSH scenarios.
+
+Local lifecycle: stopped only `runtime-stage3`, preserved its existing schema,
+accounts, systems, credentials and raw cache, and made a protected consistent
+`mariadb-dump --single-transaction --quick --hex-blob` pre-0007 database backup
+of **1,312,942,582 bytes** with recorded checksum. Applied migration 0007 with
+separate migration credentials, then restored **https://localhost:8445** and
+finally restarted it to load the completed fixes. No reset/reseed was used.
+Stage 02, the retained VM/tunnel and production infrastructure were untouched.
+Evidence: `verification/stage-4/pre-0007-backup.json`,
+`checks/collection-artifacts.json`, `collection-readiness.json`,
+`collection-screenshots.json`, final integration/upgrade logs and browser reports.
+
+Corrections/failures retained in verification: first integration run passed
+77/78 but the legacy local-fixture helper did not explicitly select the newly
+available transport; the original disabled-demo assertion was retained and the
+helper now requests `local_demo`. The next run's actual revocation case exposed
+the interrupted supervisor probe; the shared shielded probe and dedicated real
+MariaDB cancellation tests fix it. A later 87-case run passed, then final review
+added the two coverage/accounting regressions; the final 89-case run passes.
+Initial Linux unit mounts lacked two authoritative test inputs, corrected with
+read-only per-run mounts. The package's exact Administrator action set was
+extended with the two new actions while preserving every Inspector denial.
+The checks aggregate retained one format failure; final formatting/build
+follow-ups pass in `checks/final-followups.json`. No contract, fixture oracle,
+authorization, host-key check or deployment quota was relaxed.
+
+Tested SSH capabilities: locked AsyncSSH **2.24.1**, independently pinned
+Ed25519 target/jump keys, password-only auth, SFTP protocol **3**, direct and one
+`direct-tcpip` jump, read-only open/read/close/stat/realpath/listing operations.
+Synthetic servers recorded no target exec or file mutations. SFTP v3 cannot
+prove absence of every transient path race/same-size rewrite; dedicated account
+permissions and visible snapshot/coverage limitations remain essential. No
+CentOS/Rocky OpenSSH distribution or real user/production SSH host was contacted.
+Full vault-key rotation/recovery, complete backup restore, app-image/offline
+release and Ubuntu/Rocky platform qualification remain Stage 08 work. Live
+following/reconnect/WS/seed buffers remain Stage 05, full saved analysis Stage 06
+and Ansible uploads/reconciliation Stage 07.
+
+**Stage 04 completion gate passed. Stop for review before Stage 05.** Next scope:
+`prompts/05_LIVE_MONITORING.md`. No remaining Stage 04 blocker.
+
+### 17 October 2026 — Connection log-root diagnostics
+
+Investigated the reported Edit connection error when replacing synthetic
+`/var/log/demo` roots with `/tmp/log`. Whole-project validation correctly rejects
+existing active/rotation/archive paths outside a proposed root before any SSH
+attempt. A shared profile covers every referring server, not just the selected
+server. The editor previously surfaced only the backend's indexed field error.
+
+Changed files:
+
+- `frontend/src/components/TopologyEditor.tsx`: list configured paths with
+  process/server labels, mark exclusions as roots change, and prevent a known
+  invalid save with instructions to retain old roots while adding/moving to a
+  new root. Corrected the obsolete demo-only historical-collection notice.
+- `frontend/src/styles.css`: bounded path list and semantic warning styles.
+- `frontend/e2e/topology.spec.ts`: shared-profile active/rotation/archive,
+  directory-prefix, no-write rejection and successful root-addition regression;
+  draft persistence and overflow checks in both themes and desktop sizes.
+- `backend/README.md`, `docs/12_TRACEABILITY.md`, `progress/STATUS.md`: setup
+  sequence, requirement evidence and actual results.
+
+Commands actually run, with Python = `backend/.venv/Scripts/python.exe`:
+
+| Command/check | Actual result |
+|---|---|
+| `python -m pytest backend/tests/unit/test_project_config.py -q` | **124 passed in 1.10 s**. Existing backend containment/security validation remains unchanged. |
+| `python scripts/frontend.py lint` | PASS, including the final browser test changes. |
+| `python scripts/frontend.py typecheck` | PASS. |
+| `python scripts/frontend.py build` | PASS, TypeScript and Vite. Existing bundle-size advisory remains. |
+| `python scripts/frontend.py e2e connection-roots-local.spec.ts -g 'connection root edits\|server setup exposes SSH' --max-failures=1` | **2 passed in 13.3 s** against the existing local HTTPS API/MariaDB. Report `verification/stage-4/browser-connection-roots.json`. A temporary wrapper served the freshly built local index/assets through Playwright routing; API requests and persistence were real. Wrapper removed after verification. |
+| `git diff --check` | PASS; pre-existing LF/CRLF advisories remain. |
+
+Browser settings were `INSPECTOR_E2E_URL=https://localhost:8445`, protected
+`INSPECTOR_E2E_ACCOUNTS=../.secrets/stage3-browser/accounts.json`, report stage
+`stage-4`, report name `browser-connection-roots`. Initial sandbox execution
+failed with EPERM opening the protected synthetic account fixture; the approved
+elevated retry passed without printing credentials. Eight screenshots cover the
+invalid root field/dependent paths in light/dark at 1280x720 and 1920x1080;
+representative dark/light views were visually inspected. No browser page errors.
+
+The running application bundle, user configuration and approvals were not
+replaced. Tests changed only newly created synthetic systems and test-account
+appearance/session state; no target SSH connection was attempted. The UI source
+fix requires the normal application rebuild before appearing in the running
+app. No new stage was started; Stage 05 remains the next review-gated scope.
+
+### 17 October 2026 - UTC date/time entry follow-up
+
+Historical From/To fields now display `YYYY-MM-DD HH:mm:ss`, with a calendar
+button for a date/time selector. The selector includes seconds, explicitly uses
+UTC and supports Apply, Cancel and Escape. Typed values and picker selections
+use the existing inclusive From/exclusive To interval. Invalid calendar values
+and non-increasing bounds prevent dispatch. Edits invalidate collection plans.
+Existing precise API bounds remain exact until edited; API/event storage still
+uses microseconds. Page drafts and selectors stay local to each workspace.
+
+Changed files:
+
+- `frontend/src/utcDateTime.ts`: exact API normalization, UTC calendar validation
+  and second-precision display/defaults.
+- `frontend/src/components/UtcDateTimeInput.tsx`: labelled text input, calendar
+  button and native date/time controls in a keyboard-accessible modal.
+- `frontend/src/components/HistoricalViewer.tsx`, `frontend/src/styles.css`:
+  integrated both bounds and semantic theme/layout styles.
+- `frontend/e2e/historical.spec.ts`, `frontend/e2e/ui.ts`: browser behavior and
+  keyboard regressions plus opt-in context-wide built-asset routing against the
+  real local API without replacing the running app's bundle.
+- `frontend/README.md`, `docs/06_UI_UX.md`, `docs/12_TRACEABILITY.md` and this
+  status entry: input format, behavior and requirement evidence.
+
+Commands actually run, with Python = `backend/.venv/Scripts/python.exe`:
+
+| Command/check | Actual result |
+|---|---|
+| `python scripts/frontend.py lint` | PASS, including browser helper/test changes. |
+| `python scripts/frontend.py typecheck` | PASS. |
+| `python scripts/frontend.py build` | PASS, TypeScript and Vite; existing bundle-size advisory remains. |
+| `python scripts/frontend.py e2e historical.spec.ts --max-failures=1` | **4 passed in 38.9 s** against the local HTTPS API/MariaDB using the freshly rebuilt frontend assets. Includes golden historical results, reopening, same-context scope checks, keyboard traversal, UTC selectors and precision preservation/reset. Report `verification/stage-4/browser-utc-controls.json`. |
+| `git diff --check` | PASS; existing LF/CRLF advisories remain non-fatal. |
+
+Browser settings: `INSPECTOR_E2E_URL=https://localhost:8445`, protected synthetic
+`INSPECTOR_E2E_ACCOUNTS=../.secrets/stage3-browser/accounts.json`, report stage
+`stage-4`, report name `browser-utc-controls`, and
+`INSPECTOR_E2E_LOCAL_ASSETS=1`. The new selector case runs with browser timezone
+`America/Los_Angeles`; submitted bounds remain UTC. Ten new screenshots cover
+the fields/picker in light/dark at 1280x720 and 1920x1080, plus picker layout at
+640x720. Representative light fields, dark desktop picker and light narrow
+picker were visually inspected. No browser page errors occurred.
+
+The first sandbox browser attempt failed with EPERM reading the protected
+synthetic-account fixture; the approved narrow retry ran successfully without
+printing credentials. The first targeted test run exposed a test assumption:
+filling a field with its identical displayed value does not produce a React
+change. The test now makes an actual edit and additionally checks that Cancel
+preserves fractional bounds while explicit picker Apply resets them to whole
+seconds. The corrected targeted run passed **2/2 in 9.5 s**; the final four-case
+run above includes those checks. Final lint/types/build also pass.
+
+The running app's bundle was not replaced; the normal application rebuild is
+required for these changes to appear there. No deployment, database migration
+or new stage is part of this follow-up; Stage 05 remains the next review-gated
+scope. No remaining follow-up blocker.
+
+## 17 October 2026 — Conditional Administrator source confirmation
+
+Implemented the requested global **Settings → Additional security measures**
+checkbox. It defaults to checked, preserving existing behavior. When checked,
+the current configuration needs the existing explicit, expiring target/root
+approval. When unchecked and saved, configured path/parser changes are usable
+automatically without another source-confirmation checkbox or approval record.
+The backend enforces the setting; Inspectors cannot change it. SSH host keys,
+project-bound credentials, root/path validation, ownership and CSRF remain
+required. Saving configuration starts no remote work. Policy changes invalidate
+guarded remote operations, and reenabling requires a valid current approval.
+
+Changed files for this follow-up:
+
+- `backend/src/inspector/foundation.py`, `persistence/models.py`,
+  `database.py`, and `backend/migrations/versions/0008_security_setting.py`:
+  revisioned persisted boolean, strict input validation, omitted-field
+  compatibility and additive MariaDB migration with checked default true.
+- `backend/src/inspector/source_access.py`: enforce the current setting during
+  preparation, reservation and watched operations; return effective eligibility
+  and `manual_confirmation_required` without fabricating approval rows.
+- `frontend/src/components/Management.tsx`, `ConnectionAccess.tsx`,
+  `TopologyEditor.tsx`: Administrator checkbox and conditional confirmation UI;
+  refresh source readiness after host-key revocation.
+- `frontend/src/components/Common.tsx`: unique dialog heading IDs for reliable
+  accessible names when switching from the parser list to its editor.
+- `backend/openapi.json`, `frontend/src/api/schema.d.ts`: regenerated contracts.
+- `backend/tests/integration/test_security_setting.py`,
+  `backend/tests/migrations/verify_populated_upgrade.py`,
+  `frontend/e2e/ssh.spec.ts`: policy persistence/validation/permissions, actual
+  automatic SSH collection, changed paths/parsers/roots, preserved host-key and
+  credential checks, reenabling, expiry, cancellation and upgrade preservation.
+- `backend/README.md`, docs 03/05/06/07/12/13/14 and this status: operating behavior,
+  user-requested manual-confirmation override and traceability.
+
+Commands actually run, with Python = `backend/.venv/Scripts/python.exe`:
+
+| Command/check | Actual result |
+|---|---|
+| `python -m pytest backend/tests/unit -q` | **462 passed, 2 skipped** in 12.03 s on Windows. The POSIX permission contract applies to Linux; synthetic symlink creation is denied by Windows (`WinError 1314`, required privilege absent). Both checks pass in the Linux suite below. |
+| `python scripts/verify_stage4.py linux-unit` | **463 passed, 1 skipped** in 15.44 s in the local Linux image; only the Windows DACL test is skipped. |
+| `python scripts/verify_stage4.py integration --suffix s4_security_1017a` | **98 passed** in 128.56 s against fresh local MariaDB and synthetic direct/jump SSH. Includes all 9 new policy cases. Evidence `verification/stage-4/s4_security_1017a.log`. |
+| `python scripts/verify_stage4.py upgrade --suffix s2_upgrade_sec1017a` | PASS from populated `0002_foundation_preferences` to `0008_security_setting`; existing settings/accounts/two systems preserved; `setting_default_preserved: true`. |
+| `python -m unittest discover -s tests/package -q` | PASS, 128 tests run with 9 POSIX shell/permission skips on Windows. |
+| `python -m ruff check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts` | PASS. |
+| `python -m ruff format --check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts` | PASS, 95 files formatted. |
+| `.venv/Scripts/python.exe -m mypy src` from `backend` | PASS, 26 source files. |
+| `python scripts/frontend.py lint`, `typecheck`, `build`, `api:check` | PASS; existing Vite bundle-size advisory remains. |
+| `python scripts/frontend.py e2e ssh.spec.ts --max-failures=1` with the isolated browser settings below | **5 passed** in 110.5 s. Covers the new setting and actual direct/jump SSH, Inspector restrictions, two pages in one browser context, and mandatory fingerprint verification. Report `verification/stage-4/browser-security-setting.json`. |
+| `python scripts/frontend.py e2e ssh.spec.ts -g 'Additional security measures' --max-failures=1` | **1 passed** in 16.4 s in the focused run before the full suite. |
+| `python tools/validate_schemas.py`, `tools/validate_package.py`, `tools/validate_deployment_examples.py` | PASS; package/schema/template scope only. |
+| `git diff --check` | PASS; existing LF/CRLF advisories are non-fatal. |
+
+Browser verification uses a separate disposable schema
+`inspector_test_s3_web_sec1017a` and temporary service at
+`https://localhost:8446`, prepared/migrated/seeded/started through the ignored
+`.state/security-setting-browser/runner.py`. It uses protected synthetic account
+and SSH fixtures only. The existing apps on 8444/8445 and their schemas were not
+migrated or restarted. Fresh built assets are routed within the test browser
+context using `INSPECTOR_E2E_LOCAL_ASSETS=1`.
+
+The final browser environment used `INSPECTOR_E2E_URL=https://localhost:8446`,
+protected synthetic `INSPECTOR_E2E_ACCOUNTS=../.secrets/stage3-browser/accounts.json`,
+report stage `stage-4` and report name `browser-security-setting`. Four new
+1280x720 screenshots cover Settings and automatic source access in both themes;
+all four were visually inspected. The full suite also retains the desktop
+direct/jump and multi-page coverage. No browser page errors or external requests
+occurred. The temporary app was stopped after verification with
+`python .state/security-setting-browser/runner.py stop`; test data is retained.
+
+The initial browser attempt loaded the older bundled frontend. After enabling
+built-asset routing, follow-up failures identified an unavailable diagram-only
+test selector, reused dialog-title IDs and a populated textarea label selector
+during parser editing. Tests now select the explorer and exact accessible
+textbox, and dialogs use unique React IDs. Repeated suite execution also reached
+the real SSH ceiling of 10 checks per account per minute; test helpers retain
+that ceiling and retry once after 60 seconds only on an actual 429. Early standalone
+OpenAPI CLI generation lacked deployment configuration and an initial mypy
+invocation used the repository root; both were corrected using an explicit
+synthetic example configuration and the documented backend working directory.
+A supplemental diff check with `core.autocrlf=false` interpreted existing CRLF
+line endings as trailing whitespace; the repository-configured
+`git diff --check` was rerun and passed. No line-ending conversion was applied.
+
+The application requires the rebuilt bundle/backend and migration
+`0008_security_setting` before this appears in the existing running app.
+Stage 05 remains the next separately authorized review-gated scope.
+
+## 17 October 2026 — Install settings and UTC-control updates locally
+
+The user explicitly requested completing installation after the implementation
+and isolated verification above. Updated only the existing app at
+**https://localhost:8445** and its verified local MariaDB schema from
+`0007_source_access` to `0008_security_setting`. No new stage was started.
+
+Stopped only `runtime-stage3`, made a consistent compressed
+`mariadb-dump --single-transaction --quick --hex-blob` backup, and backed up the
+raw cache, prior application bundle/distributions and deployment files. The
+protected backup is `.secrets/stage4-ssh/pre-0008-security-setting/`; the SQL
+gzip is **194,541,110 bytes**, with SHA256
+`2ccfd2fe900a0d9f0390a24c22519ce46b41fe132fb46218c51bc125f5f72202`.
+Cache backup includes **898 files / 230,858,663 bytes**. The existing vault key
+was preserved separately and its private checksum checked without printing it.
+The migration ran with the existing separate migration credentials.
+
+Inspection found that 8444 shares the repository's backend/web folder. Built
+the current frontend, backend wheel and sdist into the isolated artifact
+`.state/stage4-ssh/installed-0008/backend` and changed only the `runtime-stage3`
+backend bind mount to this artifact. Its application source matches the current
+checkout; **42 packaged files** match the built wheel. The wheel SHA256 is
+`9488f7d9c9dea808d4e6d49dc62ca86ef61a9711ee99b6ebffcb160faf0a9f78`.
+The original shared web bundle was preserved, and 8444 remained running and
+HTTPS-ready throughout. Existing accounts, topology, settings and cache were
+not reset or reseeded. The installed snapshot is required for future restarts;
+future code updates need a fresh artifact, not just a service restart.
+
+Commands actually run, using `backend/.venv/Scripts/python.exe` as Python:
+
+| Command/check | Actual result |
+|---|---|
+| `python .cache/install_security_setting.py backup` | PASS: schema guard, app-only stop, private consistent SQL/cache/artifact backups and checksums. |
+| `python .cache/install_security_setting.py build` | PASS: pinned frontend build plus isolated Hatchling wheel/sdist; prior shared assets preserved. Existing Vite bundle-size advisory remains. |
+| `python scripts/stage3_local.py migrate` | PASS: additive migration 0008 on the authorized existing local schema. |
+| `python .cache/install_security_setting.py verify-migration` | PASS: **35 table row counts** and **33 unchanged-table checksums** preserved before restart, original settings unchanged, new boolean true, configuration and vault key unchanged. Only Alembic/version and the additive settings-column checksum differ as intended. |
+| `python .cache/install_security_setting.py start` | PASS: updated 8445 app restarted, using the isolated artifact and existing secrets. |
+| `python .cache/install_security_setting.py verify` | PASS: certificate/hostname-verified HTTPS readiness **200**, schema 0008, all 35 table counts preserved, 30 stable-table checksums preserved through startup, all cache file bytes/hashes preserved, two served assets match the build, 42 packaged files match, and 8444 remains ready with its prior assets. Startup may detach workspaces and mark unfinished collection state interrupted as documented. |
+| `.toolchains/node-v24.22.0-win-x64/node.exe .cache/verify_security_setting_install.mjs` | PASS: actual served assets, Administrator checkbox checked and API true, Inspector personal-only Settings/API403, no configuration writes, external requests or page errors. Separate fresh browser contexts were closed without account-wide logout; existing user browser sessions were not revoked. |
+
+Evidence: `verification/stage-4/pre-0008-security-setting-backup.json`,
+`security-setting-installed-migration.json`, `security-setting-installation.json`,
+the two `security-setting-install-*-build.log` files, and
+`security-setting-install-browser.json` / `.png`. The actual installed Settings
+dialog was visually inspected. Build/install/smoke helpers live in ignored
+`.cache/`; the generated installation artifact and private backups are also
+ignored. Updated `backend/README.md` and this status with the installed revision,
+artifact location and restart behavior.
+
+Installation is complete with **Additional security measures checked**. Uncheck
+and save in Administrator Settings to permit automatic path/parser changes.
+The retained Stage 02 app, VM/tunnel, SSH fixture identities and production
+hosts were not changed. Stage 05 remains the next separately authorized scope.
+
+## 17 October 2026 - Historical retrieval tolerates active-log appends
+
+Corrected the reported `SOURCE_CHANGED` / "The log source changed while it was
+planned" error when a configured active log receives new entries. The collector
+previously compared mutable size/mtime/ctime as an immutable whole-file identity
+at planning, path checks and collection. Active logs now freeze the initial
+planned byte boundary and probe/copy that prefix while allowing later growth.
+Appends do not change the planned byte budget or invalidate successful capture.
+Later entries are available to a subsequent collection; existing investigations
+retain their original bytes, events, offsets and checksums.
+
+Observed truncation, replacement, ownership/permission changes, equal-size
+metadata changes and captured-prefix rewrites still fail. Successive path/handle
+observations must not shrink, including replacement after previously observed
+growth. Rotated files and archives retain strict immutable validation. Bounded
+SFTP probes cannot prove absence of every transient or middle-of-file rewrite
+combined with growth; existing documented SFTP v3 limitations remain applicable.
+
+Changed files for this follow-up:
+
+- `backend/src/inspector/ssh_files.py`: append-compatible active metadata checks,
+  fixed-boundary probes/fingerprints and latest-observation validation across
+  planning, configured-path checks and copying. Existing stored candidate shape
+  and fingerprint inputs remain compatible.
+- `backend/tests/unit/test_ssh_files.py`: append races before open, during plan,
+  between connections, during path checks and every collection/probe read;
+  empty/small/large/unterminated sources; exact checksums/budgets; rewrite and
+  observed-growth/replacement regressions; immutable plain/ZIP/TAR.GZ failures.
+- `backend/tests/integration/test_history_ssh.py`: real synthetic SSH plus MariaDB
+  regression appending during preview, between preview/create, during create
+  planning and body copy. Checks exact cache/index bytes and a later collection
+  containing new entries while the prior investigation remains unchanged.
+- `backend/README.md`, `docs/12_TRACEABILITY.md` and this entry: corrected
+  operating behavior, requirement evidence and actual verification.
+
+Commands actually run, with Python = `backend/.venv/Scripts/python.exe`:
+
+| Command/check | Actual result |
+|---|---|
+| `python -m pytest backend/tests/unit/test_ssh_files.py -q` | Final focused run: **62 passed, 1 skipped in 3.88 s**. The skipped test requires Windows symlink privilege, `WinError 1314`. |
+| `python -m pytest backend/tests/unit -q` | Final full run: **492 passed, 2 skipped in 14.04 s**. POSIX permission check and Windows-denied synthetic symlink creation. |
+| Linux `local_mariadb.compose('run', '--rm', '--no-deps', 'integration', 'python', '-m', 'pytest', 'tests/unit/test_ssh_files.py', '-q', '-p', 'no:cacheprovider')` via `python -c` | **63 passed in 2.91 s** using the current checkout's read-only backend mount in the existing local Linux runner. Includes actual POSIX replacement/symlink behavior. No application or schema changes. |
+| `python scripts/verify_stage4.py integration --suffix s4_append_1017a` | **99 passed in 130.53 s** against fresh disposable `inspector_test_s4_append_1017a`, with synthetic direct/single-jump SSH. Evidence `verification/stage-4/s4_append_1017a.log` and command JSON. |
+| `python -m ruff check --config backend/pyproject.toml backend/src/inspector/ssh_files.py backend/tests/unit/test_ssh_files.py backend/tests/integration/test_history_ssh.py` | PASS. |
+| `python -m ruff format --check --config backend/pyproject.toml backend/src/inspector/ssh_files.py backend/tests/unit/test_ssh_files.py backend/tests/integration/test_history_ssh.py` | PASS, 3 files formatted. Initial formatting differences were corrected before the final run. |
+| `.venv/Scripts/python.exe -m mypy src` from `backend` | PASS, 26 source files. |
+| `python .cache/prepare_active_append.py` | PASS: isolated Hatchling wheel/sdist at `.state/stage4-ssh/active-append-fix/backend`. All 33 packaged source/asset files checked against wheel; the installed frontend bundle is preserved byte-for-byte. Only `ssh_files.py` differs among backend modules from the prior installed artifact. Wheel SHA256 `e77f42f40fd528c185a861e0e4121e75b8b7323d927b51e33b6e98ab08d3bdbc`. Evidence `verification/stage-4/active-append-package.json` and build log. |
+| `git diff --check` | PASS; existing LF/CRLF advisories remain non-fatal. |
+
+The first sandbox integration attempt could not access local Docker through its
+protected configuration and failed before provisioning. The approved elevated
+retry completed the isolated integration run successfully. Linux Docker checks
+also used the approved elevated path. No credentials were printed. Peer review
+found no remaining blocking issue.
+
+No UI, API shape, dependency or database-schema change is required, so browser
+tests, frontend builds and migration tests were not repeated for this backend
+fix. Implementation and testing left the existing local apps and target hosts
+unchanged. The user then explicitly authorized installing the prepared fix in
+the local 8445 app; that completed installation is recorded below. Stage 05
+remains the next separate review gate.
+
+### Authorized local installation of the active-log append fix
+
+Installed the prepared artifact at
+`.state/stage4-ssh/active-append-fix/backend` into **https://localhost:8445** by
+changing only the `runtime-stage3` backend bind mount and restarting that
+service. No migration, dependency install, target SSH connection or frontend
+rebuild was needed. Normal restarts continue to use `scripts/stage4_local.py up`.
+The prior `.state/stage4-ssh/installed-0008/backend` artifact is retained.
+
+Before the switch, stopped only that backend and made a consistent protected
+database dump, raw-cache archive and previous-backend/deployment backup under
+`.secrets/stage4-ssh/pre-active-append-fix/`. The SQL gzip is **194,541,979 bytes**
+with SHA256 `fed97383885478d4d1c4aadfb376ad93111f2cafcae1df46c43f8388d12d75c4`.
+The cache backup contains **898 files / 230,858,663 bytes**. The vault key and
+application configuration remain unchanged.
+
+Commands actually run:
+
+| Command/check | Actual result |
+|---|---|
+| `python .cache/install_active_append.py` | Completed the consistent backup and switched/restarted the backend. Post-start verification hit Windows `PermissionError` traversing Linux-owned cache directories; the helper restored and started the previous backend automatically. No data permissions were changed. |
+| One-file cache-access diagnostic via `python -c` | Confirmed Windows `WinError 5` on a generated private cache path, before reading log bytes. |
+| `python .cache/install_active_append.py retry` | PASS using the completed backup and verifying cache hashes inside the Linux container under its existing UID. Installed wheel SHA256 `e77f42f40fd528c185a861e0e4121e75b8b7323d927b51e33b6e98ab08d3bdbc`; serving module SHA256 `49a714c58b795fcf967d931dfb9dae53aa25e7596b22c8a6b47061b75dfc8d4c`. |
+| Installation preservation/readiness checks | PASS: certificate/hostname-verified HTTPS readiness **200**, actual imported module matches the tested artifact, schema remains `0008_security_setting`, **28 stable table counts/checksums** and all **898 original cache file byte counts/hashes** preserved. Settings, users/preferences, topology, credentials/trust, indexed events, vault and deployment application configuration remain unchanged. Startup/workspace/job/auth/query activity tables are deliberately excluded from stable checks. |
+| Other local app and frontend checks | PASS: 8445 serves the preserved installed frontend; 8444 remains HTTPS-ready with its original served index. No shared bundle was replaced. |
+
+Evidence: `verification/stage-4/active-append-install-backup.json` and
+`active-append-installation.json`. Installation used the approved elevated
+Docker/protected-fixture path without printing credentials. The Windows cache
+verification issue was resolved by reading under the Linux UID; application
+cache permissions stayed private. The final retry succeeded with no remaining
+installation blocker. No new stage was started.
+
+## 17 October 2026 - Automatic historical results, optional preview and deletion
+
+Implemented the requested historical-viewer follow-up without starting Stage 05:
+
+- Finished collections and retained collection opens automatically query and
+  display **Timestamped events**. Per-page selection, filters and stale-response
+  guards remain independent, including duplicated same-system pages.
+- **Log entry** replaces **Original text** and removes only the exact parsed
+  timestamp prefix, preserving all other characters. Unknown timestamps keep
+  their original text. Context and literal filtering still use the full line.
+- **Collect sources** works without Preview. A collection-plan panel appears
+  only after an explicit preview request and invalidates with changed scope.
+- **Delete collection** confirms the system and collection ID, and deletes only
+  the current owner's terminal collection. Both roles have this personal-data
+  action; active jobs return 409. Events, sources, cursors, download grants,
+  cached snapshots and captured files are removed. Other collections survive.
+  Capture guards serialize deletion with queries/context and bounded download
+  chunks. Staging restores bytes on SQL rollback, including rollback cleanup
+  failure, and request cancellation waits for the delete to finish safely.
+- A final captured-file unlink failure returns a committed deletion with
+  `cache_cleanup_pending: true` and a visible dismissible warning. Detached
+  private bytes require operational cleanup; no automatic retry scheduler is
+  claimed in this historical slice.
+
+Changed files for this follow-up:
+
+- `backend/src/inspector/history.py`, `history_cache.py`, new
+  `history_retention.py`, and `security.py`: scoped deletion, guards, safe file
+  lifecycle, read-cache invalidation and owner permission.
+- `backend/tests/integration/test_history_deletion.py`,
+  `backend/tests/unit/test_history_retention.py`, `test_history_cache.py` and
+  `test_security.py`: persistence, authorization, concurrency and file boundaries.
+- `frontend/src/components/HistoricalViewer.tsx`, `SystemWorkspace.tsx`,
+  `frontend/src/styles.css`: automatic query, direct collection, Log entry,
+  deletion confirmation/navigation and cleanup notices.
+- `frontend/e2e/historical.spec.ts`, `ssh.spec.ts`: automatic/direct collection,
+  exact Log entry/Context, delete confirmation and same-context page isolation.
+- `backend/openapi.json`, `frontend/src/api/schema.d.ts`: generated DELETE
+  operation and `HistoricalDeleteResponse` (including cleanup status).
+- `backend/README.md`, `frontend/README.md`, `docs/05_API_AND_WEBSOCKET.md`,
+  `docs/06_UI_UX.md`, `docs/12_TRACEABILITY.md`, `docs/14_MARIADB.md`, this entry.
+
+Commands actually run, Python = `backend/.venv/Scripts/python.exe` unless stated:
+
+| Command/check | Actual result |
+|---|---|
+| `python -m pytest backend/tests/unit -q` | Final **500 passed, 3 skipped in 13.71 s**. Skips: POSIX-only permission behavior, Windows-denied SSH symlink creation, and the new POSIX real-symlink retention test. Windows reparse-point rejection is tested separately. |
+| `python .cache/collection_browser_check.py linux-unit` | **23 passed in 2.92 s** in the existing Linux runner: retention/cache/security tests, including actual POSIX symlinks and rollback-error restoration. |
+| `python scripts/verify_stage4.py integration --suffix s4_coll_ui_1017` | **105 passed, 1 failed in 160.40 s** in fresh disposable MariaDB. Failure was the new cleanup-failure test's final test-only manual cleanup passing a string cache root instead of `Path`; all application deletion assertions passed. The source test was corrected and retained failure evidence was preserved. |
+| `python .cache/verify_collection_deletion.py` | Final **20 passed in 41.77 s** in new `inspector_test_s4_coll_del_1017b`: every deletion test plus all historical query/context/cursor/ownership regressions. Includes corrected cleanup-failure test and latest rollback restoration. Log/command JSON: `verification/stage-4/s4_coll_del_1017b*`. The prior full run also passed the real direct/single-jump SSH cases. |
+| `python scripts/frontend.py e2e historical.spec.ts` with `INSPECTOR_E2E_URL=https://localhost:8446`, `INSPECTOR_E2E_LOCAL_ASSETS=1` and protected synthetic accounts | **5 passed in 45.9 s**. Real API/MariaDB/plain/ZIP/TAR fixture collection, literal queries, Context/download, direct collection, automatic load/reopen, confirmed deletion, same-context different/same-system isolation and UTC controls. Report `verification/stage-4/collection-ui-browser.json`. Initial focused run caught missing implemented-action permission (403); added the owner permission and reran successfully. |
+| Manual inspection of browser screenshots via image viewer | PASS: light Log entry/results and dark deletion dialog; browser captures exercise both themes and existing 1280x720/1920x1080 layouts. Captures are under `verification/stage-4/screenshots/`. |
+| `python scripts/frontend.py lint`, `typecheck`, `build`, `api:check` | PASS. Final Vite build: 195 modules. Existing >500 kB minified chunk advisory remains. |
+| `python -m ruff check --config backend/pyproject.toml backend/src backend/tests`; corresponding `ruff format --check` | PASS, **68 files formatted**. |
+| `.venv/Scripts/python.exe -m mypy src` from `backend` | PASS, **27 source files**. |
+| `python -m unittest discover -s tests/package -q` | **128 tests run, 9 skipped**, no failures. Package skips retain their existing conditional prerequisites. |
+| `INSPECTOR_CONFIG_FILE=examples/deployment-policy.example.yaml python -m inspector.cli openapi --output backend/openapi.json`; `python scripts/frontend.py api:generate` | PASS, followed by generated API drift check. Initial OpenAPI invocation without a deployment config failed safely and was corrected with the example file. |
+| `python .cache/prepare_collection_ui.py` | PASS: isolated wheel/sdist and exact frontend assets prepared at `.state/stage4-ssh/collection-ui/backend`. **34 packaged files** checked against wheel; SHA256 `5ebbe363cc104d300fed3002f261366d05f0d2b764064b765ce99485b31a8e09`. Evidence `verification/stage-4/collection-ui-package.json`. |
+| `git diff --check` | PASS; existing LF/CRLF notices are non-fatal. |
+
+Browser setup used new isolated `inspector_test_s3_web_cui_1017`, fresh file-only
+synthetic accounts/TLS and a temporary app at **https://localhost:8446**. Its
+helper commands were `prepare`, `migrate`, `seed`, `start`, `restart`,
+`linux-unit`, and finally `stop` in `.cache/collection_browser_check.py`.
+Sandbox Docker access was denied; approved elevated commands accessed only
+the local daemon/test fixtures. No secret values were printed. The existing
+8444/8445 services, database/cache and installed bundles were not replaced.
+
+No schema/dependency change is required. At the end of source verification,
+8445 remained on `.state/stage4-ssh/active-append-fix/backend` awaiting explicit
+installation authorization. The subsequent authorized installation is below.
+The SSH browser suite was adapted but not rerun: this new browser fixture has
+no SSH vault/trust setup, while the full Linux integration run exercised the
+real synthetic direct/single-jump collector. No production target, credential,
+remote file or infrastructure was contacted or changed. Stage 05 remains next.
+
+### Authorized local installation of the collection-viewer update
+
+The user explicitly authorized deployment. Installed the previously tested
+artifact `.state/stage4-ssh/collection-ui/backend` at **https://localhost:8445**
+by changing only the `runtime-stage3` backend bind mount and restarting that
+service with `--no-deps`. No migration, rebuild, dependency installation,
+configuration/credential change or target SSH connection was required.
+Normal restarts continue to use `scripts/stage4_local.py up`.
+
+Before the switch, stopped only that backend and made consistent protected
+database/raw-cache backups plus the exact prior Compose/application files and
+backend artifact under `.secrets/stage4-ssh/pre-collection-ui/`. Database dump:
+**194,590,817 bytes**, SHA256
+`8d1db97abc0a35692a117cfa4d9f9109dfdd6b2b47362977ef202a763aaade4d`.
+Raw cache: **900 files / 230,869,839 bytes**; archive SHA256
+`3eb6cb0596c579c951c033438d665e0876114bad963924e643c21e27ea91c24d`.
+The previous active-append-fix artifact and all older backups remain intact.
+Installation was independently reviewed before execution; exact Compose-byte
+rollback was available if any installation check failed. No rollback was needed.
+
+Commands actually run:
+
+| Command/check | Actual result |
+|---|---|
+| `backend/.venv/Scripts/python.exe -m py_compile .cache/install_collection_ui.py` | PASS. |
+| `backend/.venv/Scripts/python.exe .cache/install_collection_ui.py` | PASS: complete backup, guarded mount switch, successful restart and preservation checks. Wheel SHA256 remains `5ebbe363cc104d300fed3002f261366d05f0d2b764064b765ce99485b31a8e09`. All 34 packaged source/assets matched the prepared wheel before switching. |
+| HTTPS/backend verification | PASS: certificate/hostname-verified readiness 200, all **3 served frontend assets** match the tested hashes, imported history/cache/retention/security modules match the artifact, and the collection DELETE operation is present. Schema remains `0008_security_setting`. |
+| Database/cache/configuration preservation | PASS: **28 stable table counts/checksums**, including indexed `history_events`, and **all 900 cached file byte counts/hashes** preserved. Vault and application configuration hashes unchanged. Startup/job/workspace/auth/query activity tables are deliberately excluded from stable checks. Cache verification ran under the existing Linux serving UID; private ACLs stayed unchanged. |
+| Retained 8444 app | PASS: HTTPS readiness 200 and exact original index bytes preserved. No shared bundle or other service was replaced. |
+| `.toolchains/node-v24.22.0-win-x64/node.exe --check .cache/verify_collection_ui_install.mjs` | PASS (helper preparation). |
+| `.toolchains/node-v24.22.0-win-x64/node.exe .cache/verify_collection_ui_install.mjs` | PASS, **no limitations**: both synthetic Administrator/Inspector logins and settings roles, actual installed asset hashes, direct Collect sources button with hidden preview panel, automatic query of existing owned retained synthetic data, Log entry exact timestamp removal, original Context, and Delete collection control. No browser page errors or external requests. |
+| Installed Inspector screenshot inspected via image viewer | PASS: automatic timestamped rows, Log entry heading/text, direct collection controls and deletion action visible. Screenshots contain only recognized synthetic fixture lines and no password inputs. |
+
+Browser verification permitted only login, new smoke workspaces, retained-data
+query/context and best-effort detach. It created no collection/plan, deleted no
+collection, changed no configuration or theme, and performed no global logout.
+The user's other browser sessions remain independent. Only fresh smoke
+workspaces were detached. The existing app's runtime restart applied its normal
+workspace-detachment/interrupted-job behavior; no remote collection was started.
+
+Evidence: `verification/stage-4/collection-ui-install-backup.json`,
+`collection-ui-installation.json`, `collection-ui-install-browser.json`, and
+`collection-ui-install-administrator.png` / `collection-ui-install-inspector.png`.
+The local Docker/protected-fixture and browser commands used approved elevation;
+no secret values were printed. `backend/README.md` now identifies the installed
+artifact and recovery backup. Stage 05 remains the next separately authorized
+scope; there is no remaining installation blocker.

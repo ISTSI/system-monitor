@@ -4,6 +4,23 @@ import { ancestors, defaultGeometry, entityList, newId, type Config, type Connec
 import { ErrorNotice, Modal } from './Common';
 
 type Props = { kind: EntityKind; item?: EditEntity; config: Config; currentView?: View; defaults?: Partial<Flow>; onClose: () => void; onSave: (kind: EntityKind, item: EditEntity, connection?: Connection) => Promise<void> };
+const rootChangeHelp = 'Keep the current roots and add the new root on another line, save, then update the affected processes before removing an old root.';
+function configuredLogPaths(config: Config, connectionId: string) {
+  return config.processes.flatMap(process => {
+    const server = config.servers.find(server => server.id === process.server_id && server.connection_id === connectionId);
+    const source = process.log_source;
+    if (!server || !source) return [];
+    return [
+      { kind: 'Active log', path: source.active_path },
+      ...source.rotated_patterns.map(path => ({ kind: 'Rotated files', path })),
+      ...source.archives.map(archive => ({ kind: 'Archive', path: archive.path_pattern })),
+    ].map(path => ({ ...path, processId: process.id, processName: process.name, serverName: server.name }));
+  });
+}
+function belowLogRoots(path: string, roots: string[]) {
+  return roots.some(root => path.startsWith(root.replace(/\/+$/, '') + '/'));
+}
+
 export default function TopologyEditor({ kind, item, config, currentView, defaults, onClose, onSave }: Props) {
   const [id] = useState(() => item?.id ?? newId(kind));
   const [busy, setBusy] = useState(false);
@@ -38,7 +55,12 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
         case 'server': value = { ...documented, subsystem_id: server?.subsystem_id ?? text(data, 'subsystem_id'), connection_id: addedConnection?.id ?? connectionId }; break;
         case 'process': value = { ...documented, server_id: process?.server_id ?? text(data, 'server_id'), pcs_resource_name: text(data, 'pcs_resource_name') || null,
           log_source: { active_path: text(data, 'active_path'), rotated_patterns: list(data, 'rotated_patterns'), archives: JSON.parse(text(data, 'archives') || '[]') as NonNullable<Process['log_source']>['archives'], parser_id: text(data, 'parser_id'), encoding: text(data, 'encoding'), allow_symlink: data.has('allow_symlink') } }; break;
-        case 'connection': value = { ...base, ...connectionFields() }; break;
+        case 'connection': {
+          const fields = connectionFields();
+          const excluded = configuredLogPaths(config, base.id).filter(source => !belowLogRoots(source.path, fields.allowed_log_roots));
+          if (excluded.length) throw new Error(`These log roots exclude ${excluded.length} configured log ${excluded.length === 1 ? 'path' : 'paths'}. ${rootChangeHelp}`);
+          value = { ...base, ...fields }; break;
+        }
         case 'parser': value = { ...base, timestamp: timestampKind === 'iso8601_prefix' ? { kind: 'iso8601_prefix', naive_timezone: 'UTC' } : { kind: 'fixed_width', width: Number(data.get('width')), format: text(data, 'format'), naive_timezone: 'UTC' }, correlation_markers: JSON.parse(text(data, 'correlation_markers') || '[]') as Parser['correlation_markers'] }; break;
         case 'flow': value = { ...base, source_process_id: text(data, 'source_process_id'), target_process_id: text(data, 'target_process_id'), protocol: text(data, 'protocol'), description: String(data.get('description') ?? '') }; break;
         case 'view': {
@@ -67,7 +89,7 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
       <label className="checkbox-label"><input type="checkbox" name="allow_symlink" defaultChecked={process?.log_source?.allow_symlink ?? false} />Allow resolved regular-file symlinks within approved roots</label>
     </>}
     {kind === 'connection' && <ConnectionFields config={config} connection={connection} />}
-    {['server', 'connection'].includes(kind) && <p className="notice">After saving, use Password & connection test to store the SSH password and verify access. Historical log collection still uses the synthetic local demo.</p>}
+    {['server', 'connection'].includes(kind) && <p className="notice">After saving, use Password & connection test to store the SSH password and verify the host key. Confirm the target and log roots when Additional security measures is enabled in Settings.</p>}
     {kind === 'parser' && <>
       <label>Timestamp strategy<select name="timestamp_kind" value={timestampKind} onChange={event => setTimestampKind(event.target.value as Parser['timestamp']['kind'])}><option value="iso8601_prefix">ISO 8601 prefix (UTC)</option><option value="fixed_width">Fixed width (UTC)</option></select></label>
       {timestampKind === 'fixed_width' && <div className="form-grid"><label>Timestamp width<input type="number" name="width" defaultValue={parser?.timestamp.kind === 'fixed_width' ? parser.timestamp.width : 23} min={1} max={64} required /></label><label>Timestamp format<input name="format" defaultValue={parser?.timestamp.kind === 'fixed_width' ? parser.timestamp.format : '%Y-%m-%d %H:%M:%S,%f'} required /></label></div>}
@@ -84,13 +106,22 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
 
 function ConnectionFields({ config, connection }: { config: Config; connection?: Connection }) {
   const [credentialReference] = useState(() => `credential-${crypto.randomUUID()}`);
+  const [logRoots, setLogRoots] = useState(connection?.allowed_log_roots.join('\n') ?? '/var/log/application');
+  const roots = logRoots.split('\n').map(root => root.trim()).filter(Boolean);
+  const paths = connection ? configuredLogPaths(config, connection.id) : [];
+  const excludedCount = paths.filter(source => !belowLogRoots(source.path, roots)).length;
   return <>
     <div className="form-grid"><label>SSH host<input name="host" defaultValue={connection?.host ?? ''} placeholder="IP address or hostname" required maxLength={253} /></label><label>SSH port<input type="number" name="port" defaultValue={connection?.port ?? 22} min={1} max={65535} step={1} required /></label></div>
     <div className="form-grid"><label>Username<input name="username" defaultValue={connection?.username ?? 'logreader'} required /></label><label>Credential reference<input name="credential_ref" defaultValue={connection?.credential_ref ?? credentialReference} required /></label></div>
     <p className="field-help">This reference is a label for a separately stored SSH password. Save the profile, then use Password & connection test to set the password and approve the host key.</p>
     {connection && <p className="field-help">Changes apply to every server using this profile ({config.servers.filter(server => server.connection_id === connection.id).length} in this system).</p>}
     <label>Jump connection<select name="jump_connection_id" defaultValue={connection?.jump_connection_id ?? ''}><option value="">Direct connection</option>{config.connections?.filter(item => item.id !== connection?.id && !item.jump_connection_id).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-    <label>Proposed log roots (one absolute Linux path per line)<textarea name="allowed_log_roots" defaultValue={connection?.allowed_log_roots.join('\n') ?? '/var/log/application'} rows={3} /></label>
+    <label>Proposed log roots (one absolute Linux path per line)<textarea name="allowed_log_roots" value={logRoots} onChange={event => setLogRoots(event.target.value)} aria-invalid={excludedCount > 0} aria-describedby="log-roots-help" rows={3} /></label>
+    <p id="log-roots-help" className="field-help">Every active log, rotated file pattern and archive path on servers using this profile must be below a proposed root. {rootChangeHelp}</p>
+    {paths.length > 0 && <section className="connection-log-paths" aria-label="Configured log paths using this profile"><h3>Configured log paths using this profile</h3><p className={excludedCount ? 'log-root-warning' : 'muted'} aria-live="polite">{excludedCount ? `${excludedCount} configured log ${excludedCount === 1 ? 'path is' : 'paths are'} outside the proposed roots. Review the marked paths below.` : 'All configured log paths are within the proposed roots.'}</p><ul>{paths.map((source, index) => {
+      const outside = !belowLogRoots(source.path, roots);
+      return <li key={`${source.processId}:${index}`}><strong>{source.processName} on {source.serverName}</strong><span>{source.kind}</span><code>{source.path}</code>{outside && <span className="log-root-warning">Outside proposed roots</span>}</li>;
+    })}</ul></section>}
   </>;
 }
 

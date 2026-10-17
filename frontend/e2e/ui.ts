@@ -1,4 +1,25 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+// Opt-in source verification against a running local API without replacing its
+// deployed bundle. Every page in the context uses the same fresh build.
+export async function serveBuiltAssets(context: BrowserContext, baseURL: string): Promise<void> {
+  const directory = resolve('dist');
+  if (!existsSync(resolve(directory, 'index.html'))) throw new Error('Build the frontend before enabling local browser assets.');
+  const origin = new URL(baseURL).origin;
+  await context.route('**/*', async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.origin !== origin || request.method() !== 'GET' || url.pathname.startsWith('/api/')) return route.fallback();
+    if (request.resourceType() === 'document') return route.fulfill({ path: resolve(directory, 'index.html'), contentType: 'text/html' });
+    if (/^\/assets\/[a-zA-Z0-9_.-]+$/.test(url.pathname)) {
+      const filename = resolve(directory, url.pathname.slice(1));
+      if (existsSync(filename)) return route.fulfill({ path: filename });
+    }
+    return route.fallback();
+  });
+}
 
 export async function submitSignIn(page: Page) {
   const submit = async () => {

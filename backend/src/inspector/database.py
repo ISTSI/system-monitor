@@ -15,7 +15,9 @@ from sqlalchemy.pool import NullPool
 
 from inspector.config import DatabaseConfig, read_secret
 
-SCHEMA_REVISION = "0006_ssh_access"
+SCHEMA_REVISION = "0008_security_setting"
+_PROBE_TIMEOUT_SECONDS = 1.0
+_DRAIN_TIMEOUT_SECONDS = 1.25
 
 
 def validate_runtime_grants(grants: list[str], database: str) -> None:
@@ -103,6 +105,10 @@ async def _acquire(connection: AsyncConnection, name: str) -> None:
 
 
 async def _release(connection: AsyncConnection, name: str) -> None:
+    # A named lock belongs to its original physical connection. Executing after
+    # invalidation can reconnect and must never be mistaken for lock ownership.
+    if connection.closed or connection.invalidated:
+        return
     if connection.in_transaction():
         await connection.rollback()
     await connection.execute(text("SELECT RELEASE_LOCK(:name)"), {"name": name})
@@ -131,11 +137,29 @@ class Supervisor:
         self.connection = connection
         self.connection_id: int | None = None
         self.failed = False
-        self._probe_lock = asyncio.Lock()
+        self._closing = False
+        self._probe_task: asyncio.Task[bool] | None = None
 
     async def healthy(self) -> bool:
-        async with self._probe_lock:
-            return await self._healthy_locked()
+        if self.failed or self._closing:
+            return False
+        if self.connection.closed or self.connection.invalidated:
+            self.failed = True
+            return False
+        if self._probe_task is None or self._probe_task.done():
+            # One independently bounded operation owns the dedicated connection.
+            # A caller may time out or cancel without interrupting driver I/O and
+            # poisoning the supervisor used by every other request/job.
+            self._probe_task = asyncio.create_task(self._probe())
+        return await asyncio.shield(self._probe_task)
+
+    async def _probe(self) -> bool:
+        try:
+            async with asyncio.timeout(_PROBE_TIMEOUT_SECONDS):
+                return await self._healthy_locked()
+        except (Exception, asyncio.CancelledError):
+            self.failed = True
+            return False
 
     async def _healthy_locked(self) -> bool:
         if self.failed:
@@ -145,13 +169,36 @@ class Supervisor:
                 text("SELECT IS_USED_LOCK(:name)"),
                 {"name": _lock_name(self.connection, "supervisor")},
             )
+            connection_id = await self.connection.scalar(text("SELECT CONNECTION_ID()"))
             await self.connection.commit()
-            if owner != self.connection_id:
+            if owner != self.connection_id or connection_id != self.connection_id:
                 self.failed = True
         except Exception:
             # Never silently reacquire a lost lock; a controlled restart is required.
             self.failed = True
         return not self.failed
+
+    async def drain(self) -> None:
+        """Stop new probes and finish the shared driver operation before close."""
+        self._closing = True
+        task = self._probe_task
+        if task is None:
+            return
+        done, _ = await asyncio.wait((task,), timeout=_DRAIN_TIMEOUT_SECONDS)
+        if task not in done:
+            self.failed = True
+            task.cancel()
+            done, _ = await asyncio.wait((task,), timeout=0.25)
+            if task not in done:
+                # A driver which ignores cancellation cannot authorize further
+                # work. Invalidation closes this connection without reacquiring.
+                try:
+                    async with asyncio.timeout(0.25):
+                        await self.connection.invalidate()
+                except Exception:
+                    pass
+        if task.done() and not task.cancelled():
+            task.exception()  # Retrieve defensive unexpected task failures.
 
 
 @asynccontextmanager
@@ -164,6 +211,7 @@ async def supervisor_guard(engine: AsyncEngine) -> AsyncIterator[Supervisor]:
             await _acquire(connection, supervisor_name)
         finally:
             await _release(connection, migration_name)
+        instance: Supervisor | None = None
         try:
             await check_schema(connection)
             await check_runtime_grants(connection)
@@ -172,7 +220,10 @@ async def supervisor_guard(engine: AsyncEngine) -> AsyncIterator[Supervisor]:
             await connection.commit()
             yield instance
         finally:
-            await _release(connection, supervisor_name)
+            if instance is not None:
+                await instance.drain()
+            if instance is None or not instance.failed:
+                await _release(connection, supervisor_name)
 
 
 @contextmanager

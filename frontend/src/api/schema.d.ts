@@ -672,6 +672,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/investigations/{investigation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Investigation */
+        delete: operations["delete_investigation_api_v1_projects__project_id__investigations__investigation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/investigations/{job_id}/query": {
         parameters: {
             query?: never;
@@ -842,6 +859,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/source-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Access */
+        get: operations["access_api_v1_projects__project_id__connections__connection_id__source_access_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/source-access/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approve_api_v1_projects__project_id__connections__connection_id__source_access_approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/source-access/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke */
+        post: operations["revoke_api_v1_projects__project_id__connections__connection_id__source_access_revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connections/{connection_id}/source-access/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test */
+        post: operations["test_api_v1_projects__project_id__connections__connection_id__source_access_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -916,6 +1001,11 @@ export interface components {
             default_theme_mode: "light" | "dark" | "system";
             /** Demo Mode */
             demo_mode: boolean;
+            /**
+             * Historical Demo Enabled
+             * @default false
+             */
+            historical_demo_enabled: boolean;
         };
         /** CatalogueEntry */
         CatalogueEntry: {
@@ -1158,6 +1248,18 @@ export interface components {
             /** Byte End */
             byte_end: number;
         };
+        /** HistoricalDeleteResponse */
+        HistoricalDeleteResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Investigation Id */
+            investigation_id: string;
+            /**
+             * Cache Cleanup Pending
+             * @default false
+             */
+            cache_cleanup_pending: boolean;
+        };
         /** HistoricalDownloadResponse */
         HistoricalDownloadResponse: {
             /** Project Id */
@@ -1354,6 +1456,8 @@ export interface components {
         HistoricalScopeInput: {
             /** Workspace Id */
             workspace_id: string;
+            /** Transport */
+            transport?: ("ssh" | "local_demo") | null;
             /** Process Ids */
             process_ids: string[];
             /** From */
@@ -1614,6 +1718,11 @@ export interface components {
              * @enum {string}
              */
             default_theme_mode: "light" | "dark" | "system";
+            /**
+             * Additional Security Measures
+             * @default true
+             */
+            additional_security_measures: boolean;
         };
         /** SettingsResponse */
         SettingsResponse: {
@@ -1626,6 +1735,83 @@ export interface components {
              * @enum {string}
              */
             default_theme_mode: "light" | "dark" | "system";
+            /** Additional Security Measures */
+            additional_security_measures: boolean;
+        };
+        /** SourceAccessResponse */
+        SourceAccessResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Connection Id */
+            connection_id: string;
+            /** Config Revision */
+            config_revision: number;
+            /** Manual Confirmation Required */
+            manual_confirmation_required: boolean;
+            approval: components["schemas"]["SourceApprovalStatus"];
+            /** Roots */
+            roots: string[];
+            /** Process Ids */
+            process_ids: string[];
+        };
+        /** SourceApprovalInput */
+        SourceApprovalInput: {
+            /** Expected Config Revision */
+            expected_config_revision: number;
+            /** Expected Approval Revision */
+            expected_approval_revision: number;
+            /** Verified */
+            verified: boolean;
+            /**
+             * Expires Seconds
+             * @default 86400
+             */
+            expires_seconds: number;
+        };
+        /** SourceApprovalStatus */
+        SourceApprovalStatus: {
+            /** Approved */
+            approved: boolean;
+            /** Revision */
+            revision: number;
+            /** Expires Us */
+            expires_us: string | null;
+        };
+        /** SourcePathResult */
+        SourcePathResult: {
+            /** Process Id */
+            process_id: string;
+            /** Accessible */
+            accessible: boolean;
+            /** Candidate Count */
+            candidate_count: number;
+            /** Estimated Bytes */
+            estimated_bytes: number;
+            /** Warning */
+            warning: string | null;
+        };
+        /** SourcePathTestResponse */
+        SourcePathTestResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Connection Id */
+            connection_id: string;
+            /** Config Revision */
+            config_revision: number;
+            /** Processes */
+            processes: components["schemas"]["SourcePathResult"][];
+        };
+        /** SourceRevisionInput */
+        SourceRevisionInput: {
+            /** Expected Config Revision */
+            expected_config_revision: number;
+            /** Expected Approval Revision */
+            expected_approval_revision: number;
+        };
+        /** SourceTestInput */
+        SourceTestInput: {
+            /** Expected Config Revision */
+            expected_config_revision: number;
         };
         /** TestResponse */
         TestResponse: {
@@ -3119,6 +3305,38 @@ export interface operations {
             };
         };
     };
+    delete_investigation_api_v1_projects__project_id__investigations__investigation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoricalDeleteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     query_api_v1_projects__project_id__investigations__job_id__query_post: {
         parameters: {
             query?: never;
@@ -3460,6 +3678,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    access_api_v1_projects__project_id__connections__connection_id__source_access_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceAccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_api_v1_projects__project_id__connections__connection_id__source_access_approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceApprovalInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceAccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_api_v1_projects__project_id__connections__connection_id__source_access_revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceRevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceAccessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_api_v1_projects__project_id__connections__connection_id__source_access_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceTestInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourcePathTestResponse"];
                 };
             };
             /** @description Validation Error */

@@ -37,6 +37,38 @@ Keep this key outside database/configuration exports and back it up separately.
 Replacing the file does not re-encrypt existing records; automated key rotation
 and a full vault-recovery/backup release workflow remain unimplemented.
 
+Stage 04 migration `0007_source_access` stores explicit local target/root
+approvals separately from imported configuration and host-key trust. They bind
+the system, connection, complete configuration revision, route, root digest,
+credential/trust versions and expiry. The default approval lifetime is 24 hours;
+Administrators can choose 60 seconds through 30 days through the bounded API.
+Configuration or access changes require approval again. A nullable vault
+credential `expires_us` permits fail-closed credential expiry; existing passwords
+retain their previous indefinite lifetime, and explicit replacement renews the
+record. Neither approvals nor vault data enter project exports. Migration tools
+remain separate from the serving application's restricted DML account.
+
+The subsequent user-requested migration `0008_security_setting` adds the
+non-null boolean `application_settings.additional_security_measures`, defaulting
+to true for existing rows and new installations, with a 0/1 check constraint.
+It preserves existing approvals and all project/account/preference data.
+Administrator settings writes persist it with the existing revision/audit
+transaction; restart does not overwrite it. This is deployment-wide application
+policy, not a project field, workspace selector or interchange/export value.
+When false, source dispatch skips only the separate manual target/root approval;
+it neither writes approval records nor relaxes credentials, host keys or root
+validation. When true, the current revision-bound approval/expiry rules above
+apply. Guarded operations include this policy in their freshness checks so
+changing it invalidates pending work.
+
+Optional deployment scan ceilings preserve schema 2.0 compatibility:
+`max_source_files_per_collection` defaults to 1,000,
+`max_source_listing_entries` to 10,000, `max_source_listing_bytes` to 4,194,304
+and `max_source_probe_bytes` to 33,554,432. Configured positive integer values
+are preserved, including lower operator ceilings. These bound source candidates,
+directory listings and snapshot/readability probes before downloads; actual
+downloaded bytes retain the independent collection budget.
+
 `SI_SSH_ALLOW_LOOPBACK=1` is a deployment-only exception for explicitly authorized
 local SSH tests; `0` is the default and other values are rejected. It permits
 loopback only, never link-local, metadata, multicast or unspecified destinations.
@@ -102,6 +134,15 @@ Database root is provisioning/recovery only. The fresh-image bootstrap creates `
 The migrator's secret is mounted only into the one-shot migration tool, not the API. The app must not invoke migrations while serving requests. Init variables/scripts only initialize an empty datadir; they do not rotate users/passwords in an existing volume [S18]. Retain the volume on restart, provide explicit credential rotation, and never delete data as a troubleshooting shortcut. A web Administrator role is independent of these SQL account names.
 
 ## Lifecycle, isolation and connection loss
+
+Deleting a finished historical collection is an owner/project-scoped DML
+operation, with bulk removal of its events, sources, cursors, download grants
+and job. It does not require a migration. Validate the managed capture directory,
+stage it by rename, and restore it if the SQL transaction rolls back. After a
+successful commit, invalidate its in-memory snapshots and unlink only validated
+regular captured files. A failed final unlink is reported as pending cleanup
+without resurrecting the deleted database resource. Other collections and
+their cache namespaces remain intact.
 
 Use one ASGI worker. One AsyncSession per operation/task; never share a session across concurrent tasks. Pool defaults are five connections plus five overflow, pre-ping, 10-second acquisition/connect bounds and 30-minute recycle. Reserve capacity for the dedicated supervisor lock, migrations, health and administration. Global MariaDB and application memory limits must fit the 16 GB server baseline. Do not leave a database transaction open while downloading an archive or waiting on a WebSocket.
 

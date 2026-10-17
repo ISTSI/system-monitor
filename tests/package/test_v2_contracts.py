@@ -109,7 +109,7 @@ class AuthorizationContractTests(unittest.TestCase):
                     "settings.read", "settings.write", "appearance.default.write", "users.manage", "audit.read",
                     "operations.metadata.read", "system.create", "system.metadata.write", "system.archive",
                     "system.restore", "inventory.upload", "inventory.source.manage", "inventory.upload.cancel",
-                    "credential_binding.manage"}
+                    "credential_binding.manage", "source_access.manage", "source.test"}
         actual = {k for k, rule in self.policy["actions"].items() if rule["roles"] == ["administrator"]}
         self.assertEqual(actual, expected)
         for action in expected:
