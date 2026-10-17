@@ -416,6 +416,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/topology": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["read_api_v1_projects__project_id__topology_get"];
+        /** Write */
+        put: operations["write_api_v1_projects__project_id__topology_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Full Config */
+        get: operations["full_config_api_v1_projects__project_id__config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/topology/delete-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Preview */
+        post: operations["delete_preview_api_v1_projects__project_id__topology_delete_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/topology/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo */
+        post: operations["undo_api_v1_projects__project_id__topology_undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/topology/redo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redo */
+        post: operations["redo_api_v1_projects__project_id__topology_redo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search */
+        post: operations["search_api_v1_projects__project_id__search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/config/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview */
+        post: operations["preview_api_v1_projects__project_id__config_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/config/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Commit */
+        post: operations["commit_api_v1_projects__project_id__config_commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/config/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export */
+        get: operations["export_api_v1_projects__project_id__config_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -495,6 +649,28 @@ export interface components {
              */
             new_password: string;
         };
+        /** CommitInput */
+        CommitInput: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Preview Id */
+            preview_id: string;
+            /**
+             * Confirmed Deletions
+             * @default false
+             */
+            confirmed_deletions: boolean;
+            /**
+             * Reparent
+             * @default false
+             */
+            reparent: boolean;
+            /**
+             * Confirm Project Remap
+             * @default false
+             */
+            confirm_project_remap: boolean;
+        };
         /** CreateAccountInput */
         CreateAccountInput: {
             /** Username */
@@ -517,6 +693,35 @@ export interface components {
              * @default false
              */
             must_change_password: boolean;
+        };
+        /** DeleteInput */
+        DeleteInput: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "subsystem" | "server" | "process" | "flow" | "connection" | "parser" | "view";
+            /** Id */
+            id: string;
+        };
+        /** DeleteResponse */
+        DeleteResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Revision */
+            revision: number;
+            /** Entities */
+            entities: {
+                [key: string]: string;
+            }[];
+            /** Flows */
+            flows: string[];
+            /** Views */
+            views: string[];
+            /** Investigations */
+            investigations: string[];
+            /** Active Sessions */
+            active_sessions: string[];
         };
         /** DemoProcess */
         DemoProcess: {
@@ -553,6 +758,18 @@ export interface components {
         };
         /** EmptyInput */
         EmptyInput: Record<string, never>;
+        /** ExportResponse */
+        ExportResponse: {
+            /** Project Id */
+            project_id: string;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "json" | "yaml";
+            /** Content */
+            content: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -631,6 +848,45 @@ export interface components {
              */
             theme_mode: "default" | "light" | "dark" | "system";
         };
+        /** PreviewInput */
+        PreviewInput: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Content */
+            content: string;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "json" | "yaml";
+        };
+        /** PreviewResponse */
+        PreviewResponse: {
+            /** Preview Id */
+            preview_id: string;
+            /** Project Id */
+            project_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Expires Us */
+            expires_us: string;
+            /** Warnings */
+            warnings: string[];
+            /** Source Project Id */
+            source_project_id: string;
+            /** Target Project Id */
+            target_project_id: string;
+            /** Changes */
+            changes: {
+                [key: string]: {
+                    [key: string]: string;
+                }[];
+            };
+            /** Requires Delete Confirmation */
+            requires_delete_confirmation: boolean;
+            /** Requires Reparent Confirmation */
+            requires_reparent_confirmation: boolean;
+        };
         /** ProjectInput */
         ProjectInput: {
             /** Name */
@@ -680,10 +936,28 @@ export interface components {
              */
             must_change_password: boolean;
         };
-        /** RevisionInput */
-        RevisionInput: {
-            /** Expected Revision */
-            expected_revision: number;
+        /** SearchInput */
+        SearchInput: {
+            /** Q */
+            q: string;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Results */
+            results: components["schemas"]["SearchResult"][];
+        };
+        /** SearchResult */
+        SearchResult: {
+            /** Kind */
+            kind: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** View Id */
+            view_id: string | null;
         };
         /** SessionResponse */
         SessionResponse: {
@@ -724,6 +998,44 @@ export interface components {
              * @enum {string}
              */
             default_theme_mode: "light" | "dark" | "system";
+        };
+        /** TopologyInput */
+        TopologyInput: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Confirmed Deletions
+             * @default false
+             */
+            confirmed_deletions: boolean;
+            /**
+             * Reparent
+             * @default false
+             */
+            reparent: boolean;
+        };
+        /** TopologyResponse */
+        TopologyResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Revision */
+            revision: number;
+            /** Archived */
+            archived: boolean;
+            /** Editable */
+            editable: boolean;
+            /** Can Undo */
+            can_undo: boolean;
+            /** Can Redo */
+            can_redo: boolean;
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
         };
         /** UpdateAccountInput */
         UpdateAccountInput: {
@@ -774,6 +1086,16 @@ export interface components {
             state: "active" | "detached" | "expired";
             /** Live Session Ids */
             live_session_ids: string[];
+        };
+        /** RevisionInput */
+        inspector__app__RevisionInput: {
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** RevisionInput */
+        inspector__topology__RevisionInput: {
+            /** Expected Revision */
+            expected_revision: number;
         };
     };
     responses: never;
@@ -1077,7 +1399,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RevisionInput"];
+                "application/json": components["schemas"]["inspector__app__RevisionInput"];
             };
         };
         responses: {
@@ -1112,7 +1434,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RevisionInput"];
+                "application/json": components["schemas"]["inspector__app__RevisionInput"];
             };
         };
         responses: {
@@ -1583,6 +1905,346 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PasswordChangedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_api_v1_projects__project_id__topology_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopologyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_api_v1_projects__project_id__topology_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopologyInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopologyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    full_config_api_v1_projects__project_id__config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopologyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_preview_api_v1_projects__project_id__topology_delete_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    undo_api_v1_projects__project_id__topology_undo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__topology__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopologyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redo_api_v1_projects__project_id__topology_redo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__topology__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopologyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_api_v1_projects__project_id__search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_api_v1_projects__project_id__config_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commit_api_v1_projects__project_id__config_commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopologyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_api_v1_projects__project_id__config_export_get: {
+        parameters: {
+            query?: {
+                format?: "json" | "yaml";
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportResponse"];
                 };
             };
             /** @description Validation Error */

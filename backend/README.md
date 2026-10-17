@@ -1,11 +1,14 @@
-# Stage 01 foundation
+# System Inspector backend
 
 FastAPI/Python 3.13 serves the bundled React application and uses MariaDB only.
 Implemented: local Administrator/Inspector accounts, protected first-account CLI,
 account lifecycle and forced password changes, opaque sessions/CSRF, persistent
 appearance and application defaults, named systems, safe synthetic documentation,
-revisioned metadata/archive/restore and private per-page workspaces. Collection,
-SSH, editable topology, imports and investigations belong to later stages.
+revisioned metadata/archive/restore and private per-page workspaces. Stage 02 adds
+scoped topology entities and constraints, shared documentation, flows, named
+views, revisioned editing/undo/redo, scoped search and safe YAML/JSON import
+preview/commit/export. Collection, SSH, Ansible inventory reconciliation and
+investigations belong to later stages.
 
 Results and release gates are in [STATUS.md](../progress/STATUS.md). Setup:
 [temporary VM](../deploy/vm-mariadb/README.md),
@@ -57,8 +60,9 @@ python -m inspector.cli seed-demo
 
 Bootstrap refuses an existing enabled Administrator. The other commands require
 Administrator credentials. Demo seeding creates two labelled synthetic systems
-with read-only documentation snapshots. It does not approve targets, create SSH
-profiles or start collection. The separate VM browser fixture is explicit test
+with real editable topology and unresolved connection/root proposals. It does
+not approve targets, bind credentials, trust host keys or start collection.
+The separate VM browser fixture is explicit test
 setup with random credentials in ignored protected files; no universal seed
 password or public setup API exists.
 
@@ -69,6 +73,26 @@ HttpOnly and SameSite Strict. Host and write Origin must match exactly. Login
 uses pre-session CSRF; protected writes use authenticated CSRF. All security
 mutations increment the account version, revoke its sessions and expire its page
 workspaces. Deletion is unavailable; the last enabled Administrator is retained.
+
+Stage 02 local browser verification uses a separate fresh Docker schema and
+`https://localhost:8444`; it does not migrate or replace the VM app on port 8443.
+With the pinned local database and runner already prepared:
+
+```sh
+python scripts/stage2_local.py prepare
+python scripts/stage2_local.py migrate
+python scripts/stage2_local.py fixture
+python scripts/build_stage1.py
+python scripts/stage2_local.py up
+```
+
+`fixture` expires only this isolated schema's synthetic browser-account workspaces
+before a rerun. Test account values stay in `.secrets/stage2-browser/accounts.json`.
+Set `INSPECTOR_E2E_URL`, `INSPECTOR_E2E_ACCOUNTS` and
+`INSPECTOR_E2E_REPORT_STAGE=stage-2` for the browser suite. `stop` retains data.
+Migrations run with the test server stopped and separate migration credentials.
+Project configuration import accepts version 2 YAML/JSON and previewed version 1
+conversion; Ansible inventory files and reconciliation arrive in Stage 07.
 
 Each document creates a fresh workspace using POST under its URL's project.
 There is no mutable current-project session, browser storage or shared filter.

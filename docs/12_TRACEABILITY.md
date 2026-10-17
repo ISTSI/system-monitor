@@ -1,8 +1,8 @@
 # 12 — Requirement-to-acceptance traceability
 
-All 56 requirements map to future application tests. This table is not a test-result report.
+All 56 requirements map to application acceptance targets. The requirement table is not a test-result report; implemented evidence and remaining limits appear below it.
 
-Actual first-slice evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Backend unit tests cover parts of R35/R37/R39/R42/R44/R46–R49/R56; guarded MariaDB tests target subsets of AT02/AT04/AT71/AT80/AT81/AT91/AT94/AT98/AT115. Whole acceptance targets are not claimed passed. Browser, live, inventory and offline gates remain open.
+Actual Stage 00–02 evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Authentication, appearance, scoped topology/configuration and independent browser workspaces have executable unit, MariaDB and browser coverage. SSH, historical/live logs, investigations, inventory import and the complete offline release remain later-stage gates. Passing a subset does not complete an entire acceptance target.
 
 The authorized temporary VM now supplies actual MariaDB evidence for part of R42/R44/R46/R48/R56: the initial migration, binary identities, owner/role/scope behavior, composite FK rejection, exact BIGINT values and named migration locks pass in `backend/tests/vm/test_vm_mariadb.py`. Those rollback-only checks also prove the supplied migration account is refused for serving. They do not replace restricted-runtime/API/browser or disposable-schema integration targets.
 
@@ -87,3 +87,34 @@ Production evidence: backend/tests/stage1 (23 actual VM API tests),
 backend/tests/integration (19 actual Linux MariaDB tests), backend/tests/unit,
 frontend/e2e/foundation.spec.ts, verification/stage-1 browser/Docker/artifact logs.
 Original golden fixtures, IDs, expected outcomes and image references are retained.
+
+## Stage 02 topology/configuration evidence — 17 October 2026
+
+Verification on the implemented application: **253 backend unit tests passed**;
+**30 integration tests passed against real Linux MariaDB 11.8.9**, including ten
+topology tests and the legacy startup-backfill test; **four topology browser
+tests passed in 10.7 seconds**, including persisted drag/resize, and **ten
+foundation browser regressions passed**. Exact timings are retained in the reports.
+
+| Target | Implemented evidence | Remaining limit |
+|---|---|---|
+| AT05, AT06, AT07 | Administrator graph CRUD, explicit process reparent, directed labelled flows, stable IDs through rename/reload, shared Markdown descriptions and multiple views in [topology browser tests](../frontend/e2e/topology.spec.ts); invalid ownership and scoped relationships in [MariaDB topology tests](../backend/tests/integration/test_topology.py) | SSH/access checks are later stages |
+| AT08, AT93 | Whole-system name/PCS/tag/documentation search, collapsed-process reveal, repeated IDs/names in different systems, and page-local searches in the topology API/browser suites | No historical/live log search is implemented |
+| AT09 | Named geometry, collapse/reveal, transactional undo/redo, real drag/resize and persisted layout through reload are exercised by the browser suite | Log-update rendering behavior awaits the log engine |
+| AT10, AT11 | YAML export/preview/commit through real API, JSON download/edit/preview/commit through browser, revision conflicts, explicit deletions, preview owner/project/digest/expiry checks, duplicate-ID guard, and rejected invalid imports | Project interchange only; Ansible inventory is Stage 07 |
+| AT12 (partial) | Delete-impact preview lists model/flow/view dependencies; confirmed deletion, undo, immutable-ID tombstones, bounded full history and retained name snapshots are tested in MariaDB | Bookmarks, notes, event/log associations and active-session impacts require Stages 03–06; empty investigation/session lists do not prove those behaviors |
+| AT43, AT78 (partial) | [Configuration unit tests](../backend/tests/unit/test_project_config.py) reject unsafe Markdown/assets without reflecting secrets; browser renders safe documentation as React text, preserves Inspector navigation and selection, and checks both themes/desktop sizes without external requests | Log/note rendering, collection errors and live controls await their stages; health remains explicitly unknown |
+| AT86, AT117 | Explicit v1-to-v2 conversion retains IDs/content/layout, warns about legacy theme removal, forbids account/DB/secret fields, and requires explicit outer-project remapping. Fresh migrations, [startup backfill](../backend/tests/integration/test_topology_upgrade.py) and [populated 0002-to-0004 upgrade](../backend/tests/migrations/verify_populated_upgrade.py) preserve two systems, accounts/password verification, preferences, revisions and documentation | Upgrade uses guarded synthetic MariaDB data; no VM/production upgrade or legacy SQLite migration was performed |
+| AT89 | Concurrent real MariaDB edits yield one committed winner and one 409; stale same-context browser drafts remain visible; direct Inspector writes fail and full configuration uses an Administrator-only projection | New SSH/live operations must preserve the same permission/revision boundary |
+| AT101 (partial) | Archive/restore updates only the selected system and its revision, blocks shared mutations while archived and retains configuration | Active-job drain/start races and cached investigation access cannot be tested before those resources exist |
+
+Result artifacts: [unit output](../verification/stage-2/checks/unit.log),
+[MariaDB integration output](../verification/stage-2/s2_final_1017.log),
+[topology browser report](../verification/stage-2/browser-final.json), and
+[foundation browser report](../verification/stage-2/browser-foundation.json).
+Configuration parsing is bounded to 10 MiB UTF-8/serialized content, depth 32,
+200,000 tree nodes and 5,000 configured entities; project descriptions are at
+most 10,000 characters and finite canvas coordinates/dimensions at most
+10,000,000 in magnitude. Root lists and credential references remain proposals;
+imports create no approvals, trust, bindings or target connections. Stop at the
+Stage 02 gate before historical/log implementation.

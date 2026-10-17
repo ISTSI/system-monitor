@@ -30,6 +30,7 @@ from inspector.database import create_engine, local_state_lock, supervisor_guard
 from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
 from inspector.security import issue_token, require_admin, token_hash
+from inspector.topology import build_topology_router, initialize_legacy_documents
 
 SESSION_COOKIE = "__Host-si-session"
 CSRF_COOKIE = "__Host-si-csrf"
@@ -180,6 +181,7 @@ def create_app(config: Config | None = None) -> FastAPI:
 
                     async with app.state.sessions.begin() as session:
                         await foundation.initialize_settings(session, config)
+                        await initialize_legacy_documents(session)
                         await session.execute(
                             update(Workspace)
                             .where(Workspace.state == "active")
@@ -269,10 +271,17 @@ def create_app(config: Config | None = None) -> FastAPI:
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             if request.headers.get("origin") != config.public_origin:
                 return error_response(DomainError("CSRF_FAILED", "Unexpected request origin.", 403))
+            topology_upload = bool(
+                re.fullmatch(
+                    r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/(?:topology|config/preview)",
+                    request.url.path,
+                )
+            )
+            maximum_body = config.config_upload_bytes * 6 + 512 if topology_upload else 16384
             chunks, size = [], 0
             async for chunk in request.stream():
                 size += len(chunk)
-                if size > 16384:
+                if size > maximum_body:
                     return error_response(
                         DomainError("PAYLOAD_TOO_LARGE", "Request exceeds limit.", 413)
                     )
@@ -624,6 +633,7 @@ def create_app(config: Config | None = None) -> FastAPI:
         return await foundation.project_viewer(session, principal, project_id)
 
     app.include_router(build_account_router(transaction, authenticated, protected_write))
+    app.include_router(build_topology_router(transaction, authenticated, protected_write))
     bundled = Path(__file__).parent / "web"
     frontend = (
         bundled

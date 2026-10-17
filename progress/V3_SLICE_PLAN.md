@@ -10,7 +10,7 @@ Version dimensions remain distinct: package 3.0, project interchange 2.0, deploy
 
 1. **Current slice, backend foundation:** explicit immutable ProjectContext; one MariaDB endpoint; secure local accounts and opaque sessions; named Project catalogue and revisioned metadata; server-issued owner/project workspaces; composite workspace-to-project-revision constraint; bounded quotas, supervision and initial migration. Unit/API boundary tests and guarded real-MariaDB tests. Stop for review. Stage 01 remains incomplete until real DB validation and browser foundation exist.
 2. **Current continuation, finish Stage 00/01:** use the user-approved temporary MariaDB 12.3.3 VM database `system-monitor` through the existing workstation SSH tunnel while Docker Desktop is unavailable. The schema is migrated and rollback-only database checks pass; obtain a separate DML-only runtime identity before serving, then complete the original disposable-database integration tests when their separate schema/accounts are available. Preserve the prepared Docker setup and its image/offline/volume lifecycle gates for later validation. Then add Node 24 LTS/React/TypeScript/Vite locks and the two-themed browser catalogue/workspace shell with generated clients. Test different-system and duplicated same-system pages in one browser context/account, fresh bootstrap on reload and no collection on GET. Complete account lifecycle/last-Administrator concurrency, preferences, settings and authenticated foundation gates before Stage 02.
-3. **Stage 02 topology/config:** scoped entity repositories and composite FK pairs for subsystem/server/connection/parser/process/flow; retain schema-2.0 interchange and explicit v1 previewed conversion. Include collision fixtures and valid/invalid direct MariaDB INSERT/UPDATE tests. Scope optimistic revisions and named/personal layouts; no singleton active project.
+3. **Stage 02 topology/config — implemented; review gate:** scoped MariaDB topology entities and composite FK pairs; graph/documentation CRUD, explicit reparenting, directed flows, named geometry, undo/redo, system-local search/reveal and safe Inspector projection. Schema-2.0 YAML/JSON interchange has explicit v1 conversion, target-project remapping, bound previews, optimistic transactions and immutable-ID/name history. Real database and browser evidence and remaining limits are recorded below. No singleton active project and no log collection.
 4. **Stages 03/04 historical/SSH:** carry ProjectContext through source planning, exact integer-microsecond indexing, private investigation parents, query/cursor/download grants, raw-cache namespaces and strict host/root/trust/credential-binding contexts. Preserve event IDs; resource identity is `(project_id,event_id)`. SFTP integration uses local synthetic hosts only after local environment authorization. No cross-system raw-byte deduplication or shell commands.
 5. **Stage 05 live:** required workspace IDs and controller leases; explicit detached resume and revision conflicts; WS protocol 2 validates project/workspace/session on every frame; page-local filters/replay. Reserve subscription budgets atomically: defaults 5/workspace and 10/project/user/deployment, preserving explicit lower legacy ceilings. Test two × five and rejected-eleventh isolation, slow/background pages and global logout with a local SSH fixture.
 6. **Stage 06 investigation:** project/owner-scoped notes, bookmarks, source/event joins, context/correlation, redacted bundles and expiring grants; source IDs unchanged, no existence leaks or broad administrative content access.
@@ -33,7 +33,7 @@ If Docker access requires a Windows administrator, prepare and statically valida
 ## Risks and assumptions
 
 - The user added Docker group membership but Docker Desktop remains unavailable due to sign-in/account issues. It no longer blocks direct database development: the authorized VM replacement is initialized and real migration/FK/service checks pass. The VPN and existing pinned-host-key tunnel must stay running; do not stop/reconfigure them or use another host's localhost. No production deployment or unrelated infrastructure access is authorized.
-- The current schema stores only catalogue metadata snapshots and workspaces, not the complete project export model or log entities. Topology/source/event collisions remain future gates; existing package collision checks are synthetic oracles only.
+- The current MariaDB schema stores the complete scoped topology/configuration, normalized relationships, views, import previews, bounded undo history and retained identity/name snapshots. Actual topology collisions and composite-FK rejection are tested; source/event identities and operational log resources remain Stage 03–06 work.
 - Fresh-schema revision is not an upgrade utility. Existing populated installations require an inventory of actual parent relationships and an approved backup/restore dry-run before additional migration code is accepted.
 - Runtime dependency locks are real registry resolutions, but Linux wheel compatibility and a security advisory audit remain open. No exact container digest or frontend dependency lock has been invented.
 - Authentication and current service operations use short serialized transactions. Do not extend their lifetime across streaming/network/file operations in subsequent slices.
@@ -63,8 +63,62 @@ service, separate runtime/migration identities and original 19-test integration
 suite now run locally. The optional VM test-database DBA script is no longer a
 prerequisite. Final image/lifecycle results and exact commands are in STATUS.md.
 
-Stop at the Stage 01 review gate. The next separately reviewed scope is Stage 02:
-production scoped topology entities/repositories/constraints and import/export.
-The Stage 01 demo snapshot is labelled presentation data, not a second live
-inventory model or a claim that topology editing/import is implemented. Full SSH,
-logs, import, Ubuntu/Rocky deployment and Stage 08 release gates remain future work.
+The Stage 01 review gate passed; the user's subsequent instruction authorized
+Stage 02. The retained labelled Stage 01 demo is reconciled into the canonical
+topology at startup when its derived topology state is absent. Full SSH/logs,
+inventory import, Ubuntu/Rocky deployment and Stage 08 release gates remain
+future work.
+
+## Stage 02 review gate — 17 October 2026
+
+The implemented vertical slice uses actual React Flow components and MariaDB
+transactions for subsystem/server/process CRUD, directed labelled flows, shared
+documentation, independent named views and validated reparenting. Model IDs are
+separate from geometry. Administrator mutations, safe Inspector navigation,
+project-local search/reveal, delete-impact confirmation, undo/redo, catalogue
+archive/restore and YAML/JSON preview/commit/export are connected to the real API.
+Imported roots and credentials remain unresolved proposals; no SSH trust,
+credential binding, target enablement or collection is created.
+
+Verification evidence:
+
+- **253 backend unit tests passed**, including bounded parsing, semantic
+  validation, v1 conversion, unsafe configuration and safe error responses:
+  [configuration tests](../backend/tests/unit/test_project_config.py) and
+  [recorded unit output](../verification/stage-2/checks/unit.log).
+- **30 real Linux MariaDB 11.8.9 integration tests passed in 23.56 seconds**.
+  [Ten topology tests](../backend/tests/integration/test_topology.py) cover scoped
+  CRUD/revisions/search, forged Inspector writes, explicit parents, deletion and
+  history, imports, composite FK rejection, archive/restore and concurrent edits.
+  [Startup-backfill coverage](../backend/tests/integration/test_topology_upgrade.py)
+  preserves Stage 01 project IDs/revisions/docs/accounts and repeated entity IDs
+  across two systems. See [integration output](../verification/stage-2/s2_final_1017.log).
+- **Four topology browser tests passed in 10.7 seconds**, covering graph forms,
+  stable-ID rename/flows, reparenting, views, collapsed-process search, JSON
+  roundtrip, deletion/undo, duplicate-ID refusal, same-context stale drafts and
+  Inspector navigation in both themes/sizes and persisted drag/resize. **Ten foundation browser tests
+  passed**, including independent same-context pages, keyboard,
+  200% layout equivalent and delayed-authentication regressions. See
+  [topology tests/report](../frontend/e2e/topology.spec.ts) /
+  [result](../verification/stage-2/browser-final.json) and
+  [foundation tests](../frontend/e2e/foundation.spec.ts) /
+  [result](../verification/stage-2/browser-foundation.json).
+- The geometry browser test confirms drag and resize save through real API
+  transactions, survive reload and preserve server/process ownership.
+
+Bounds are explicit: 10 MiB UTF-8/serialized project configuration, nesting 32,
+200,000 tree nodes, 5,000 configured entities, project description 10,000
+characters and finite canvas geometry of magnitude at most 10,000,000. Full
+snapshots retain current/undo/redo states; compact historical names and identity
+tombstones survive pruning.
+
+AT12 remains partial until real bookmarks, notes, log associations and sessions
+exist. AT101's active-job drain/start races and cached investigations also remain
+later-stage work. Fresh schema installation through Alembic 0003/0004,
+idempotent demo startup backfill and a guarded populated 0002-to-0004 upgrade
+passed. The latter preserves two synthetic systems, accounts/password verification,
+preferences, metadata, revisions and documentation. No VM or production database
+was upgraded, and no existing database was downgraded to manufacture evidence.
+Ansible file/bundle import remains Stage 07, distinct from implemented project
+configuration import. Stop at the Stage 02 review gate; Stage 03 requires its
+separate prompt before historical/log-engine implementation.

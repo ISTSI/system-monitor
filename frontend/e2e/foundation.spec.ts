@@ -5,7 +5,8 @@ import { resolve } from 'node:path';
 type Role = 'administrator' | 'inspector';
 type Account = { username: string; password: string };
 type Accounts = Record<Role, Account>;
-const screenshots = resolve('../verification/stage-1/screenshots');
+const evidenceDirectory = resolve(`../verification/${process.env.INSPECTOR_E2E_REPORT_STAGE ?? 'stage-1'}`);
+const screenshots = resolve(evidenceDirectory, 'screenshots');
 const systemA = 'demo-foundation-a';
 const systemB = 'demo-foundation-b';
 const workspacePattern = /^[0-9a-f]{8}-[0-9a-f-]{27}$/;
@@ -476,7 +477,7 @@ test('Administrator creates and edits two colliding system names through real fo
       expect(value.archived).toBe(true);
       retained.push({ project_id: value.project_id, name: value.name, description: value.description, revision: value.revision, archived: value.archived });
     }
-    writeFileSync(resolve('../verification/stage-1/browser-mutation-state.json'), JSON.stringify({
+    writeFileSync(resolve(evidenceDirectory, 'browser-mutation-state.json'), JSON.stringify({
       verified, created_via_browser_forms: createdIds, same_display_name: sharedName,
       independent_description_and_revision_after_refresh: verified,
       cleanup: 'Archived only these newly created synthetic systems; history retained.', retained,

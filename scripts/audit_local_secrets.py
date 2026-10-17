@@ -4,6 +4,7 @@ Run as a local identity allowed to read the ignored .secrets directory. No secre
 value, verifier or value hash is emitted. This is development verification only.
 """
 
+import argparse
 import json
 import os
 import sys
@@ -32,6 +33,11 @@ EXCLUDED = {
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--output", type=Path, default=ROOT / "verification/stage-1/secret-audit.json"
+    )
+    args = parser.parse_args()
     values: set[bytes] = set()
     private_files = 0
 
@@ -101,7 +107,8 @@ def main() -> int:
         "matching_files": sorted(matches),
         "scope": "Private/toolchain/cache/build directories excluded; wheel contents scanned explicitly. Values and value hashes never emitted.",
     }
-    output = ROOT / "verification/stage-1/secret-audit.json"
+    output = args.output
+    output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     return int(bool(matches))

@@ -149,9 +149,19 @@ def require_admin(principal: Principal) -> None:
         raise DomainError("FORBIDDEN", "This action requires an Administrator.", 403)
 
 
-_READ_ACTIONS = frozenset({"system.list", "topology.read", "workspace.create"})
+_READ_ACTIONS = frozenset({"system.list", "topology.read", "topology.search", "workspace.create"})
 _ADMIN_ACTIONS = frozenset(
-    {"system.create", "system.metadata.write", "system.archive", "system.restore", "users.manage"}
+    {
+        "system.create",
+        "system.metadata.write",
+        "system.archive",
+        "system.restore",
+        "users.manage",
+        "topology.write",
+        "project_config.read",
+        "project_config.import",
+        "project_config.export",
+    }
 )
 _OWN_ACTIONS = frozenset(
     {

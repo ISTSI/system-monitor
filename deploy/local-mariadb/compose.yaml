@@ -107,6 +107,7 @@ services:
     volumes:
       - ../../backend:/workspace/backend:ro
       - ../../contracts:/workspace/contracts:ro
+      - ../../examples:/workspace/examples:ro
     networks: [database]
     depends_on:
       mariadb: {condition: service_healthy}

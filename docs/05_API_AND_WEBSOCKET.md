@@ -21,7 +21,10 @@ Prefix all routes with `/api/v1`. Use same-origin HTTPS with server-side cookie 
 | `GET /projects` | System catalogue (Project IDs), active/archived state and own usage | Both |
 | `POST /projects` | Create named system configuration | Administrator |
 | `GET /projects/{project_id}` | Safe topology/documentation viewer projection | Both |
-| `GET /projects/{project_id}/config`, `PUT /projects/{project_id}` | Full secret-free configuration read / revisioned write | Administrator |
+| `GET /projects/{project_id}/config`, `PUT /projects/{project_id}/topology` | Full secret-free configuration read / revisioned shared model/layout write | Administrator |
+| `GET /projects/{project_id}/topology` | Full Administrator or safe Inspector diagram projection | Both |
+| `POST /projects/{project_id}/topology/delete-preview` | Scoped affected entities, flows and views before deletion | Administrator |
+| `POST /projects/{project_id}/topology/undo`, `/topology/redo` | Explicit saved change with current revision precondition | Administrator |
 | `POST /projects/{project_id}/config/preview`, `/config/commit` | Previewed versioned config conversion/import | Administrator; own preview |
 | `GET /projects/{project_id}/config/export` | Secret-free v2 YAML/JSON configuration export | Administrator |
 | `POST /projects/{project_id}/search` | Model-wide search; terms in body, not URL/access logs | Both |

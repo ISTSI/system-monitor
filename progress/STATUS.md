@@ -276,3 +276,88 @@ this completed acceptance run. Later full-product targets remain partial exactly
 as stated in traceability; no SSH/live/import or production release is claimed.
 
 Final close-out: readiness is 200 through explicitly trusted local TLS, bundled HTML is served, and no system certificate store was modified. The final authorized-owner secret audit checked 17 distinct private values against 704 source/log/wheel entries (27 wheel members): zero matches. See `final-readiness.json` and `secret-audit.json`.
+
+## Stage 02 — complete, 17 October 2026
+
+The user authorized Stage 02. Implemented Administrator subsystem/server/process,
+connection/parser, flow and named-view editing; nested React Flow with pan/zoom,
+multi-selection, resize, collapse, dependency selection and fit controls; safe
+Markdown; system-scoped search/reveal; explicit moves and delete-impact previews;
+transactional undo/redo; and versioned YAML/JSON export/preview/commit. Inspector
+navigation uses a safe projection and cannot persist shared changes. Stable IDs,
+name history and scoped relationships survive rename, delete/undo and reimport.
+
+MariaDB migrations `0003_topology` and `0004_topology_name_history` add normalized
+composite-scoped entities, constraints, retained identities/names, bounded full
+undo snapshots and owner/auth-version/revision/digest/expiry-bound import previews.
+Imports cannot create credentials, approvals, bindings or SSH trust. New targets
+remain unresolved proposals. Safe parsing/validation runs in two bounded workers,
+including cancellation. Project revisions and catalogue/archive state stay scoped.
+
+Changed files/groups (inventory: `verification/stage-2/checks/changed-files.txt`):
+
+- Backend topology/config modules, packaged v1/v2 schemas, models/migrations,
+  permission declarations, scoped services, safe viewer/demo upgrade, upload caps,
+  generated OpenAPI; topology/worker/validation/startup-backfill tests.
+- Frontend workspace, graph/editor/config-transfer/Markdown components, domain
+  types, generated API types, shared styles and browser tests/report paths.
+- Local test setup helper, read-only integration example mount, secret-audit
+  output option, README/API/traceability/plan and this status. No dependencies,
+  lockfiles, original themes, golden fixtures or source event IDs were changed.
+
+Verification uses fresh disposable schemas in the existing local pinned MariaDB
+11.8.9 container, with Python 3.13.16 and the locked toolchain. The separate test
+app runs at **https://localhost:8444**, with localhost TLS and protected random
+synthetic accounts in `.secrets/stage2-browser/accounts.json`. The VM database,
+tunnel and port-8443 application were not migrated or replaced.
+
+Actual commands/results (Python is `backend/.venv/Scripts/python.exe` unless
+recorded inside the Linux runner; GNU Make remains unavailable on this host):
+
+| Command/check | Result |
+|---|---|
+| `scripts/stage2_local.py prepare`, `migrate`, `fixture`, `up` | PASS: new isolated schema, separate DML/migration identities, migrations 0003/0004, synthetic accounts/demo and HTTPS app. Explicit `stop`/`up` later loaded final backend while retaining all test data. |
+| `python -m pytest backend/tests/unit -q` | **253 passed**; validation, limits, secret-safe errors, permission/CSRF declarations and cancellation retaining worker permits. Final output `checks/unit.log`. |
+| `scripts/local_mariadb.py new-test --suffix s2_final_1017 --run` (same helper invoked by the recorded local evidence wrapper) | **30 passed, zero skips**, on real Linux MariaDB 11.8.9/Python 3.13.16. Includes direct composite-FK rejection, concurrent revisions, preview ownership/scope/expiry/tampering, tombstones/name history, snapshot bounds, archive and idempotent legacy-demo startup. Exact Docker argv/result: `s2_final_1017-command.json`; output: `s2_final_1017.log`. |
+| `python tests/migrations/verify_populated_upgrade.py` in a separately provisioned empty `inspector_test_s2_upgrade_1017` schema | PASS: explicitly installs 0002, seeds Stage 01-only synthetic data, upgrades to 0004 and starts the real app with DML credentials. Preserves two accounts/password verification/preferences, two projects/metadata/revisions/docs, derives 16 scoped identities/name records and four processes, and intentionally detaches two old workspaces. No drop/downgrade. `populated-upgrade-command.json` and `populated-upgrade.log`. |
+| `scripts/frontend.py e2e topology.spec.ts` with URL/account/report-stage variables | **4 passed in 10.7 s** on the final restarted backend: complete UI graph, duplicate-ID refusal, rename/flow preservation, explicit reparent, named views, collapsed search, JSON download/edit/preview/commit, delete-impact/cancel/confirm/undo, same-context independent pages/stale drafts, Inspector projection, and real drag/resize persistence through reload. `browser-final.json`. |
+| `scripts/frontend.py e2e foundation.spec.ts` | **10 passed in 73.4 s**; roles/themes/sizes, same-context same/different-system isolation, global logout/appearance, keyboard, 200% layout equivalent, delayed authentication races and catalogue mutations. One real login-rate-limit response used the suite's bounded 60-second retry. `browser-foundation.json`. |
+| Same foundation command with `-g 'uses both themes'` | **2 passed in 4.0 s**; final screenshots captured separately under Stage 02 for both roles/themes at 1280x720 and 1920x1080. `browser-visual.json`. |
+| `python -m unittest discover -s tests/package -q` | 128 run: 119 passed, nine POSIX-only permission cases skipped on Windows. Their assertions were retained; Linux integration above has no skips. |
+| `tools/validate_package.py`, `tools/validate_schemas.py`, `tools/validate_deployment_examples.py` | PASS; 18 schemas, 102 valid/36 rejected contract instances and 44 static deployment checks. These remain package checks, not runtime proof. |
+| Ruff check and format-check over backend/src/tests/migrations/scripts; `cd backend; .venv/Scripts/python.exe -m mypy src` | PASS; 55 files at the consolidated check, plus the later populated-upgrade verifier independently checked/formatted; 16 typed source modules. |
+| `scripts/frontend.py lint`, `typecheck`, `api:check`; OpenAPI generation with explicit example deployment config | PASS; generated client matches actual OpenAPI. |
+| `scripts/build_stage1.py` and wheel inspection | PASS; local browser assets, both project schemas and migrations 0003/0004 included. All bundled frontend bytes match the build; no private paths. Wheel SHA256 `9256a20a784eb1dd2b9aeea0be4e9cfe1a1d71e5cb30a97ff6a63cec50546f1e`. `checks/artifact.json`. |
+| `scripts/audit_local_secrets.py --output verification/stage-2/secret-audit.json` | PASS: 30 distinct private values checked against 796 source/log/wheel entries (33 wheel members), zero matches. |
+| Trusted local TLS `GET /api/v1/health/ready` | 200 with certificate/hostname verification enabled using the explicit local development certificate; no system trust-store change. `readiness.json`. |
+
+`verification/stage-2/checks/commands.json` retains exact quality/build commands,
+working directories and exit codes. Final light/dark topology, selected-process
+and import-preview screenshots were visually inspected. Both themes retain the
+reference tokens, clear system labels and unknown-health/access state. External
+browser requests were blocked by the foundation tests and none were attempted.
+
+Failures and corrections are retained separately: initial browser account-file
+ACL access and internal-only Docker port routing; missing example-fixture mount
+in the first integration attempt; React controlled-selection feedback crash
+(fixed and covered by browser page-error assertions); exact implicit-label test
+locators changed to accessible role locators; and a resize test pointer hitting
+the details panel below the clipped canvas, corrected through the real Fit
+diagram control. Repeated test runs exhausted only synthetic workspace leases;
+the guarded fixture expires those accounts' test workspaces before reruns. No
+production limit or assertion was relaxed. The first foundation regression used
+its old Stage 01 screenshot destination; it now writes to the selected stage's
+directory, and final Stage 02 screenshots were captured separately. Earlier
+reports remain historical results. Routine tool invocation/cwd/OpenAPI-config
+errors were corrected before the recorded successful checks.
+
+Limits/unrun work: migration/upgrade checks used guarded synthetic MariaDB data;
+no VM/production upgrade or existing database downgrade was performed.
+Bookmarks/notes/log associations,
+active-job archive races, SSH/historical/live behavior, Ansible file/bundle import,
+Ubuntu/Rocky installation and the full offline release remain their later-stage
+gates. AT12/AT43/AT78/AT101 are partial where they depend on those resources;
+traceability records the implemented Stage 02 portions explicitly.
+
+**Stage 02 completion gate passed. Stop for review before Stage 03.** Next scope:
+`prompts/03_HISTORICAL_LOG_ENGINE.md`.

@@ -146,6 +146,9 @@ async def create_project(
     )
     audit(session, principal, "system.create", identifier, identifier, utc_now_us())
     await session.flush()
+    from inspector.topology import initialize_document
+
+    await initialize_document(session, project)
     return project
 
 
@@ -175,6 +178,10 @@ async def rename_project(
         )
     )
     audit(session, principal, "system.metadata.write", project_id, project_id, utc_now_us())
+    await session.flush()
+    from inspector.topology import sync_metadata
+
+    await sync_metadata(session, project, record_undo=True)
     await session.flush()
     return project
 
@@ -212,6 +219,10 @@ async def set_project_archived(
             .values(state="detached", revision=Workspace.revision + 1)
         )
     audit(session, principal, action, project_id, project_id, utc_now_us())
+    await session.flush()
+    from inspector.topology import sync_metadata
+
+    await sync_metadata(session, project)
     await session.flush()
     return project
 

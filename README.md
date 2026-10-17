@@ -1,6 +1,6 @@
 # System Inspector — Codex implementation package
 
-The Stage 01 foundation includes the real backend, MariaDB migrations, local accounts, persistent appearance and a themed browser catalogue with independent system workspaces. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Topology editing, log investigation and release hardening remain later stages. The original package description below is retained as the handoff baseline.
+The application includes the real backend, MariaDB migrations, local accounts, persistent appearance, independent system workspaces and the Stage 02 topology/configuration implementation. Administrators edit nested diagrams, documentation, flows and named views, with revision checks, undo/redo and explicit configuration import previews. Inspectors navigate a safe read-only projection. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Log investigation, SSH, Ansible inventory reconciliation and release hardening remain later stages. The original package description below is retained as the handoff baseline.
 
 **Package version 3.0 · 17 October 2026**
 

@@ -184,7 +184,7 @@ class ProjectRevision(Base):
 
 
 class DemoSnapshot(Base):
-    """Explicit read-only synthetic presentation, never an operational inventory."""
+    """Preserved Stage 01 synthetic fixture and Stage 02 migration marker."""
 
     __tablename__ = "demo_snapshots"
     __table_args__ = (
@@ -262,3 +262,255 @@ class Audit(Base):
 
 
 AuditEvent = Audit
+
+
+class TopologyState(Base):
+    """Current canonical config and bounded semantic undo/redo revision stacks."""
+
+    __tablename__ = "topology_states"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", name="pk_topology_states"),
+        ForeignKeyConstraint(["project_id"], ["projects.id"], name="fk_topology_states_project"),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    config: Mapped[dict] = mapped_column(JSON)
+    undo_stack: Mapped[list] = mapped_column(JSON)
+    redo_stack: Mapped[list] = mapped_column(JSON)
+
+
+class TopologySnapshot(Base):
+    """Immutable complete snapshots retain historic names and source definitions."""
+
+    __tablename__ = "topology_snapshots"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "revision", name="pk_topology_snapshots"),
+        ForeignKeyConstraint(
+            ["project_id", "revision"],
+            ["project_revisions.project_id", "project_revisions.revision"],
+            name="fk_topology_snapshots_revision",
+        ),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    revision: Mapped[int] = mapped_column(Integer)
+    config: Mapped[dict] = mapped_column(JSON)
+
+
+class EntityIdentity(Base):
+    """Tombstones prohibit reusing an immutable ID for a new entity/type."""
+
+    __tablename__ = "entity_identities"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "id", name="pk_entity_identities"),
+        ForeignKeyConstraint(["project_id"], ["projects.id"], name="fk_entity_identities_project"),
+        CheckConstraint("deleted IN (0, 1)", name="deleted"),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    id: Mapped[str] = mapped_column(identifier())
+    kind: Mapped[str] = mapped_column(VARCHAR(16, charset="ascii", collation="ascii_bin"))
+    name: Mapped[str] = mapped_column(binary_text(256))
+    deleted: Mapped[bool] = mapped_column(Boolean)
+
+
+class NamedTopology:
+    project_id: Mapped[str] = mapped_column(identifier())
+    id: Mapped[str] = mapped_column(identifier())
+    name: Mapped[str] = mapped_column(binary_text(256))
+    name_key: Mapped[str] = mapped_column(verifier())
+    payload: Mapped[dict] = mapped_column(JSON)
+
+
+class EntityNameSnapshot(Base):
+    """Compact name/deletion history survives full-config undo retention."""
+
+    __tablename__ = "topology_entity_names"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "id", "revision", name="pk_topology_entity_names"),
+        ForeignKeyConstraint(
+            ["project_id", "id"],
+            ["entity_identities.project_id", "entity_identities.id"],
+            name="fk_topology_entity_names_identity",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "revision"],
+            ["project_revisions.project_id", "project_revisions.revision"],
+            name="fk_topology_entity_names_revision",
+        ),
+        CheckConstraint("deleted IN (0, 1)", name="deleted"),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    id: Mapped[str] = mapped_column(identifier())
+    revision: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(binary_text(256))
+    deleted: Mapped[bool] = mapped_column(Boolean)
+
+
+def topology_constraints(table: str, *extra: object) -> tuple:
+    return (
+        PrimaryKeyConstraint("project_id", "id", name=f"pk_{table}"),
+        ForeignKeyConstraint(
+            ["project_id", "id"],
+            ["entity_identities.project_id", "entity_identities.id"],
+            name=f"fk_{table}_identity",
+        ),
+        UniqueConstraint("project_id", "name_key", name=f"uq_{table}_project_name"),
+        *extra,
+        TABLE_OPTIONS,
+    )
+
+
+class Subsystem(NamedTopology, Base):
+    __tablename__ = "subsystems"
+    __table_args__ = topology_constraints("subsystems")
+
+
+class ConnectionProfile(NamedTopology, Base):
+    __tablename__ = "connection_profiles"
+    __table_args__ = topology_constraints(
+        "connection_profiles",
+        ForeignKeyConstraint(
+            ["project_id", "jump_connection_id"],
+            ["connection_profiles.project_id", "connection_profiles.id"],
+            name="fk_connections_scoped_jump",
+        ),
+    )
+    jump_connection_id: Mapped[str | None] = mapped_column(identifier(), nullable=True)
+
+
+class ParserProfile(NamedTopology, Base):
+    __tablename__ = "parser_profiles"
+    __table_args__ = topology_constraints("parser_profiles")
+
+
+class Server(NamedTopology, Base):
+    __tablename__ = "servers"
+    __table_args__ = topology_constraints(
+        "servers",
+        ForeignKeyConstraint(
+            ["project_id", "subsystem_id"],
+            ["subsystems.project_id", "subsystems.id"],
+            name="fk_servers_scoped_subsystem",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "connection_id"],
+            ["connection_profiles.project_id", "connection_profiles.id"],
+            name="fk_servers_scoped_connection",
+        ),
+    )
+    subsystem_id: Mapped[str] = mapped_column(identifier())
+    connection_id: Mapped[str] = mapped_column(identifier())
+
+
+class Process(NamedTopology, Base):
+    __tablename__ = "processes"
+    __table_args__ = topology_constraints(
+        "processes",
+        ForeignKeyConstraint(
+            ["project_id", "server_id"],
+            ["servers.project_id", "servers.id"],
+            name="fk_processes_scoped_server",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "parser_id"],
+            ["parser_profiles.project_id", "parser_profiles.id"],
+            name="fk_processes_scoped_parser",
+        ),
+    )
+    server_id: Mapped[str] = mapped_column(identifier())
+    parser_id: Mapped[str] = mapped_column(identifier())
+
+
+class Flow(NamedTopology, Base):
+    __tablename__ = "flows"
+    __table_args__ = topology_constraints(
+        "flows",
+        ForeignKeyConstraint(
+            ["project_id", "source_process_id"],
+            ["processes.project_id", "processes.id"],
+            name="fk_flows_scoped_source",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "target_process_id"],
+            ["processes.project_id", "processes.id"],
+            name="fk_flows_scoped_target",
+        ),
+    )
+    source_process_id: Mapped[str] = mapped_column(identifier())
+    target_process_id: Mapped[str] = mapped_column(identifier())
+
+
+class SharedView(NamedTopology, Base):
+    __tablename__ = "shared_views"
+    __table_args__ = topology_constraints("shared_views")
+
+
+class ViewNode(Base):
+    __tablename__ = "view_nodes"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "view_id", "element_id", name="pk_view_nodes"),
+        ForeignKeyConstraint(
+            ["project_id", "view_id"],
+            ["shared_views.project_id", "shared_views.id"],
+            name="fk_view_nodes_scoped_view",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "element_id"],
+            ["entity_identities.project_id", "entity_identities.id"],
+            name="fk_view_nodes_scoped_element",
+        ),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    view_id: Mapped[str] = mapped_column(identifier())
+    element_id: Mapped[str] = mapped_column(identifier())
+    geometry: Mapped[dict] = mapped_column(JSON)
+
+
+class ViewFlow(Base):
+    __tablename__ = "view_flows"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "view_id", "flow_id", name="pk_view_flows"),
+        ForeignKeyConstraint(
+            ["project_id", "view_id"],
+            ["shared_views.project_id", "shared_views.id"],
+            name="fk_view_flows_scoped_view",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "flow_id"],
+            ["flows.project_id", "flows.id"],
+            name="fk_view_flows_scoped_flow",
+        ),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    view_id: Mapped[str] = mapped_column(identifier())
+    flow_id: Mapped[str] = mapped_column(identifier())
+
+
+class ConfigPreview(Base):
+    __tablename__ = "config_previews"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "id", name="pk_config_previews"),
+        ForeignKeyConstraint(["owner_user_id"], ["users.id"], name="fk_config_previews_owner"),
+        ForeignKeyConstraint(
+            ["project_id", "expected_revision"],
+            ["project_revisions.project_id", "project_revisions.revision"],
+            name="fk_config_previews_revision",
+        ),
+        Index(
+            "ix_config_previews_project_owner_expiry", "project_id", "owner_user_id", "expires_us"
+        ),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    id: Mapped[str] = mapped_column(identifier())
+    owner_user_id: Mapped[str] = mapped_column(identifier())
+    auth_version: Mapped[int] = mapped_column(Integer)
+    expected_revision: Mapped[int] = mapped_column(Integer)
+    source_project_id: Mapped[str] = mapped_column(identifier())
+    digest: Mapped[str] = mapped_column(verifier())
+    config: Mapped[dict] = mapped_column(JSON)
+    expires_us: Mapped[int] = mapped_column(BigInteger)

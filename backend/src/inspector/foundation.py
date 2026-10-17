@@ -10,7 +10,12 @@ from inspector import services
 from inspector.config import Config
 from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
-from inspector.persistence.models import ApplicationSetting, DemoSnapshot, UserPreference
+from inspector.persistence.models import (
+    ApplicationSetting,
+    DemoSnapshot,
+    TopologyState,
+    UserPreference,
+)
 from inspector.security import authorize, require_admin
 
 Theme = Literal["light", "dark", "system"]
@@ -59,14 +64,14 @@ class DemoServer(StrictModel):
     id: str = Field(pattern=ID_PATTERN)
     name: str = Field(max_length=256)
     description: str = Field(max_length=10000)
-    processes: list[DemoProcess] = Field(max_length=10)
+    processes: list[DemoProcess] = Field(max_length=5000)
 
 
 class DemoSubsystem(StrictModel):
     id: str = Field(pattern=ID_PATTERN)
     name: str = Field(max_length=256)
     description: str = Field(max_length=10000)
-    servers: list[DemoServer] = Field(max_length=20)
+    servers: list[DemoServer] = Field(max_length=5000)
 
 
 class ProjectViewerResponse(StrictModel):
@@ -76,7 +81,7 @@ class ProjectViewerResponse(StrictModel):
     revision: int
     archived: bool
     demo: bool
-    subsystems: list[DemoSubsystem] = Field(max_length=20)
+    subsystems: list[DemoSubsystem] = Field(max_length=5000)
 
 
 async def initialize_settings(session: AsyncSession, config: Config) -> ApplicationSetting:
@@ -186,6 +191,27 @@ async def project_viewer(session: AsyncSession, actor: Principal, project_id: st
     authorize(actor, "topology.read")
     project = await services.project_in_context(session, ProjectContext(project_id, actor.user_id))
     demo = await session.get(DemoSnapshot, project_id)
+    state = await session.get(TopologyState, project_id)
+    if state is None:
+        raise DomainError("NOT_READY", "Topology initialization is required before serving.", 503)
+    config = state.config
+    subsystems = []
+    for part in config["subsystems"]:
+        servers = []
+        for host in config["servers"]:
+            if host["subsystem_id"] != part["id"]:
+                continue
+            processes = [
+                {key: process[key] for key in ("id", "name", "description")} | {"log_path": None}
+                for process in config["processes"]
+                if process["server_id"] == host["id"]
+            ]
+            servers.append(
+                {key: host[key] for key in ("id", "name", "description")} | {"processes": processes}
+            )
+        subsystems.append(
+            {key: part[key] for key in ("id", "name", "description")} | {"servers": servers}
+        )
     return ProjectViewerResponse(
         project_id=project.id,
         name=project.name,
@@ -193,7 +219,7 @@ async def project_viewer(session: AsyncSession, actor: Principal, project_id: st
         revision=project.revision,
         archived=project.archived,
         demo=demo is not None,
-        subsystems=demo.payload["subsystems"] if demo else [],
+        subsystems=[DemoSubsystem.model_validate(item) for item in subsystems],
     ).model_dump()
 
 
@@ -250,3 +276,17 @@ async def seed_demo(session: AsyncSession, actor: Principal) -> None:
         safe = [DemoSubsystem.model_validate(item).model_dump() for item in payload["subsystems"]]
         session.add(DemoSnapshot(project_id=project.id, payload={"subsystems": safe}))
         await session.flush()
+        # The explicit synthetic seed is now a real editable topology; this all
+        # occurs within the original create transaction before revision 1 exists
+        # for any external reader. Legacy presentation remains for old clients.
+        from inspector.persistence.models import TopologySnapshot, TopologyState
+        from inspector.topology import demo_config, normalize_rows, record_names, sync_identities
+
+        value = demo_config(project, {"subsystems": safe})
+        state = await session.get(TopologyState, project.id)
+        snapshot = await session.get(TopologySnapshot, (project.id, project.revision))
+        assert state is not None and snapshot is not None
+        state.config, snapshot.config = value, value
+        await sync_identities(session, project.id, value)
+        await record_names(session, project.id, project.revision, None, value)
+        await normalize_rows(session, project.id, value)

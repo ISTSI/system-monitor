@@ -347,7 +347,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RevisionInput"
+                "$ref": "#/components/schemas/inspector__app__RevisionInput"
               }
             }
           }
@@ -397,7 +397,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RevisionInput"
+                "$ref": "#/components/schemas/inspector__app__RevisionInput"
               }
             }
           }
@@ -1013,6 +1013,488 @@
         },
         "x-permission": "self.password.change"
       }
+    },
+    "/api/v1/projects/{project_id}/topology": {
+      "get": {
+        "summary": "Read",
+        "operationId": "read_api_v1_projects__project_id__topology_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopologyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "topology.read"
+      },
+      "put": {
+        "summary": "Write",
+        "operationId": "write_api_v1_projects__project_id__topology_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopologyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopologyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "topology.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/config": {
+      "get": {
+        "summary": "Full Config",
+        "operationId": "full_config_api_v1_projects__project_id__config_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopologyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "project_config.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/topology/delete-preview": {
+      "post": {
+        "summary": "Delete Preview",
+        "operationId": "delete_preview_api_v1_projects__project_id__topology_delete_preview_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "topology.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/topology/undo": {
+      "post": {
+        "summary": "Undo",
+        "operationId": "undo_api_v1_projects__project_id__topology_undo_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/inspector__topology__RevisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopologyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "topology.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/topology/redo": {
+      "post": {
+        "summary": "Redo",
+        "operationId": "redo_api_v1_projects__project_id__topology_redo_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/inspector__topology__RevisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopologyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "topology.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/search": {
+      "post": {
+        "summary": "Search",
+        "operationId": "search_api_v1_projects__project_id__search_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "topology.search"
+      }
+    },
+    "/api/v1/projects/{project_id}/config/preview": {
+      "post": {
+        "summary": "Preview",
+        "operationId": "preview_api_v1_projects__project_id__config_preview_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "project_config.import"
+      }
+    },
+    "/api/v1/projects/{project_id}/config/commit": {
+      "post": {
+        "summary": "Commit",
+        "operationId": "commit_api_v1_projects__project_id__config_commit_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommitInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopologyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "project_config.import"
+      }
+    },
+    "/api/v1/projects/{project_id}/config/export": {
+      "get": {
+        "summary": "Export",
+        "operationId": "export_api_v1_projects__project_id__config_export_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "yaml"
+              ],
+              "type": "string",
+              "default": "json",
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "project_config.export"
+      }
     }
   },
   "components": {
@@ -1223,6 +1705,43 @@
         ],
         "title": "ChangePasswordInput"
       },
+      "CommitInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "preview_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Preview Id"
+          },
+          "confirmed_deletions": {
+            "type": "boolean",
+            "title": "Confirmed Deletions",
+            "default": false
+          },
+          "reparent": {
+            "type": "boolean",
+            "title": "Reparent",
+            "default": false
+          },
+          "confirm_project_remap": {
+            "type": "boolean",
+            "title": "Confirm Project Remap",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "preview_id"
+        ],
+        "title": "CommitInput"
+      },
       "CreateAccountInput": {
         "properties": {
           "username": {
@@ -1268,6 +1787,97 @@
           "password"
         ],
         "title": "CreateAccountInput"
+      },
+      "DeleteInput": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "subsystem",
+              "server",
+              "process",
+              "flow",
+              "connection",
+              "parser",
+              "view"
+            ],
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "DeleteInput"
+      },
+      "DeleteResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "entities": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Entities"
+          },
+          "flows": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Flows"
+          },
+          "views": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Views"
+          },
+          "investigations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Investigations"
+          },
+          "active_sessions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Active Sessions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "revision",
+          "entities",
+          "flows",
+          "views",
+          "investigations",
+          "active_sessions"
+        ],
+        "title": "DeleteResponse"
       },
       "DemoProcess": {
         "properties": {
@@ -1384,6 +1994,34 @@
         "additionalProperties": false,
         "type": "object",
         "title": "EmptyInput"
+      },
+      "ExportResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "yaml"
+            ],
+            "title": "Format"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "format",
+          "content"
+        ],
+        "title": "ExportResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1568,6 +2206,108 @@
         ],
         "title": "PreferenceResponse"
       },
+      "PreviewInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 10485760,
+            "title": "Content"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "yaml"
+            ],
+            "title": "Format"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "content",
+          "format"
+        ],
+        "title": "PreviewInput"
+      },
+      "PreviewResponse": {
+        "properties": {
+          "preview_id": {
+            "type": "string",
+            "title": "Preview Id"
+          },
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "title": "Expected Revision"
+          },
+          "expires_us": {
+            "type": "string",
+            "title": "Expires Us"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "source_project_id": {
+            "type": "string",
+            "title": "Source Project Id"
+          },
+          "target_project_id": {
+            "type": "string",
+            "title": "Target Project Id"
+          },
+          "changes": {
+            "additionalProperties": {
+              "items": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Changes"
+          },
+          "requires_delete_confirmation": {
+            "type": "boolean",
+            "title": "Requires Delete Confirmation"
+          },
+          "requires_reparent_confirmation": {
+            "type": "boolean",
+            "title": "Requires Reparent Confirmation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "preview_id",
+          "project_id",
+          "expected_revision",
+          "expires_us",
+          "warnings",
+          "source_project_id",
+          "target_project_id",
+          "changes",
+          "requires_delete_confirmation",
+          "requires_reparent_confirmation"
+        ],
+        "title": "PreviewResponse"
+      },
       "ProjectInput": {
         "properties": {
           "name": {
@@ -1690,20 +2430,79 @@
         ],
         "title": "ResetPasswordInput"
       },
-      "RevisionInput": {
+      "SearchInput": {
         "properties": {
-          "expected_revision": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Revision"
+          "q": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Q"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "expected_revision"
+          "q"
         ],
-        "title": "RevisionInput"
+        "title": "SearchInput"
+      },
+      "SearchResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "results"
+        ],
+        "title": "SearchResponse"
+      },
+      "SearchResult": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "view_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "view_id"
+        ],
+        "title": "SearchResult"
       },
       "SessionResponse": {
         "properties": {
@@ -1807,6 +2606,83 @@
           "default_theme_mode"
         ],
         "title": "SettingsResponse"
+      },
+      "TopologyInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          },
+          "confirmed_deletions": {
+            "type": "boolean",
+            "title": "Confirmed Deletions",
+            "default": false
+          },
+          "reparent": {
+            "type": "boolean",
+            "title": "Reparent",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "config"
+        ],
+        "title": "TopologyInput"
+      },
+      "TopologyResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable"
+          },
+          "can_undo": {
+            "type": "boolean",
+            "title": "Can Undo"
+          },
+          "can_redo": {
+            "type": "boolean",
+            "title": "Can Redo"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "revision",
+          "archived",
+          "editable",
+          "can_undo",
+          "can_redo",
+          "config"
+        ],
+        "title": "TopologyResponse"
       },
       "UpdateAccountInput": {
         "properties": {
@@ -1965,6 +2841,37 @@
           "live_session_ids"
         ],
         "title": "WorkspaceResponse"
+      },
+      "inspector__app__RevisionInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "RevisionInput"
+      },
+      "inspector__topology__RevisionInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "RevisionInput"
       }
     }
   }

@@ -83,6 +83,7 @@ class Config:
     max_workspaces_per_user: int
     max_workspaces_global: int
     default_theme_mode: str = "dark"
+    config_upload_bytes: int = 10_485_760
 
 
 def parse_config(
@@ -208,6 +209,7 @@ def parse_config(
         ),
         max_workspaces_global=limits.get("max_workspaces_global", 64),
         default_theme_mode=data["bootstrap_settings"]["default_theme_mode"],
+        config_upload_bytes=limits["config_upload_bytes"],
     )
 
 
