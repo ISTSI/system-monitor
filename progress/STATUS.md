@@ -1,15 +1,15 @@
 # Implementation status — version 3
 
-**Current: Stage 01 foundation is complete and verified. Stop before Stage 02.** The approved VM app runs at `https://localhost:8443`; independent Linux Docker integration, runtime and offline lifecycle checks pass. Exact results and remaining later-stage gates are recorded below. Earlier blockers remain as dated history.
+**Current: Stage 03 historical investigation is complete at its review gate.** The local Stage 03 Docker app is running at `https://localhost:8445`. Stage 02 data and the service on port 8444 are retained. The Stage 01 app on port 8443 remains stopped at the user's request; its VM database, SSH tunnel and data are preserved. Exact results and remaining later-stage gates are recorded below. Earlier blockers remain as dated history.
 
 **Starting point: specification package only.** The dated entries preserve the inspection and implementation history.
 
 | Stage | State | Evidence |
 |---|---|---|
 | 00 — Verify and plan | Complete for the foundation scope | Real toolchain/locks/notices; Linux package checks; plan and traceability |
-| 01 — Foundation | Complete; review gate | 127 units, 23 VM API tests, 19 Linux DB tests, 10 browser cases, container lifecycle |
-| 02 — Topology/config | Not started | — |
-| 03 — Historical log engine | Not started | — |
+| 01 — Foundation | Complete | 127 units, 23 VM API tests, 19 Linux DB tests, 10 browser cases, container lifecycle |
+| 02 — Topology/config | Complete; review gate | 253 units, 30 Linux DB tests, populated upgrade, topology/foundation browser tests; evidence below |
+| 03 — Historical log engine | Complete; review gate | 321 units, 47 Linux DB tests, 17 browser cases, populated upgrade; 20 MiB ingest 9.72 s and warmed query p95 at most 240.307 ms on the recorded development machine |
 | 04 — SSH and collection | Not started | — |
 | 05 — Live monitoring | Not started | — |
 | 06 — Investigation tools | Not started | — |
@@ -361,3 +361,179 @@ traceability records the implemented Stage 02 portions explicitly.
 
 **Stage 02 completion gate passed. Stop for review before Stage 03.** Next scope:
 `prompts/03_HISTORICAL_LOG_ENGINE.md`.
+
+## 17 October 2026 — Stage 01 development app stopped
+
+The user authorized shutting down the retained Stage 01 environment. Stopped only
+the workspace Python process serving `127.0.0.1:8443` (PID 20640), after confirming
+its executable path and listener ownership. The VM MariaDB, existing SSH tunnel,
+retained data and Stage 02 Docker environment were left in place.
+
+Changed files: `progress/STATUS.md` and `backend/README.md` identify Stage 02 as
+current and Stage 01 as stopped. No application code, schema or credentials changed.
+
+Commands actually run and results:
+
+- Guarded PowerShell `Stop-Process -Id $stageOneProcess.Id -ErrorAction Stop`,
+  followed by `Wait-Process`: PASS; confirmed Stage 01 PID 20640 exited.
+- `netstat -ano -p tcp` with listener filtering: PASS; port 8443 has no listener,
+  Stage 02 port 8444 remains listening (Docker PID 28756), and tunnel port 13306
+  remains listening (PID 34064).
+- Python `ssl.create_default_context(cafile='.secrets/stage2-browser/localhost-cert.pem')`
+  and `urllib.request.urlopen('https://localhost:8444/api/v1/health/ready', ...)`:
+  PASS, HTTP 200 with certificate/hostname verification. The initial restricted
+  attempt could not read the protected certificate; the read-only elevated rerun passed.
+- The optional `Get-CimInstance Win32_Process` query was denied by Windows;
+  `Get-Process` executable identity and `netstat` ownership checks were used instead.
+
+No automated tests were run for this process shutdown and documentation update.
+No remaining shutdown blocker. Next stage remains Stage 03, pending its review gate.
+
+## 17 October 2026 — Stage 03 historical investigation
+
+The user authorized Stage 03. Implemented the production timestamp parser,
+literal Unicode-casefold predicate, unchanged source/event identity, bounded
+plain/ZIP/TAR.GZ readers, MariaDB event/provenance index and actual historical
+browser viewer. Tests independently compare all fields of **38 golden events**
+and all **17 expected query sequences**; production code does not import the
+package oracle. Integer UTC microseconds and `[from,to)` apply throughout.
+Unknown timestamps remain visible in the diagnostic lane.
+
+Collection planning uses approved configuration through a local transport
+interface. The supplied fixed synthetic manifest requires explicit deployment
+opt-in `SI_LOCAL_HISTORY_DEMO=1`, disabled by default. Browser requests cannot
+supply replacement hosts, local paths, parsers or credentials. Archive members
+are streamed without extraction. Unsafe/corrupt archives and actual-byte,
+metadata, member, ratio, line, event, time and cancellation budgets produce safe
+errors or explicit partial coverage. ZIP64/multivolume and nested archives are
+explicitly unsupported. Observed timestamp extrema do not imply continuity.
+
+Retained collections provide preliminary owned offline investigations. Planning,
+jobs, query cursors, context, event/source IDs and downloads bind project and
+owner. MariaDB schema `0005_historical_capture` uses exact nullable BIGINT times,
+large Unicode text, deterministic nullable ordering and composite foreign keys.
+Snapshots exclude later events; source-local context marks unmatched/out-of-time
+lines. Pages/context cap raw text at 8 MiB and continue with a cursor. Typed
+tombstones preserve captured names after topology deletion. Active captures
+block archiving only their own system. Logout requests cancellation; read scans
+release authentication locks and recheck independent MariaDB authorization at
+bounded intervals. Audited Administrator cancellation grants no private read.
+
+The virtualised viewer supports process selection, UTC validation, plan/collect/
+cancel/progress, retained deep links, merged/five-process split results, global
+and per-process literal filters, diagnostic records, provenance, source-order
+context and captured-source download. Filter limits count Unicode code points.
+Each page owns its system/filter/query state; tests include same-account pages
+in one browser context for different and duplicated systems. Shared themes use
+the existing semantic tokens and original reference images.
+
+Changed files/groups (full inventory: `verification/stage-3/checks/changed-files.txt`):
+
+- `backend/src/inspector/log_engine/`, `history.py`, `history_cache.py`, models,
+  migration 0005, app/config/auth/security/services/topology integration and
+  generated OpenAPI; engine/cache/storage/worker/config unit tests and real
+  MariaDB historical/lifecycle/cancellation cases.
+- `frontend/src/components/HistoricalViewer.tsx`, App/SystemWorkspace/styles,
+  generated API types and historical browser suite; topology report destination
+  now respects the chosen stage.
+- `scripts/stage3_local.py`, `verify_stage3.py`, `benchmark_history.py` and
+  `benchmark_stage3.py`; read-only fixture/script mounts for the local runner;
+  optional diagnostic query lane in `contracts/query.schema.json`.
+- README/backend/frontend setup, docs 12/14 and this status. Package validation
+  skips generated runtime trees; source-link test clones include the real file
+  types referenced by documentation. No contract assertion was removed.
+
+No dependencies, lockfiles, notices, original themes, golden inputs or event IDs
+changed. A separate guarded local schema and `runtime-stage3` HTTPS service on
+**https://localhost:8445** preserve the Stage 02 schema/service on 8444. Random
+synthetic accounts remain in `.secrets/stage3-browser/accounts.json`; persistent
+test cache is separate from the serving credentials. No VM/production host or
+database was contacted or migrated.
+
+Actual commands/results (Python is `backend/.venv/Scripts/python.exe` unless the
+record names the Linux runner; GNU Make is unavailable on this Windows host):
+
+| Command/check | Result |
+|---|---|
+| `scripts/stage3_local.py prepare`, `migrate`, `fixture`, `up`; later `stop`/`up` | PASS: isolated synthetic schema, separate DML/migration identities, schema 0005, fixture systems and trusted local HTTPS. Cache/data retained across restart. |
+| `scripts/verify_stage3.py checks` | All 12 recorded commands passed; exact argv/cwd/exit codes in `checks/commands.json`. |
+| `python -m pytest backend/tests/unit -q` | **321 passed in 6.39 s**, including 61 engine tests, complete golden comparisons, archive/metadata attacks, Unicode boundaries, immutable cache accounting/leases and deployment worker ceilings. |
+| `scripts/verify_stage3.py integration --suffix s3_cancel_final_1017` | **47 passed in 50.18 s**, zero skips/pytest warnings, against actual Linux MariaDB 11.8.9/Python 3.13.16. Golden results, composite FK/forged-scope/download checks, exact time/large Unicode/nullable ordering, snapshot/byte budgets, auth revocation, single-connection-pool queries, cache boundaries, collisions and lifecycle regressions. Real barriers verify cancellation mid-copy and after committed index batches within two seconds, exact byte counts, temporary cleanup, partial coverage and no subsequent writes. `s3_cancel_final_1017.log`; earlier final-code 45-case run also passed. |
+| `scripts/verify_stage3.py upgrade --suffix s2_upgrade_s3_1017` | PASS: populated 0002-to-0005 upgrade in a new disposable MariaDB schema; retains two systems/accounts, password verification, preferences, revisions and documentation; old workspaces intentionally detach. `s2_upgrade_s3_1017.log`. |
+| `scripts/frontend.py e2e historical.spec.ts` with Stage 03 URL/account/report variables | **3 passed in 23.1 s** in the final keyboard/visual run; real plain/ZIP/TAR collection/query/context/download, Unicode 512/513-code-point boundaries, theme/filter persistence, same/different-system pages, forged job/cursor/downloads and invalid UTC. Tab/Enter/Space navigate and activate topology/history/preview controls; Escape closes context and returns focus. `browser-historical-keyboard-final.json`; the earlier expanded visual run also passed 3/3. |
+| `scripts/frontend.py e2e topology.spec.ts`; `... foundation.spec.ts` | **4 topology** and **10 foundation** regressions passed. Includes role permissions, two-page isolation, global logout/theme, keyboard and 200% layout equivalent. `browser-topology-final.json`, `browser-foundation.json`. |
+| `python -m unittest discover -s tests/package -q` | 128 run: **119 passed, nine POSIX-only permission cases skipped on Windows**. Assertions retained; Linux MariaDB tests above have no skips. |
+| `tools/validate_package.py`, `tools/validate_schemas.py`, `tools/validate_deployment_examples.py` | PASS: source/traceability links, 18 schemas, 102 valid and 36 rejected instances, 44 static deployment checks. |
+| Ruff check/format; `cd backend` then `.venv/Scripts/python.exe -m mypy src` | PASS: 73 formatted files at the consolidated run; no issues in 21 typed source files. |
+| `scripts/frontend.py lint`, `typecheck`, `api:check`; `scripts/build_stage1.py` | PASS: generated API consistency and actual bundled frontend/Python distributions. Build retains a non-fatal Vite chunk-size advisory. |
+| Wheel inspection | PASS: 39 members include engine, history/cache and migration 0005; all four bundled browser assets match build bytes; no private paths. SHA256 `3ede9c82ef43489019f6ae3b10b8d1e1c523dc9ff28f672a378773ef0f5f2dfd`. `checks/artifact.json`. |
+| Independent original-input SHA256/size comparison | PASS: all 43 delivered fixture/theme files match `PACKAGE_MANIFEST.json`. `checks/original-inputs.json`. |
+| `scripts/audit_local_secrets.py --output verification/stage-3/secret-audit.json` | PASS: 53 distinct private values against 1,013 source/log/wheel entries, zero matches. Values and value hashes were never emitted. |
+| `scripts/benchmark_stage3.py` with only Stage 03 service stopped, then `scripts/stage3_local.py up` | PASS: final-code production collector/index/query benchmark below; server restored and trusted-TLS readiness returned HTTP 200. |
+| Final documentation package validation/tests; `git diff --check` | PASS: 128 package cases with the same nine Windows/POSIX skips; repository-configured diff check reports no whitespace defects. `checks/diff-check.json`. |
+
+Performance evidence: `verification/stage-3/mariadb-benchmark.json` and sanitized
+command/stdout/stderr records. Generated input is **20,972,325 bytes across five
+sources**, **102,575 indexed events**. Final-code cached ingestion took **9.717 s**.
+Ten measured warmed queries after one declared warm-up produced p95 **73.968 ms**
+unfiltered, **240.307 ms** full-interval literal and **23.718 ms** narrow literal;
+exact matching totals are 102,575 / 105 / 5. Full literal cold cache build took
+**3.375 s**, recorded separately. The immutable read-through cache uses
+57,383,534 of 67,108,864 bytes, including builds/leased entries, with a 300-second
+TTL; project/owner/snapshot/config/auth/process/time/lane scope and current DB
+authorization apply on every hit. Cold/expired/evicted scopes use bounded SQL.
+
+Machine: Linux WSL2 kernel 5.15.153.1, x86_64, Python 3.13.16, MariaDB 11.8.9;
+16 logical CPUs exposed, no CPU quota, runner memory cap 512 MiB, local MariaDB
+service cap 1 GiB. Peak process RSS **161,980,416 bytes**. Generation and network
+download time are excluded. These local results meet the measured 10-second/
+500-ms warmed targets. **The documented 4-vCPU/SSD reference qualification was
+not run**; these results are not Ubuntu/Rocky release certification.
+
+Visual evidence: 73 PNGs plus dimensions, SHA256 and viewport/full-page metadata
+in `verification/stage-3/screenshots/manifest.json`. Both themes at 1280x720 and
+1920x1080 cover merged logs, five split panes, filters, diagnostics and provenance/
+context, alongside topology/import/foundation screenshots. Full-page split
+overviews are identified separately from exact viewport captures. Representative
+light/dark context, diagnostics and split panes were visually inspected.
+
+Failures/corrections: initial restricted Docker/secret-file access required the
+local-only elevated rerun. Source-link test clones initially omitted referenced
+code/log file types; they now include actual targets. Browser fixes addressed
+an implicit-label locator, a retained-investigation load race, sticky row actions,
+readable UTC columns and Unicode UTF-16/code-point differences without weakening
+assertions. The first topology screenshot run used its old Stage 02 destination;
+the configurable report stage was fixed and the final suite recaptured Stage 03.
+Only ignored same-named screenshot artifacts were affected, not Stage 02 data.
+
+Early benchmark failures exposed transaction-context misuse, then slow SQL
+ingestion/refiltering. Retained profiles led to compact indexed storage (full
+public provenance preserved), bounded immutable raw-event caching, Core inserts,
+one grant query and at most two already-queued worker batches per transaction.
+No waiting for extra batches or cap increase was introduced. A redundant join
+predicate causing SQLAlchemy warnings was corrected; the final 47-case run has
+no pytest warnings. Compose identifies the intentionally retained Stage 03
+service as an orphan when using an integration-only override; no remove-orphans
+operation was performed. Earlier failed/slow measurements and sanitized diagnostics remain
+in the Stage 03 evidence directory. No fixture/oracle/acceptance condition was
+relaxed to make a test pass.
+
+A supplementary Git check with `core.autocrlf=false` interpreted existing CRLF
+terminators as trailing whitespace. The check with the repository's actual
+configuration passed; line endings were preserved.
+
+Limits/unrun work: no real SSH/SFTP or remote host testing (Stage 04), live/WS
+monitoring (Stage 05), full saved layouts/notes/bookmarks/correlation/bundles or
+retention management (Stage 06), Ansible uploads (Stage 07), production database
+upgrade, Ubuntu/Rocky installation or complete offline release (Stage 08).
+Those portions of cross-stage acceptance targets remain explicitly partial in
+traceability. Serving app credentials have no migration/root authority.
+
+No remaining Stage 03 implementation blocker. The final local TLS readiness
+check passed HTTP 200 with explicit certificate/hostname verification;
+`verification/stage-3/readiness.json` records the result. No system trust-store
+change was made. The 4-vCPU/SSD and later release qualifications remain unrun as
+specified above.
+
+**Stage 03 completion gate passed. Stop for review before Stage 04.** Next scope:
+`prompts/04_SSH_COLLECTION.md`.

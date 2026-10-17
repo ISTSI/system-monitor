@@ -33,6 +33,17 @@ def test_valid_schema2_config_and_lower_custom_workspace_ceiling():
     assert data["limits"]["max_live_processes_global"] == 10
 
 
+def test_local_history_demo_requires_explicit_server_opt_in_and_preserves_caps():
+    config = parse(sample())
+    assert config.local_history_demo is False
+    assert config.cache_dir == sample()["deployment"]["cache_dir"]
+    assert config.history_limits["max_line_bytes"] == 262144
+    assert parse(sample(), {"SI_LOCAL_HISTORY_DEMO": "1"}).local_history_demo is True
+    for value in ("", "true", "yes", "2"):
+        with pytest.raises(ConfigurationError, match="SI_LOCAL_HISTORY_DEMO"):
+            parse(sample(), {"SI_LOCAL_HISTORY_DEMO": value})
+
+
 def test_duplicate_unknown_alias_and_oversize_rejected():
     for raw in (
         b"database: 1\ndatabase: 2",

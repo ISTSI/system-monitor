@@ -10,6 +10,7 @@ from inspector.domain import Principal, ProjectContext
 from inspector.errors import DomainError
 from inspector.persistence.models import (
     Audit,
+    HistoryJob,
     Project,
     ProjectRevision,
     SecurityState,
@@ -202,6 +203,23 @@ async def set_project_archived(
     )
     if project.revision != expected_revision or project.archived == archived:
         raise DomainError("REVISION_CONFLICT", "System has changed; reload before saving.", 409)
+    if archived:
+        active_capture = await session.scalar(
+            select(HistoryJob.id)
+            .where(
+                HistoryJob.project_id == project_id,
+                HistoryJob.status.in_(
+                    ("queued", "planning", "collecting", "indexing", "cancel_requested")
+                ),
+            )
+            .limit(1)
+        )
+        if active_capture is not None:
+            raise DomainError(
+                "COLLECTION_ACTIVE",
+                "Cancel this system's active collections before archiving.",
+                409,
+            )
     project.archived = archived
     project.revision += 1
     session.add(

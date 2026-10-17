@@ -29,6 +29,8 @@ from inspector.persistence.models import (
     EntityIdentity,
     EntityNameSnapshot,
     Flow,
+    HistoryJob,
+    HistorySource,
     ParserProfile,
     Process,
     Project,
@@ -740,13 +742,46 @@ def build_topology_router(transaction: Any, authenticated: Any, protected_write:
     async def delete_preview(
         project_id: str, payload: DeleteInput, actor: Writer, session: Session
     ) -> dict:
-        _actor, project, state = await context(
+        actor, project, state = await context(
             session, actor, project_id, "topology.write", writable=True
         )
+        impact = deletion_impact(state.config, payload.kind, payload.id)
+        processes = [item["id"] for item in impact["entities"] if item["kind"] == "process"]
+        if processes:
+            jobs = (
+                await session.scalars(
+                    select(HistoryJob)
+                    .where(
+                        HistoryJob.project_id == project_id,
+                        HistoryJob.id.in_(
+                            select(HistorySource.job_id).where(
+                                HistorySource.project_id == project_id,
+                                HistorySource.process_id.in_(processes),
+                            )
+                        ),
+                    )
+                    .limit(1001)
+                )
+            ).all()
+            if len(jobs) > 1000:
+                raise DomainError(
+                    "LIMIT_REACHED", "Deletion affects too many captures to preview.", 413
+                )
+            # Reveal only the caller's private investigation IDs. Active job
+            # identifiers are operational metadata available to Administrators.
+            impact["investigations"] = [
+                job.id for job in jobs if job.owner_user_id == actor.user_id
+            ]
+            impact["active_sessions"] = [
+                job.id
+                for job in jobs
+                if job.status
+                in {"queued", "planning", "collecting", "indexing", "cancel_requested"}
+            ]
         return dict(
             project_id=project.id,
             revision=project.revision,
-            **deletion_impact(state.config, payload.kind, payload.id),
+            **impact,
         )
 
     @router.post(

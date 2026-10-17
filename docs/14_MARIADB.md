@@ -22,6 +22,12 @@ DB location is deployment configuration because it is needed before MariaDB is a
 
 Project YAML/JSON and investigation bundles must not contain database settings, passwords, user hashes, roles, auth sessions or vault keys. `bootstrap_settings.default_theme_mode` initializes the persisted global setting on a new installation only; subsequent restarts must not overwrite an Administrator's saved default or per-user preferences. Deployment resource limits are ceilings; Administrator UI overrides can reduce them and adjust validated defaults, not silently exceed them.
 
+The Stage 03 local fixture transport has a separate explicit deployment-only
+opt-in, `SI_LOCAL_HISTORY_DEMO=1` (`0` is the default; other values fail startup).
+It authorizes only the bundled synthetic fixture mapping through configured
+process/path selectors. Browser requests and project imports cannot enable it
+or choose a local path. It does not authorize SSH or production target access.
+
 ## Managed and external connectivity
 
 For the managed Docker stack, `host: mariadb`, port 3306, database `system_inspector`, and runtime user `inspector_app` are the reference values. `localhost` inside an application container is not the database container. The database has a private internal network, persistent named volume, healthcheck and no published port. The application additionally needs an egress-capable service network for its approved LAN/VPN SSH traffic; the DB does not. A private bridge is not encrypted: disabling DB TLS is an explicit managed-single-host exception, not an assertion of transport encryption.

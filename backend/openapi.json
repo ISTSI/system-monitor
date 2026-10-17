@@ -1495,6 +1495,553 @@
         },
         "x-permission": "project_config.export"
       }
+    },
+    "/api/v1/projects/{project_id}/collections/plan": {
+      "post": {
+        "summary": "Plan",
+        "operationId": "plan_api_v1_projects__project_id__collections_plan_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoricalScopeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalPlanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "collection.create"
+      }
+    },
+    "/api/v1/projects/{project_id}/collections": {
+      "post": {
+        "summary": "Start",
+        "operationId": "start_api_v1_projects__project_id__collections_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoricalScopeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalJobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "collection.create"
+      }
+    },
+    "/api/v1/projects/{project_id}/investigations/{job_id}": {
+      "get": {
+        "summary": "Read Job",
+        "operationId": "read_job_api_v1_projects__project_id__investigations__job_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalJobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "investigation.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/jobs/{job_id}": {
+      "get": {
+        "summary": "Read Job",
+        "operationId": "read_job_api_v1_projects__project_id__jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalJobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "collection.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/investigations": {
+      "get": {
+        "summary": "Investigations",
+        "operationId": "investigations_api_v1_projects__project_id__investigations_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "investigation.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/jobs/{job_id}/cancel": {
+      "post": {
+        "summary": "Cancel",
+        "operationId": "cancel_api_v1_projects__project_id__jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HistoricalJobResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/HistoricalAdministrativeCancelResponse"
+                    }
+                  ],
+                  "title": "Response Cancel Api V1 Projects  Project Id  Jobs  Job Id  Cancel Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "collection.cancel"
+      }
+    },
+    "/api/v1/projects/{project_id}/investigations/{job_id}/query": {
+      "post": {
+        "summary": "Query",
+        "operationId": "query_api_v1_projects__project_id__investigations__job_id__query_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoricalQueryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalQueryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "investigation.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/investigations/{job_id}/events/{event_id}/context": {
+      "post": {
+        "summary": "Context",
+        "operationId": "context_api_v1_projects__project_id__investigations__job_id__events__event_id__context_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoricalContextInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalContextResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "investigation.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/investigations/{job_id}/sources/{source_id}/download": {
+      "post": {
+        "summary": "Grant Download",
+        "operationId": "grant_download_api_v1_projects__project_id__investigations__job_id__sources__source_id__download_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Source Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoricalDownloadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "download.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/downloads/{opaque_id}": {
+      "get": {
+        "summary": "Download",
+        "operationId": "download_api_v1_projects__project_id__downloads__opaque_id__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "opaque_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Opaque Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "download.read"
+      }
     }
   },
   "components": {
@@ -1939,7 +2486,7 @@
               "$ref": "#/components/schemas/DemoProcess"
             },
             "type": "array",
-            "maxItems": 10,
+            "maxItems": 5000,
             "title": "Processes"
           }
         },
@@ -1975,7 +2522,7 @@
               "$ref": "#/components/schemas/DemoServer"
             },
             "type": "array",
-            "maxItems": 20,
+            "maxItems": 5000,
             "title": "Servers"
           }
         },
@@ -2035,6 +2582,867 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HistoricalAdministrativeCancelResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "job_id",
+          "status"
+        ],
+        "title": "HistoricalAdministrativeCancelResponse"
+      },
+      "HistoricalContextInput": {
+        "properties": {
+          "before": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Before",
+            "default": 5
+          },
+          "after": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "After",
+            "default": 5
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "To"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/HistoricalFilter"
+          },
+          "per_process_filters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HistoricalFilter"
+            },
+            "type": "object",
+            "maxProperties": 200,
+            "title": "Per Process Filters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "from",
+          "to"
+        ],
+        "title": "HistoricalContextInput"
+      },
+      "HistoricalContextItem": {
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/HistoricalEvent"
+          },
+          "outside_time_bounds": {
+            "type": "boolean",
+            "title": "Outside Time Bounds"
+          },
+          "matches_filter": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matches Filter"
+          },
+          "is_anchor": {
+            "type": "boolean",
+            "title": "Is Anchor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event",
+          "outside_time_bounds",
+          "matches_filter",
+          "is_anchor"
+        ],
+        "title": "HistoricalContextItem"
+      },
+      "HistoricalContextResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HistoricalContextItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "event_id",
+          "items"
+        ],
+        "title": "HistoricalContextResponse"
+      },
+      "HistoricalCoverage": {
+        "properties": {
+          "source_revision_id": {
+            "type": "string",
+            "title": "Source Revision Id"
+          },
+          "process_id": {
+            "type": "string",
+            "title": "Process Id"
+          },
+          "remote_path": {
+            "type": "string",
+            "title": "Remote Path"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "events": {
+            "type": "integer",
+            "title": "Events"
+          },
+          "bytes": {
+            "type": "integer",
+            "title": "Bytes"
+          },
+          "expanded_bytes": {
+            "type": "integer",
+            "title": "Expanded Bytes"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "checksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checksum"
+          },
+          "byte_start": {
+            "type": "integer",
+            "title": "Byte Start"
+          },
+          "byte_end": {
+            "type": "integer",
+            "title": "Byte End"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_revision_id",
+          "process_id",
+          "remote_path",
+          "status",
+          "events",
+          "bytes",
+          "expanded_bytes",
+          "error_code",
+          "checksum",
+          "byte_start",
+          "byte_end"
+        ],
+        "title": "HistoricalCoverage"
+      },
+      "HistoricalDownloadResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "download_id": {
+            "type": "string",
+            "title": "Download Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "download_id",
+          "url"
+        ],
+        "title": "HistoricalDownloadResponse"
+      },
+      "HistoricalEvent": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version"
+          },
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "process_id": {
+            "type": "string",
+            "title": "Process Id"
+          },
+          "server_id": {
+            "type": "string",
+            "title": "Server Id"
+          },
+          "process_name_snapshot": {
+            "type": "string",
+            "title": "Process Name Snapshot"
+          },
+          "server_name_snapshot": {
+            "type": "string",
+            "title": "Server Name Snapshot"
+          },
+          "raw_line": {
+            "type": "string",
+            "title": "Raw Line"
+          },
+          "timestamp_original": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Original"
+          },
+          "timestamp_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Utc"
+          },
+          "timestamp_us": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Us"
+          },
+          "received_at": {
+            "type": "string",
+            "title": "Received At"
+          },
+          "parse_status": {
+            "type": "string",
+            "title": "Parse Status"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Metadata"
+          },
+          "source": {
+            "$ref": "#/components/schemas/HistoricalSourceProvenance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "project_id",
+          "event_id",
+          "process_id",
+          "server_id",
+          "process_name_snapshot",
+          "server_name_snapshot",
+          "raw_line",
+          "timestamp_original",
+          "timestamp_utc",
+          "timestamp_us",
+          "received_at",
+          "parse_status",
+          "metadata",
+          "source"
+        ],
+        "title": "HistoricalEvent"
+      },
+      "HistoricalFilter": {
+        "properties": {
+          "include": {
+            "items": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Include"
+          },
+          "include_mode": {
+            "type": "string",
+            "enum": [
+              "any",
+              "all"
+            ],
+            "title": "Include Mode",
+            "default": "any"
+          },
+          "exclude": {
+            "items": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Exclude"
+          },
+          "case_sensitive": {
+            "type": "boolean",
+            "title": "Case Sensitive",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HistoricalFilter"
+      },
+      "HistoricalJobResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "investigation_id": {
+            "type": "string",
+            "title": "Investigation Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "title": "Workspace Id"
+          },
+          "process_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Process Ids"
+          },
+          "from": {
+            "type": "string",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "demo_mode": {
+            "type": "boolean",
+            "title": "Demo Mode"
+          },
+          "source_snapshot_revision": {
+            "type": "integer",
+            "title": "Source Snapshot Revision"
+          },
+          "source_count": {
+            "type": "integer",
+            "title": "Source Count"
+          },
+          "scanned_sources": {
+            "type": "integer",
+            "title": "Scanned Sources"
+          },
+          "event_count": {
+            "type": "integer",
+            "title": "Event Count"
+          },
+          "parse_issue_count": {
+            "type": "integer",
+            "title": "Parse Issue Count"
+          },
+          "downloaded_bytes": {
+            "type": "integer",
+            "title": "Downloaded Bytes"
+          },
+          "expanded_bytes": {
+            "type": "integer",
+            "title": "Expanded Bytes"
+          },
+          "coverage_status": {
+            "type": "string",
+            "title": "Coverage Status"
+          },
+          "coverage": {
+            "items": {
+              "$ref": "#/components/schemas/HistoricalCoverage"
+            },
+            "type": "array",
+            "title": "Coverage"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "job_id",
+          "investigation_id",
+          "workspace_id",
+          "process_ids",
+          "from",
+          "to",
+          "status",
+          "demo_mode",
+          "source_snapshot_revision",
+          "source_count",
+          "scanned_sources",
+          "event_count",
+          "parse_issue_count",
+          "downloaded_bytes",
+          "expanded_bytes",
+          "coverage_status",
+          "coverage",
+          "errors"
+        ],
+        "title": "HistoricalJobResponse"
+      },
+      "HistoricalListResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HistoricalJobResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "items"
+        ],
+        "title": "HistoricalListResponse"
+      },
+      "HistoricalPlanResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "demo_mode": {
+            "type": "boolean",
+            "title": "Demo Mode"
+          },
+          "process_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Process Ids"
+          },
+          "from": {
+            "type": "string",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "source_count": {
+            "type": "integer",
+            "title": "Source Count"
+          },
+          "estimated_bytes": {
+            "type": "integer",
+            "title": "Estimated Bytes"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/HistoricalPlanSource"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "demo_mode",
+          "process_ids",
+          "from",
+          "to",
+          "source_count",
+          "estimated_bytes",
+          "sources",
+          "warnings"
+        ],
+        "title": "HistoricalPlanResponse"
+      },
+      "HistoricalPlanSource": {
+        "properties": {
+          "source_revision_id": {
+            "type": "string",
+            "title": "Source Revision Id"
+          },
+          "process_id": {
+            "type": "string",
+            "title": "Process Id"
+          },
+          "remote_path": {
+            "type": "string",
+            "title": "Remote Path"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "estimated_bytes": {
+            "type": "integer",
+            "title": "Estimated Bytes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_revision_id",
+          "process_id",
+          "remote_path",
+          "kind",
+          "estimated_bytes"
+        ],
+        "title": "HistoricalPlanSource"
+      },
+      "HistoricalQueryInput": {
+        "properties": {
+          "process_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Process Ids"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "To"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/HistoricalFilter"
+          },
+          "per_process_filters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HistoricalFilter"
+            },
+            "type": "object",
+            "maxProperties": 200,
+            "title": "Per Process Filters"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 200
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          },
+          "lane": {
+            "type": "string",
+            "enum": [
+              "events",
+              "diagnostic"
+            ],
+            "title": "Lane",
+            "default": "events"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "process_ids",
+          "from",
+          "to"
+        ],
+        "title": "HistoricalQueryInput"
+      },
+      "HistoricalQueryResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HistoricalEvent"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "matched_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Count"
+          },
+          "parse_issue_count": {
+            "type": "integer",
+            "title": "Parse Issue Count"
+          },
+          "source_snapshot_revision": {
+            "type": "integer",
+            "title": "Source Snapshot Revision"
+          },
+          "partial": {
+            "type": "boolean",
+            "title": "Partial"
+          },
+          "coverage": {
+            "items": {
+              "$ref": "#/components/schemas/HistoricalCoverage"
+            },
+            "type": "array",
+            "title": "Coverage"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "items",
+          "next_cursor",
+          "matched_count",
+          "parse_issue_count",
+          "source_snapshot_revision",
+          "partial",
+          "coverage"
+        ],
+        "title": "HistoricalQueryResponse"
+      },
+      "HistoricalScopeInput": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Workspace Id"
+          },
+          "process_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Process Ids"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "To"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "workspace_id",
+          "process_ids",
+          "from",
+          "to"
+        ],
+        "title": "HistoricalScopeInput"
+      },
+      "HistoricalSourceProvenance": {
+        "properties": {
+          "source_revision_id": {
+            "type": "string",
+            "title": "Source Revision Id"
+          },
+          "remote_path": {
+            "type": "string",
+            "title": "Remote Path"
+          },
+          "archive_member": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archive Member"
+          },
+          "member_ordinal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Ordinal"
+          },
+          "byte_start": {
+            "type": "integer",
+            "title": "Byte Start"
+          },
+          "byte_end": {
+            "type": "integer",
+            "title": "Byte End"
+          },
+          "line_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Number"
+          },
+          "content_sha256": {
+            "type": "string",
+            "title": "Content Sha256"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_revision_id",
+          "remote_path",
+          "archive_member",
+          "member_ordinal",
+          "byte_start",
+          "byte_end",
+          "line_number",
+          "content_sha256"
+        ],
+        "title": "HistoricalSourceProvenance"
       },
       "LoginInput": {
         "properties": {
@@ -2384,7 +3792,7 @@
               "$ref": "#/components/schemas/DemoSubsystem"
             },
             "type": "array",
-            "maxItems": 20,
+            "maxItems": 5000,
             "title": "Subsystems"
           }
         },

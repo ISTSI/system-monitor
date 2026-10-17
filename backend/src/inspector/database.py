@@ -15,7 +15,7 @@ from sqlalchemy.pool import NullPool
 
 from inspector.config import DatabaseConfig, read_secret
 
-SCHEMA_REVISION = "0004_topology_name_history"
+SCHEMA_REVISION = "0005_historical_capture"
 
 
 def validate_runtime_grants(grants: list[str], database: str) -> None:

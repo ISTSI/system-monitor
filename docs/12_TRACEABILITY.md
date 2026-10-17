@@ -118,3 +118,36 @@ most 10,000 characters and finite canvas coordinates/dimensions at most
 10,000,000 in magnitude. Root lists and credential references remain proposals;
 imports create no approvals, trust, bindings or target connections. Stop at the
 Stage 02 gate before historical/log implementation.
+
+## Stage 03 historical investigation evidence — 17 October 2026
+
+The production parser and local transport feed MariaDB and the actual browser
+viewer. Expected fixture files are used only by tests; production parsing,
+filtering and identity code do not import the package oracle. This stage does
+not implement SSH, live monitoring, bookmark editing or investigation bundles.
+
+| Targets | Implemented evidence | Scope and limits |
+|---|---|---|
+| AT13–AT18 | [Engine tests](../backend/tests/unit/test_log_engine.py) compare every field of all 38 golden events and all 17 query sequences; [MariaDB API tests](../backend/tests/integration/test_history.py) independently reproduce those results, exact BIGINT UTC time, Unicode literals and large lines | Local plain/ZIP/TAR.GZ transport; event IDs retain their original derivation |
+| AT19–AT21, AT44 | Actual-byte/download/member/line/count/ratio/deadline limits, corrupt CRC/trailer and unsafe member rejection, cancellation before indexing and [during partial copy/after committed batches](../backend/tests/integration/test_history_cancellation.py), partial manifests and temporary-file cleanup | Coverage is complete only for scanned candidates; observed timestamp extrema never prove continuity. ZIP64/multivolume and nested archives return explicit unsupported diagnostics |
+| AT22, AT95 | Snapshot keyset pagination pins sequence/revision/filter/owner/project; later indexed events do not enter an old cursor. Byte-limited pages continue without skipped events. Context remains in source order with outside-filter/time labels | Diagnostic records receive no invented timestamp; truncated oversized previews retain unknown literal-match state |
+| AT23 | Generated five-source 20 MiB benchmark exercises the production collector, MariaDB bulk index and warmed queries, with exact machine/limits and cold/warm timings in [benchmark evidence](../verification/stage-3/mariadb-benchmark.json) | Development WSL2/Docker measurement; not a certified 4-vCPU Ubuntu/Rocky installation or SSH latency measurement |
+| AT45 | Existing bounded configuration parsing rejects executable/unsafe YAML; fixed parser strategies accept no executable expressions. Archive metadata allocation and literal term sizes are bounded | Connection/parser-preview workflows that require SSH remain Stage 04 |
+| AT73, AT94, AT115 | Forged project/job/event/source/cursor/download/owner checks; real composite FK rejection of source type, source-process, source-job, job-workspace-owner and download-owner pairings. Administrators may audit-cancel another owner's job without private read access | HTTP historical paths implemented; WebSocket/live/bundle paths remain their later stages |
+| R31, R32, R38, R47–R49 | [Historical browser tests](../frontend/e2e/historical.spec.ts) exercise real query/filter/context/download results, themes, merged/split panes, Unicode, and different/same-system pages in one browser context | Pages own their selection/filter/query state; account logout/theme preferences remain intentionally shared |
+| R28, R41, R44, R55 | Retained collection deep links, interruption on restart, bounded auth/session freshness, typed tombstones preserving captured event names after topology deletion, and [lifecycle tests](../backend/tests/integration/test_history_lifecycle.py) | Full saved analysis layouts/notes/bookmarks and retention management remain Stage 06; populated upgrade verification preserves two systems/accounts/preferences to schema 0005 |
+
+Current execution results: **321 backend unit tests**, **47 Linux MariaDB
+integration tests**, **three historical browser tests**, **four topology browser
+regressions**, and **ten foundation browser regressions** passed. The package
+suite ran 128 cases with nine POSIX-only permission skips on Windows; those skips
+are not represented as Linux runtime evidence. Ruff, mypy, frontend lint/types,
+generated API consistency and the bundled build passed. Final stage status and
+the performance record are maintained in [STATUS.md](../progress/STATUS.md).
+
+The optional `lane` field added to the query schema defaults to `events`, keeping
+existing golden request payloads valid. The immutable read-through cache is
+bounded to 64 MiB including builds and leases, with a five-minute TTL. Its full
+scope includes project, owner, capture/config/snapshot/auth revisions,
+process/time scope and lane. Every hit rechecks MariaDB authorization and current
+session state. Cold, expired or evicted scopes use the bounded SQL scan.

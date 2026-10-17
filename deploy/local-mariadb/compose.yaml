@@ -108,6 +108,8 @@ services:
       - ../../backend:/workspace/backend:ro
       - ../../contracts:/workspace/contracts:ro
       - ../../examples:/workspace/examples:ro
+      - ../../fixtures:/workspace/fixtures:ro
+      - ../../scripts:/workspace/scripts:ro
     networks: [database]
     depends_on:
       mariadb: {condition: service_healthy}

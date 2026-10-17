@@ -149,7 +149,9 @@ def require_admin(principal: Principal) -> None:
         raise DomainError("FORBIDDEN", "This action requires an Administrator.", 403)
 
 
-_READ_ACTIONS = frozenset({"system.list", "topology.read", "topology.search", "workspace.create"})
+_READ_ACTIONS = frozenset(
+    {"system.list", "topology.read", "topology.search", "workspace.create", "collection.create"}
+)
 _ADMIN_ACTIONS = frozenset(
     {
         "system.create",
@@ -170,6 +172,10 @@ _OWN_ACTIONS = frozenset(
         "preference.read",
         "preference.write",
         "self.password.change",
+        "collection.read",
+        "collection.cancel",
+        "investigation.read",
+        "download.read",
     }
 )
 
@@ -185,6 +191,8 @@ def authorize(principal: Principal, action: str, *, owner_user_id: str | None = 
     if action in _ADMIN_ACTIONS:
         require_admin(principal)
     elif action in _OWN_ACTIONS:
+        if action == "collection.cancel" and principal.role == "administrator":
+            return
         if owner_user_id is None or owner_user_id != principal.user_id:
             raise DomainError("NOT_FOUND", "Resource not found.", 404)
     elif action not in _READ_ACTIONS:

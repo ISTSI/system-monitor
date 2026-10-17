@@ -112,6 +112,14 @@
         "string",
         "null"
       ]
+    },
+    "lane": {
+      "enum": [
+        "events",
+        "diagnostic"
+      ],
+      "default": "events",
+      "description": "Unknown timestamp records remain diagnostic and never receive an invented time."
     }
   },
   "required": [

@@ -84,6 +84,9 @@ class Config:
     max_workspaces_global: int
     default_theme_mode: str = "dark"
     config_upload_bytes: int = 10_485_760
+    cache_dir: str = "/var/cache/system-inspector"
+    history_limits: dict[str, int] = field(default_factory=dict)
+    local_history_demo: bool = False
 
 
 def parse_config(
@@ -125,6 +128,8 @@ def parse_config(
     schema_path = Path(__file__).parent / "contracts" / "deployment.schema.json"
     validator = Draft202012Validator(json.loads(schema_path.read_text(encoding="utf-8")))
     env = environment if environment is not None else dict(os.environ)
+    if env.get("SI_LOCAL_HISTORY_DEMO", "0") not in {"0", "1"}:
+        raise ConfigurationError("SI_LOCAL_HISTORY_DEMO: expected 0 or 1.")
     overrides = {
         "SI_DB_HOST": "host",
         "SI_DB_PORT": "port",
@@ -210,6 +215,9 @@ def parse_config(
         max_workspaces_global=limits.get("max_workspaces_global", 64),
         default_theme_mode=data["bootstrap_settings"]["default_theme_mode"],
         config_upload_bytes=limits["config_upload_bytes"],
+        cache_dir=data["deployment"]["cache_dir"],
+        history_limits={key: value for key, value in limits.items() if isinstance(value, int)},
+        local_history_demo=env.get("SI_LOCAL_HISTORY_DEMO", "0") == "1",
     )
 
 

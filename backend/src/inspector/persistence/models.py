@@ -19,7 +19,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.dialects.mysql import VARCHAR
+from sqlalchemy.dialects.mysql import LONGTEXT, VARCHAR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -303,6 +303,7 @@ class EntityIdentity(Base):
     __tablename__ = "entity_identities"
     __table_args__ = (
         PrimaryKeyConstraint("project_id", "id", name="pk_entity_identities"),
+        UniqueConstraint("project_id", "id", "kind", name="uq_entity_identities_kind"),
         ForeignKeyConstraint(["project_id"], ["projects.id"], name="fk_entity_identities_project"),
         CheckConstraint("deleted IN (0, 1)", name="deleted"),
         TABLE_OPTIONS,
@@ -513,4 +514,186 @@ class ConfigPreview(Base):
     source_project_id: Mapped[str] = mapped_column(identifier())
     digest: Mapped[str] = mapped_column(verifier())
     config: Mapped[dict] = mapped_column(JSON)
+    expires_us: Mapped[int] = mapped_column(BigInteger)
+
+
+class HistoryJob(Base):
+    """Private capture and its offline investigation; never serialize the config."""
+
+    __tablename__ = "history_jobs"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "id", name="pk_history_jobs"),
+        ForeignKeyConstraint(
+            ["project_id", "workspace_id", "owner_user_id"],
+            ["workspaces.project_id", "workspaces.id", "workspaces.owner_user_id"],
+            name="fk_history_jobs_scoped_workspace_owner",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "config_revision"],
+            ["project_revisions.project_id", "project_revisions.revision"],
+            name="fk_history_jobs_scoped_revision",
+        ),
+        UniqueConstraint("project_id", "id", "owner_user_id", name="uq_history_jobs_owner"),
+        CheckConstraint("snapshot_revision >= 0 AND event_count >= 0", name="counts"),
+        Index("ix_history_jobs_owner_state", "owner_user_id", "status"),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    id: Mapped[str] = mapped_column(identifier())
+    workspace_id: Mapped[str] = mapped_column(identifier())
+    owner_user_id: Mapped[str] = mapped_column(identifier())
+    auth_version: Mapped[int] = mapped_column(Integer)
+    auth_session_hash: Mapped[str] = mapped_column(verifier())
+    config_revision: Mapped[int] = mapped_column(Integer)
+    config_snapshot: Mapped[dict] = mapped_column(JSON)
+    process_ids: Mapped[list] = mapped_column(JSON)
+    from_us: Mapped[int] = mapped_column(BigInteger)
+    to_us: Mapped[int] = mapped_column(BigInteger)
+    status: Mapped[str] = mapped_column(binary_text(32))
+    snapshot_revision: Mapped[int] = mapped_column(BigInteger)
+    event_count: Mapped[int] = mapped_column(BigInteger)
+    parse_issue_count: Mapped[int] = mapped_column(BigInteger)
+    downloaded_bytes: Mapped[int] = mapped_column(BigInteger)
+    expanded_bytes: Mapped[int] = mapped_column(BigInteger)
+    created_us: Mapped[int] = mapped_column(BigInteger)
+    errors: Mapped[list] = mapped_column(JSON)
+
+
+class HistorySource(Base):
+    __tablename__ = "history_sources"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "job_id", "id", name="pk_history_sources"),
+        ForeignKeyConstraint(
+            ["project_id", "job_id"],
+            ["history_jobs.project_id", "history_jobs.id"],
+            name="fk_history_sources_scoped_job",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "process_id", "process_kind"],
+            ["entity_identities.project_id", "entity_identities.id", "entity_identities.kind"],
+            name="fk_history_sources_scoped_process",
+        ),
+        CheckConstraint("process_kind = 'process'", name="process_kind"),
+        UniqueConstraint(
+            "project_id", "job_id", "id", "process_id", name="uq_history_sources_process"
+        ),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    job_id: Mapped[str] = mapped_column(identifier())
+    id: Mapped[str] = mapped_column(identifier())
+    process_id: Mapped[str] = mapped_column(identifier())
+    process_kind: Mapped[str] = mapped_column(
+        VARCHAR(16, charset="ascii", collation="ascii_bin"),
+        default="process",
+        server_default=text("'process'"),
+    )
+    remote_path: Mapped[str] = mapped_column(Text)
+    kind: Mapped[str] = mapped_column(binary_text(16))
+    cache_name: Mapped[str] = mapped_column(identifier())
+    checksum: Mapped[str | None] = mapped_column(verifier(), nullable=True)
+    status: Mapped[str] = mapped_column(binary_text(32))
+    error_code: Mapped[str | None] = mapped_column(binary_text(64), nullable=True)
+    event_count: Mapped[int] = mapped_column(BigInteger)
+    downloaded_bytes: Mapped[int] = mapped_column(BigInteger)
+    expanded_bytes: Mapped[int] = mapped_column(BigInteger)
+    manifest: Mapped[dict] = mapped_column(JSON)
+
+
+class HistoryEvent(Base):
+    __tablename__ = "history_events"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "job_id", "event_id", name="pk_history_events"),
+        ForeignKeyConstraint(
+            ["project_id", "job_id", "source_revision_id", "process_id"],
+            [
+                "history_sources.project_id",
+                "history_sources.job_id",
+                "history_sources.id",
+                "history_sources.process_id",
+            ],
+            name="fk_history_events_scoped_source",
+        ),
+        UniqueConstraint("project_id", "job_id", "capture_seq", name="uq_history_events_seq"),
+        Index(
+            "ix_history_events_order",
+            "project_id",
+            "job_id",
+            "timestamp_us",
+            "process_id",
+            "source_revision_id",
+            "member_order",
+            "byte_start",
+            "event_id",
+        ),
+        Index(
+            "ix_history_events_source_order",
+            "project_id",
+            "job_id",
+            "source_revision_id",
+            "member_order",
+            "byte_start",
+        ),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    job_id: Mapped[str] = mapped_column(identifier())
+    event_id: Mapped[str] = mapped_column(identifier())
+    process_id: Mapped[str] = mapped_column(identifier())
+    source_revision_id: Mapped[str] = mapped_column(identifier())
+    capture_seq: Mapped[int] = mapped_column(BigInteger)
+    timestamp_us: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    member_order: Mapped[int] = mapped_column(Integer)
+    byte_start: Mapped[int] = mapped_column(BigInteger)
+    raw_line: Mapped[str] = mapped_column(LONGTEXT)
+    payload: Mapped[dict] = mapped_column(JSON)
+
+
+class HistoryCursor(Base):
+    __tablename__ = "history_cursors"
+    __table_args__ = (
+        PrimaryKeyConstraint("token_hash", name="pk_history_cursors"),
+        ForeignKeyConstraint(
+            ["project_id", "job_id", "owner_user_id"],
+            ["history_jobs.project_id", "history_jobs.id", "history_jobs.owner_user_id"],
+            name="fk_history_cursors_scoped_owner_job",
+        ),
+        Index("ix_history_cursors_expiry", "expires_us"),
+        TABLE_OPTIONS,
+    )
+    token_hash: Mapped[str] = mapped_column(verifier())
+    project_id: Mapped[str] = mapped_column(identifier())
+    job_id: Mapped[str] = mapped_column(identifier())
+    owner_user_id: Mapped[str] = mapped_column(identifier())
+    auth_version: Mapped[int] = mapped_column(Integer)
+    query_hash: Mapped[str] = mapped_column(verifier())
+    snapshot_revision: Mapped[int] = mapped_column(BigInteger)
+    max_seq: Mapped[int] = mapped_column(BigInteger)
+    after_key: Mapped[list] = mapped_column(JSON)
+    expires_us: Mapped[int] = mapped_column(BigInteger)
+
+
+class HistoryDownload(Base):
+    __tablename__ = "history_downloads"
+    __table_args__ = (
+        PrimaryKeyConstraint("token_hash", name="pk_history_downloads"),
+        ForeignKeyConstraint(
+            ["project_id", "job_id", "source_revision_id"],
+            ["history_sources.project_id", "history_sources.job_id", "history_sources.id"],
+            name="fk_history_downloads_scoped_source",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "job_id", "owner_user_id"],
+            ["history_jobs.project_id", "history_jobs.id", "history_jobs.owner_user_id"],
+            name="fk_history_downloads_scoped_owner_job",
+        ),
+        Index("ix_history_downloads_expiry", "expires_us"),
+        TABLE_OPTIONS,
+    )
+    token_hash: Mapped[str] = mapped_column(verifier())
+    project_id: Mapped[str] = mapped_column(identifier())
+    job_id: Mapped[str] = mapped_column(identifier())
+    owner_user_id: Mapped[str] = mapped_column(identifier())
+    source_revision_id: Mapped[str] = mapped_column(identifier())
+    auth_version: Mapped[int] = mapped_column(Integer)
     expires_us: Mapped[int] = mapped_column(BigInteger)

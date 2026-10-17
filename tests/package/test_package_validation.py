@@ -53,8 +53,8 @@ class GeneratedDirectoryValidationTests(unittest.TestCase):
         sources = {ROOT / entry["path"] for entry in manifest["files"]}
         # Current documentation can link to files added after the handoff.
         # Recreate those source files without copying installed dependencies.
-        sources.update(validate_package.source_files(ROOT, ".json"))
-        sources.update(validate_package.source_files(ROOT, ".md"))
+        for suffix in (".json", ".md", ".py", ".ts", ".tsx", ".yaml", ".yml", ".log"):
+            sources.update(validate_package.source_files(ROOT, suffix))
         for source in sorted(sources):
             destination = self.root / source.relative_to(ROOT)
             destination.parent.mkdir(parents=True, exist_ok=True)

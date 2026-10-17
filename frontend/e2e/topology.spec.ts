@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Config, EntityKind, Topology } from '../src/topology';
 
-const screenshots = resolve('../verification/stage-2/screenshots');
+const screenshots = resolve(`../verification/${process.env.INSPECTOR_E2E_REPORT_STAGE ?? 'stage-2'}/screenshots`);
 type Role = 'administrator' | 'inspector';
 const browserErrors = new WeakMap<Page, string[]>();
 test.beforeEach(({ page }) => {

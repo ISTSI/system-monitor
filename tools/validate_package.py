@@ -16,7 +16,7 @@ from reference_contracts import ROOT, load_json, query_events, read_fixture_sour
 GENERATED_DIRECTORIES = frozenset({
     ".git", ".bootstrap", ".toolchains", ".cache", ".venv", "node_modules",
     "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", "build", "dist",
-    ".secrets", "secrets",
+    ".secrets", "secrets", ".state", "state", "cache",
 })
 
 

@@ -7,8 +7,19 @@ appearance and application defaults, named systems, safe synthetic documentation
 revisioned metadata/archive/restore and private per-page workspaces. Stage 02 adds
 scoped topology entities and constraints, shared documentation, flows, named
 views, revisioned editing/undo/redo, scoped search and safe YAML/JSON import
-preview/commit/export. Collection, SSH, Ansible inventory reconciliation and
-investigations belong to later stages.
+preview/commit/export. Stage 03 adds local historical collection, bounded archive
+parsing, exact microsecond event indexing in MariaDB, literal filtering, source
+context and owner/project-bound snapshot pagination. SSH, saved analysis tools
+and Ansible inventory reconciliation belong to later stages.
+
+Historical result pages and context are capped at 8 MiB of raw text. A page can
+contain fewer rows than requested; its cursor continues from the last emitted
+event. Oversized-line diagnostics remain visible with an explicitly unknown
+literal match result. A 64 MiB, five-minute read-through cache includes in-flight
+builds and leased immutable rows. Its key includes owner, project, capture,
+configuration/snapshot revision, process/time scope and diagnostic lane. Every
+query still checks MariaDB authorization/session state; a cache entry grants no
+access. Cold or evicted scopes use the bounded MariaDB scan.
 
 Results and release gates are in [STATUS.md](../progress/STATUS.md). Setup:
 [temporary VM](../deploy/vm-mariadb/README.md),
@@ -74,8 +85,52 @@ uses pre-session CSRF; protected writes use authenticated CSRF. All security
 mutations increment the account version, revoke its sessions and expire its page
 workspaces. Deletion is unavailable; the last enabled Administrator is retained.
 
-Stage 02 local browser verification uses a separate fresh Docker schema and
-`https://localhost:8444`; it does not migrate or replace the VM app on port 8443.
+Stage 03 local browser verification uses a separate Docker test schema and
+`runtime-stage3` service at `https://localhost:8445`. Run its setup with existing
+pinned local images (no pulls):
+
+```sh
+python scripts/stage3_local.py prepare
+python scripts/stage3_local.py migrate
+python scripts/stage3_local.py fixture
+python scripts/build_stage1.py
+python scripts/stage3_local.py up
+```
+
+The fixture creates `[Synthetic demo] Historical A/B` with the golden configured
+processes. Open **Log history**, select processes and enter UTC bounds, for
+example `[2026-10-16T12:00:00.000000Z, 2026-10-16T12:00:02.000000Z)`, preview
+the collection plan, then collect and apply the filter. Inspector and
+Administrator both own their captures. Retained collections reopen through their
+system-scoped URLs; sources/context/downloads remain ownership checked.
+
+Local collection requires explicit deployment environment `SI_LOCAL_HISTORY_DEMO=1`.
+It maps only the supplied fixed fixture manifest through configured process/path
+selectors. The default is disabled. No browser-supplied host, path, parser or
+credential can replace approved configuration. This is a labelled local adapter,
+not SSH transport. ZIP64/multivolume archives and nested archives are explicitly
+unsupported. Archives are streamed; members are never extracted.
+
+Set `INSPECTOR_E2E_URL=https://localhost:8445`, `INSPECTOR_E2E_REPORT_STAGE=stage-3`
+and `INSPECTOR_E2E_ACCOUNTS` to the absolute protected
+`.secrets/stage3-browser/accounts.json` path. `fixture` expires only these
+synthetic accounts' old workspaces. The cache survives the Stage 03 container
+restart; `stop` retains all test data. Migrations require the test server stopped.
+
+`python scripts/verify_stage3.py integration` creates a new disposable MariaDB
+schema and records actual Linux test output. `python scripts/verify_stage3.py checks`
+records unit/package/lint/type/API/build results. For the generated 20 MiB
+production collector/index/query benchmark, stop this test server and run
+`python scripts/stage3_local.py benchmark`, then `up` again. Benchmark input
+generation and network transfer are excluded from the recorded ingestion timing.
+`python scripts/verify_stage3.py upgrade` verifies a populated foundation upgrade
+to the current schema in a newly guarded disposable database. Existing schemas
+are refused. `python scripts/benchmark_stage3.py` records the benchmark with
+sanitized UTF-8 diagnostics and exact commands; the test server must be stopped.
+
+Stage 02 browser verification remains at `https://localhost:8444`. The retained Stage 01 VM-backed
+app on port 8443 is stopped at the user's request; its database, tunnel and data
+are preserved. Stage 02 does not migrate or replace that database.
 With the pinned local database and runner already prepared:
 
 ```sh

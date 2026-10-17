@@ -22,7 +22,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from inspector.domain import Principal
 from inspector.errors import DomainError
-from inspector.persistence.models import Audit, AuthSession, SecurityState, User, Workspace
+from inspector.persistence.models import (
+    Audit,
+    AuthSession,
+    HistoryJob,
+    SecurityState,
+    User,
+    Workspace,
+)
 from inspector.security import (
     ROLES,
     authorize,
@@ -107,13 +114,21 @@ async def _current_user(
 
 
 async def _revoke_user(session: AsyncSession, user: User, now_us: int) -> None:
-    """No live jobs exist in Stage 01; expire their future page ownership now."""
+    """Revoke account sessions and request a bounded stop of private captures."""
     user.auth_version += 1
     await session.execute(delete(AuthSession).where(AuthSession.user_id == user.id))
     await session.execute(
         update(Workspace)
         .where(Workspace.owner_user_id == user.id, Workspace.state != "expired")
         .values(state="expired", expires_us=now_us, revision=Workspace.revision + 1)
+    )
+    await session.execute(
+        update(HistoryJob)
+        .where(
+            HistoryJob.owner_user_id == user.id,
+            HistoryJob.status.in_(("queued", "planning", "collecting", "indexing")),
+        )
+        .values(status="cancel_requested")
     )
 
 

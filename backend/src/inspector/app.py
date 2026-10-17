@@ -29,6 +29,7 @@ from inspector.config import Config, load_config
 from inspector.database import create_engine, local_state_lock, supervisor_guard
 from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
+from inspector.history import NONTERMINAL, HistoryManager, build_history_router
 from inspector.security import issue_token, require_admin, token_hash
 from inspector.topology import build_topology_router, initialize_legacy_documents
 
@@ -177,7 +178,7 @@ def create_app(config: Config | None = None) -> FastAPI:
                     # Restart never resumes collection or claims any old page's workspace.
                     from sqlalchemy import update
 
-                    from inspector.persistence.models import Workspace
+                    from inspector.persistence.models import HistoryJob, HistorySource, Workspace
 
                     async with app.state.sessions.begin() as session:
                         await foundation.initialize_settings(session, config)
@@ -187,7 +188,21 @@ def create_app(config: Config | None = None) -> FastAPI:
                             .where(Workspace.state == "active")
                             .values(state="detached", revision=Workspace.revision + 1)
                         )
-                    yield
+                        await session.execute(
+                            update(HistoryJob)
+                            .where(HistoryJob.status.in_(NONTERMINAL))
+                            .values(status="interrupted")
+                        )
+                        await session.execute(
+                            update(HistorySource)
+                            .where(HistorySource.status.in_(["queued", "collecting"]))
+                            .values(status="partial", error_code="BACKEND_RESTART")
+                        )
+                    app.state.history = HistoryManager(config, app.state.sessions, supervisor)
+                    try:
+                        yield
+                    finally:
+                        await app.state.history.close()
         finally:
             app.state.supervisor = None
             await lock_engine.dispose()
@@ -277,7 +292,19 @@ def create_app(config: Config | None = None) -> FastAPI:
                     request.url.path,
                 )
             )
-            maximum_body = config.config_upload_bytes * 6 + 512 if topology_upload else 16384
+            history_query = bool(
+                re.fullmatch(
+                    r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/investigations/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/(?:query|events/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/context)",
+                    request.url.path,
+                )
+            )
+            maximum_body = (
+                config.config_upload_bytes * 6 + 512
+                if topology_upload
+                else 25_624_576
+                if history_query
+                else 16384
+            )
             chunks, size = [], 0
             async for chunk in request.stream():
                 size += len(chunk)
@@ -634,6 +661,7 @@ def create_app(config: Config | None = None) -> FastAPI:
 
     app.include_router(build_account_router(transaction, authenticated, protected_write))
     app.include_router(build_topology_router(transaction, authenticated, protected_write))
+    app.include_router(build_history_router(transaction, authenticated, protected_write))
     bundled = Path(__file__).parent / "web"
     frontend = (
         bundled
@@ -649,10 +677,16 @@ def create_app(config: Config | None = None) -> FastAPI:
     @app.get("/users", include_in_schema=False)
     @app.get("/systems/{project_id}", include_in_schema=False)
     @app.get("/systems/{project_id}/topology", include_in_schema=False)
-    async def browser_shell(project_id: str | None = None) -> Response:
-        if (project_id is not None and not re.fullmatch(ID_PATTERN, project_id)) or not (
-            frontend / "index.html"
-        ).is_file():
+    @app.get("/systems/{project_id}/logs", include_in_schema=False)
+    @app.get("/systems/{project_id}/investigations/{investigation_id}", include_in_schema=False)
+    async def browser_shell(
+        project_id: str | None = None, investigation_id: str | None = None
+    ) -> Response:
+        if (
+            (project_id is not None and not re.fullmatch(ID_PATTERN, project_id))
+            or not (frontend / "index.html").is_file()
+            or (investigation_id is not None and not re.fullmatch(ID_PATTERN, investigation_id))
+        ):
             return JSONResponse(
                 {"error": {"code": "NOT_FOUND", "message": "Page not found."}}, status_code=404
             )
