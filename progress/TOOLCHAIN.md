@@ -68,3 +68,28 @@ snapshot metadata/probes detect observed changes without promising every race
 can be detected. Actual CentOS/Rocky OpenSSH distributions and production SSH
 endpoints were not contacted. Full offline/platform release qualification remains
 Stage 08. See STATUS.md and verification/stage-4 for executed checks.
+
+Stage 05 (17 October 2026) resolves **websockets 16.1.1** (BSD-3-Clause) for
+Uvicorn 0.54.0's explicit `websockets` adapter. Installed source forwards both
+the 16 KiB message-byte ceiling and 16-message receive queue; its legacy
+protocol applies backpressure at the queue limit. Uvicorn's wsproto and SansIO
+adapters do not honor this queue setting. **wsproto 1.3.2** (MIT) remains a
+development dependency for raw-wire transport tests. Actual uv resolution and
+locked synchronization preserve the other dependency versions. Original
+licenses are retained under `third_party/backend/`, with the refreshed
+**54-distribution** inventory. No paid library, font, telemetry or runtime
+Internet dependency is added.
+
+The selected legacy adapter emits upstream deprecation warnings. Its compatible
+major range is bounded; an upgrade must rerun the real TCP fragmented-message
+and queue/backpressure tests rather than assume a future Uvicorn adapter alias
+preserves these limits. `websocket-transport-dependency.json` retains the actual
+version, license and warnings. Offline runtime never resolves a newer version.
+
+The separate `system-inspector-runner:stage5` image uses the existing pinned
+Python 3.13.16 Linux base plus the updated uv lock. Build evidence records both
+actual image IDs and verifies that `system-inspector-runner:local` remains
+unchanged. The existing 8444/8445 services are not recreated by Stage 05 tests.
+The synthetic browser fixture uses 8447 and grants Chromium's local-network
+permission only for that test origin; this is test setup, not an application or
+SSH trust exception. Actual results are in STATUS.md and verification/stage-5.

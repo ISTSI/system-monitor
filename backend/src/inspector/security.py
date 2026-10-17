@@ -150,7 +150,14 @@ def require_admin(principal: Principal) -> None:
 
 
 _READ_ACTIONS = frozenset(
-    {"system.list", "topology.read", "topology.search", "workspace.create", "collection.create"}
+    {
+        "system.list",
+        "topology.read",
+        "topology.search",
+        "workspace.create",
+        "collection.create",
+        "live.create",
+    }
 )
 _ADMIN_ACTIONS = frozenset(
     {
@@ -182,6 +189,12 @@ _OWN_ACTIONS = frozenset(
         "investigation.read",
         "investigation.delete",
         "download.read",
+        "live.read",
+        "live.filter",
+        "live.history",
+        "live.save",
+        "live.stop",
+        "workspace.attach",
     }
 )
 
@@ -197,7 +210,7 @@ def authorize(principal: Principal, action: str, *, owner_user_id: str | None = 
     if action in _ADMIN_ACTIONS:
         require_admin(principal)
     elif action in _OWN_ACTIONS:
-        if action == "collection.cancel" and principal.role == "administrator":
+        if action in {"collection.cancel", "live.stop"} and principal.role == "administrator":
             return
         if owner_user_id is None or owner_user_id != principal.user_id:
             raise DomainError("NOT_FOUND", "Resource not found.", 404)

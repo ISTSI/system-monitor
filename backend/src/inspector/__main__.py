@@ -11,4 +11,7 @@ if __name__ == "__main__":
         port=8000,
         proxy_headers=False,
         access_log=False,
+        ws="websockets",
+        ws_max_size=16_384,
+        ws_max_queue=16,
     )

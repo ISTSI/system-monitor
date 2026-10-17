@@ -757,6 +757,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/live-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listing */
+        get: operations["listing_api_v1_projects__project_id__live_sessions_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_projects__project_id__live_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["get_api_v1_projects__project_id__live_sessions__identifier__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Filters */
+        put: operations["filters_api_v1_projects__project_id__live_sessions__identifier__filters_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** History Rows */
+        post: operations["history_rows_api_v1_projects__project_id__live_sessions__identifier__history_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save */
+        post: operations["save_api_v1_projects__project_id__live_sessions__identifier__save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/attach": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach */
+        post: operations["attach_api_v1_projects__project_id__live_sessions__identifier__attach_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop */
+        post: operations["stop_api_v1_projects__project_id__live_sessions__identifier__stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usage */
+        get: operations["usage_api_v1_projects__project_id__usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/connections/{connection_id}/access": {
         parameters: {
             query?: never;
@@ -1495,6 +1632,222 @@ export interface components {
             /** Expires Us */
             expires_us: string;
         };
+        /** LiveAttachInput */
+        LiveAttachInput: {
+            /** Workspace Id */
+            workspace_id: string;
+            /** Expected Lease Revision */
+            expected_lease_revision: number;
+        };
+        /** LiveControlInput */
+        LiveControlInput: {
+            /** Workspace Id */
+            workspace_id: string;
+            /** Lease Revision */
+            lease_revision: number;
+        };
+        /** LiveCreateInput */
+        LiveCreateInput: {
+            filter: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /** Seed Rows */
+            seed_rows: number;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "merged" | "split";
+            /** Seed Rows By Process */
+            seed_rows_by_process: {
+                [key: string]: number;
+            };
+            /** Project Id */
+            project_id: string;
+            /** Project Revision */
+            project_revision: number;
+            /** Workspace Id */
+            workspace_id: string;
+            /** Process Ids */
+            process_ids: string[];
+            /** Record */
+            record: boolean;
+        };
+        /** LiveEvent */
+        LiveEvent: {
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "1.0";
+            /** Project Id */
+            project_id: string;
+            /** Event Id */
+            event_id: string;
+            /** Process Id */
+            process_id: string;
+            /** Server Id */
+            server_id: string;
+            /** Process Name Snapshot */
+            process_name_snapshot: string;
+            /** Server Name Snapshot */
+            server_name_snapshot: string;
+            /** Raw Line */
+            raw_line: string;
+            /** Timestamp Original */
+            timestamp_original: string | null;
+            /** Timestamp Utc */
+            timestamp_utc: string | null;
+            /** Timestamp Us */
+            timestamp_us: number | null;
+            /** Received At */
+            received_at: string;
+            /** Parse Status */
+            parse_status: string;
+            /** Metadata */
+            metadata: {
+                [key: string]: string;
+            };
+            source: components["schemas"]["HistoricalSourceProvenance"];
+            /**
+             * Late Arrival
+             * @default false
+             */
+            late_arrival: boolean;
+        };
+        /** LiveFilterInput */
+        LiveFilterInput: {
+            /** Workspace Id */
+            workspace_id: string;
+            /** Lease Revision */
+            lease_revision: number;
+            global_filter?: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters?: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /**
+             * Requested Rows
+             * @default 30
+             */
+            requested_rows: number;
+            /**
+             * Layout
+             * @default merged
+             * @enum {string}
+             */
+            layout: "merged" | "split";
+            /** Seed Rows By Process */
+            seed_rows_by_process?: {
+                [key: string]: number;
+            };
+            /** Expected Filter Version */
+            expected_filter_version: number;
+        };
+        /** LiveHistoryInput */
+        LiveHistoryInput: {
+            /** Workspace Id */
+            workspace_id: string;
+            /** Lease Revision */
+            lease_revision: number;
+            /** Requested Rows */
+            requested_rows?: number | null;
+        };
+        /** LiveListResponse */
+        LiveListResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Items */
+            items: components["schemas"]["LiveSessionResponse"][];
+        };
+        /** LiveSessionResponse */
+        LiveSessionResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Session Id */
+            session_id: string;
+            /** Workspace Id */
+            workspace_id: string;
+            /** Lease Revision */
+            lease_revision: number;
+            /** Filter Version */
+            filter_version: number;
+            /** Status */
+            status: string;
+            /** Process Ids */
+            process_ids: string[];
+            /** Recording */
+            recording: boolean;
+            /** Investigation Id */
+            investigation_id: string | null;
+            /**
+             * Layout
+             * @enum {string}
+             */
+            layout: "merged" | "split";
+            global_filter: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /** Requested Rows */
+            requested_rows: number;
+            /** Seed Rows By Process */
+            seed_rows_by_process?: {
+                [key: string]: number;
+            };
+            /** Detached */
+            detached: boolean;
+            /** Error Code */
+            error_code?: string | null;
+            snapshot: components["schemas"]["LiveSnapshot"];
+        };
+        /** LiveSnapshot */
+        LiveSnapshot: {
+            /** Events */
+            events?: components["schemas"]["LiveEvent"][];
+            /** Diagnostics */
+            diagnostics?: components["schemas"]["LiveEvent"][];
+            /** Counters */
+            counters?: {
+                [key: string]: number;
+            };
+            /** Sources */
+            sources?: {
+                [key: string]: unknown;
+            }[];
+            /** Coverage */
+            coverage?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Filter Version
+             * @default 1
+             */
+            filter_version: number;
+            /**
+             * Seq
+             * @default 0
+             */
+            seq: number;
+        };
+        /** LiveUsageResponse */
+        LiveUsageResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Workspace Id */
+            workspace_id: string | null;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Limits */
+            limits: {
+                [key: string]: number;
+            };
+        };
         /** LoginInput */
         LoginInput: {
             /** Username */
@@ -1942,6 +2295,36 @@ export interface components {
         inspector__topology__RevisionInput: {
             /** Expected Revision */
             expected_revision: number;
+        };
+        /** LiveFrame */
+        LiveFrame: {
+            /**
+             * Protocol Version
+             * @default 2
+             * @constant
+             */
+            protocol_version: 2;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "snapshot" | "events" | "status" | "filter_applied" | "gap" | "resync_required" | "counters" | "heartbeat" | "error" | "stopped";
+            /** Project Id */
+            project_id: string;
+            /** Workspace Id */
+            workspace_id: string;
+            /** Session Id */
+            session_id: string;
+            /** Filter Version */
+            filter_version: number;
+            /** Seq */
+            seq: number;
+            /** Sent At */
+            sent_at: string;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
         };
     };
     responses: never;
@@ -3466,6 +3849,319 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listing_api_v1_projects__project_id__live_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_v1_projects__project_id__live_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveSessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_projects__project_id__live_sessions__identifier__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveSessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    filters_api_v1_projects__project_id__live_sessions__identifier__filters_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveFilterInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveSessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    history_rows_api_v1_projects__project_id__live_sessions__identifier__history_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveHistoryInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveSessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_api_v1_projects__project_id__live_sessions__identifier__save_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveControlInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveSessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_api_v1_projects__project_id__live_sessions__identifier__attach_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveAttachInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveSessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_api_v1_projects__project_id__live_sessions__identifier__stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                identifier: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveControlInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    usage_api_v1_projects__project_id__usage_get: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveUsageResponse"];
                 };
             };
             /** @description Validation Error */

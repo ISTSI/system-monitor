@@ -139,3 +139,33 @@ Stop at this review gate. The next authorized stage must be
 `prompts/05_LIVE_MONITORING.md`; no live following, reconnect loop, live socket,
 live buffer or viewport seed implementation was added in Stage 04. Full saved
 analysis, Ansible import and offline release remain their separate stages.
+
+## Stage 05 review gate — 17–18 October 2026
+
+Stage 05 is complete within the recorded local synthetic verification baseline.
+Scoped supervised SFTP capture, protocol 2 streaming, independent workspace
+leases/filters, measured pane history, pause/stop, bounded retention/replay and
+explicit partial recording are working vertical slices. Actual commands and
+corrected failures are in STATUS.md: 595 unit passes with four platform skips,
+136 real MariaDB passes, 44 Linux engine/SFTP/TCP passes, populated upgrade and
+eight browser cases. The full suite measures nominal p95 1,098 ms and concurrent
+capacity p95 1,592 ms at 3.995 physical appends/s. Capacity includes two live
+five-source windows, two complete 16 MiB archive investigations, a held page
+and the preceding retention burst. The artifact matches the tested source and
+assets. Ubuntu/Rocky installation, the full proxy/browser process memory
+envelope and offline release artifacts remain separate gates.
+
+The temporary 8447/SFTP fixtures are stopped. On 18 October the separately
+authorized local deployment installed the tested Stage 05 snapshot and runner
+on 8445, applying `0008_security_setting` → `0009_live` after consistent backups.
+All 35 old table counts and 34 non-Alembic checksums matched before startup;
+897 retained cache files (230,864,349 bytes) and 957 ownership/mode entries
+matched afterward. Installed browser checks passed for both roles/themes and
+independent pages without starting SSH. The 8444 container and original runner
+tag remain unchanged. Backups and the prior application remain retained; this
+local deployment does not qualify Ubuntu/Rocky installation or the offline release.
+
+Stop here. Next scope, after separate authorization, is
+`prompts/06_INVESTIGATION_TOOLS.md`.
+Do not start the investigation editor/correlation/bookmark/bundle stage from
+live test success; Ansible import and release hardening remain later gates.

@@ -1,5 +1,63 @@
 # System Inspector backend
 
+Stage 05 is installed at **https://localhost:8445**, using migration `0009_live`
+and the tested Python environment (including BSD-licensed `websockets` 16.1.1).
+The isolated installed artifact is `.state/stage5-install/backend`; the Compose
+override pins its separate runtime image. Existing data, configuration and vault
+were backed up and verified unchanged. The isolated Stage 05 test fixture on
+8447 is stopped; its commands are below. Do not point an old serving artifact at
+the new schema.
+
+Both roles can select configured processes and choose **Monitor selected** or
+open **Live monitor** in the logs workspace. Starting is explicit. Each page
+owns its session, filter version and revisioned workspace control lease. The
+stream authenticates cookies, exact Origin and a CSRF-bearing protocol 2 hello;
+no tokens or terms go in its URL. Every protected dispatch and a silent-socket
+watchdog check current authentication and ownership. Database/supervisor loss
+stops collection; database recovery never automatically restarts it.
+
+SFTP polls every 750 ms and buffers new arrivals for at most 500 ms. Host
+connections and raw source capture can be shared within the complete matching
+project/owner/configuration/access context. Filters remain private to each
+monitor. Seed requests use measured rows (1–500); scans and raw retention obey
+deployment ceilings. Changing or clearing literal filters refilters retained
+unfiltered bytes without reconnecting. Unknown timestamps have a diagnostic
+lane. Source status explains scanned boundaries, exhaustion, errors, observed
+rotation/truncation, disconnects and retention eviction. SFTP observations cannot
+prove lossless continuity through every rewrite or rotation.
+
+**Pause display** continues receipt; **Resume display** shows the retained
+position. **Stop this monitor** releases only its subscriptions. A page/socket
+disconnect retains a bounded reconnect lease (at most 300 seconds, or a smaller
+configured limit). A new page lists detached owned sessions and requires
+**Resume in this window**; it cannot take an occupied lease. Theme preferences
+are shared account state and leave streams running. Logout revokes every page
+using that login.
+
+**Record into investigation** saves the retained raw lines, including current
+nonmatches, and persists new original-byte ranges before their publication.
+Recording is bounded by the collection byte ceiling and 200,000 events; reaching
+a limit stops the affected recording visibly. Oversized preview lines cannot be
+misrepresented as original recorded bytes. The partial capture remains queryable
+offline through the historical viewer, with original source labels/provenance.
+Captured ranges may start after byte zero or have gaps; their cache contains
+only recorded ranges. These sources remain explicitly partial and cannot use
+the complete-source raw download action. Stopping/cancelling, restart and
+recording failures retain committed partial results. The Stage 06 investigation
+editing/correlation/bookmark/bundle features are a separate scope.
+
+For a synthetic browser test installation, use the existing local MariaDB
+service and `python scripts/prepare_stage5_runner.py`, followed by
+`python scripts/stage5_local.py prepare`, `migrate`, `fixture`, `up`, and
+`configure`. This fixture uses generated accounts and a read-only SFTP service,
+never a real target. `restart` and `stop` affect only that fixture. The
+`capacity-archive` action prepares a generated 16 MiB regular ZIP member for
+the concurrent-investigation browser check; it writes only the fixture's data.
+The runner build needs connected dependency preparation; fixture operation has no Internet
+dependency. Use `scripts/verify_stage5.py` for fresh disposable integration and
+upgrade checks. Actual commands/results and test limitations are recorded in
+[STATUS.md](../progress/STATUS.md).
+
 FastAPI/Python 3.13 serves the bundled React application and uses MariaDB only.
 Implemented: local Administrator/Inspector accounts, protected first-account CLI,
 account lifecycle and forced password changes, opaque sessions/CSRF, persistent
@@ -11,8 +69,10 @@ preview/commit/export. Stage 03 adds local historical collection, bounded archiv
 parsing, exact microsecond event indexing in MariaDB, literal filtering, source
 context and owner/project-bound snapshot pagination. Stage 04 adds encrypted
 passwords, independent host-key and target/root approval, configured path checks,
-and bounded direct/single-jump SSH/SFTP historical collection. Live following,
-saved analysis tools and Ansible inventory reconciliation remain later work.
+and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds
+supervised live SFTP capture, independent monitor leases, protocol 2 WebSockets,
+retained literal refiltering and explicit recording. Saved analysis tools and
+Ansible inventory reconciliation remain later work.
 
 To configure a server as an Administrator, add a subsystem, then choose **Add
 server**. Its **SSH connection** section shows the selected profile's host and
@@ -102,30 +162,36 @@ SFTP v3 cannot prove absence of every same-size rewrite or path race;
 dedicated account permissions remain essential. Symlinks are rejected. A
 successful scan describes its candidates, not continuous or exactly-once history.
 
-The current local development app remains **https://localhost:8445**, using the
-existing Stage 03 schema/accounts/configuration upgraded to `0008_security_setting`.
-`scripts/stage4_local.py prepare` adds isolated SSH fixtures and a protected master
-key under ignored `.secrets/stage4-ssh/`; it never resets existing data. Its
-container wrapper copies the mounted key to
-`/var/lib/system-inspector/ssh-vault.key` with mode 0600 before starting ASGI.
-Prepare, stop the serving app, back up its database/cache, explicitly run
-`scripts/stage3_local.py migrate`, then `scripts/stage4_local.py up`. Normal
-restarts use `stage4_local.py up`; no package downloads or connections occur at
-startup. Fixture host keys/passwords are synthetic and are not application-wide
-default credentials. The named non-root Linux account is required by AsyncSSH.
+The retained local app at **https://localhost:8445** now uses the existing
+Stage 03 accounts/configuration and database upgraded to `0009_live` on
+18 October. Its tested artifact at `.state/stage5-install/backend` is mounted
+read-only into `runtime-stage3`; the image is pinned to
+`sha256:668bfc011a595c63ea4f88c29eea56c326828662dbba1cd20a18a4eacdfcd8a8`.
+It runs one worker with explicit `websockets`, a 16 KiB message limit and a
+16-message receive queue. The isolated wrapper copies the unchanged vault key
+to `/var/lib/system-inspector/ssh-vault.key` as UID 10001 with mode 0600.
+No package downloads or target connections occur at startup. Fixture host
+keys/passwords are synthetic; the named non-root Linux account is required by
+AsyncSSH.
 
-The 17 October collection-viewer update is installed from the isolated artifact
-at `.state/stage4-ssh/collection-ui/backend`, mounted into `runtime-stage3` as
-`/workspace/backend`. It includes automatic results, direct collection, Log entry
-and owned collection deletion, and preserves the active-log append fix. Schema
-remains `0008_security_setting`. Keep that directory for restarts; normal
-restarts use `scripts/stage4_local.py up`, and future source updates require a
-fresh artifact. The previous `.state/stage4-ssh/active-append-fix/backend` and
-`.state/stage4-ssh/installed-0008/backend` artifacts remain available for rollback.
-The shared repository bundle used by the retained 8444 app is intact. Consistent
-pre-install database/cache and previous-backend/deployment backups are protected
-under `.secrets/stage4-ssh/pre-collection-ui/`; older append-fix and migration
-backups remain in their existing protected directories.
+For a normal restart, use the existing local MariaDB base Compose file plus
+`deploy/local-mariadb/stage3-browser.compose.local.yaml` and target only
+`up --detach --no-deps runtime-stage3`. The earlier `stage4_local.py up/stop`
+commands also operate SSH fixtures. Preserve the installed snapshot and its
+image; future source updates require a fresh tested artifact.
+
+The matching pre-upgrade schema `0008_security_setting` SQL dump, raw-cache
+archive with byte/permission manifests, prior backend, exact deployment files
+and protected vault copy are retained under
+`.secrets/stage5-install/pre-0009-live/`. All previous Stage 04 artifacts and
+backups remain available. Rollback after migration must restore a matching
+database/cache/application state. The deployment verified every old table before
+startup, all retained cache bytes/ownership/modes, both browser roles and the
+unchanged 8444 container. See `verification/stage-5/deployment-*.json` and
+[STATUS.md](../progress/STATUS.md); no rollback drill was performed for this upgrade.
+`python scripts/verify_stage5_preservation.py --installed-stage5` performs the
+read-only installed-image/TLS/retained-service check. Its default mode retains
+the earlier pre-deployment expectations.
 
 `scripts/verify_stage4.py integration` runs the real MariaDB/SSH gate in a fresh
 disposable local schema; `upgrade` checks populated additive migration and

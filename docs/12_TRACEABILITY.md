@@ -281,3 +281,26 @@ The table identifies the scope and test locations, not a passing test report.
 Actual commands, test results, initial corrected failures, prepared artifact and
 installation status are recorded in [STATUS.md](../progress/STATUS.md). This
 follow-up stays within historical collection; Stage 05 remains the next gate.
+
+## Stage 05 — live capture and independent monitor controls
+
+| Requirements / targets | Implemented behavior and test locations |
+|---|---|
+| R20–R24, AT30–AT33/AT37 | `live_engine.py` pins source boundary S, retains unfiltered original bytes, seeds timestamped matching rows (including distinct pane targets), preserves partial UTF-8/lines and source-range identity, and refilters without reconnecting. `test_live_engine.py` covers sparse/unknown history, limits, boundary races, late/equal ordering and Unicode/literal predicates; `test_live_sftp.py` runs the actual pinned SFTP adapter, five low-rate sources and an idle peer. |
+| R25–R27/R32, AT34–AT41 | Raw event/byte retention, actual serialized frame/replay limits, visible eviction/backlog/continuity, deadline-based 500 ms merge buffering, bounded reconnect, old-handle rotation drain and copytruncate generation changes. Unit plus actual SFTP tests cover failures, rekey blocking, retention, slow replay and shared source refcounts. Transient capture makes no durable/lossless claim. |
+| R27/R28/R41/R42/R44, AT40 | Explicit recording saves retained nonmatches and new original ranges before publication into owned MariaDB historical jobs/events. Recording byte/event caps, cancellation, rollback-safe cache append, offline query, recorded history top-up and deletion/link cleanup have unit and actual MariaDB/SFTP coverage in `test_live_controls.py` and `test_live.py`. Full investigation editing remains Stage 06. |
+| R35/R39–R41/R48/R49, AT47/AT74/AT83/AT90/AT96–AT99 | Protocol 2 validates exact Origin/Host, cookie/CSRF, owner/project/workspace/lease and filter epochs; each protected dispatch and silent watchdog reauthorize with bounded fail-closed DB checks. Queued obsolete ACKs cannot reset filters. Private content stays owner-only; audited Administrator stop returns operational metadata only. `test_live.py` covers stale/forged references, revocation, actual supervisor loss, explicit transfer/quota races, detached expiry and real backend restart without SSH resumption. |
+| R42/R44/R48/R50 | Frozen `0009_live` DDL adds scoped session/workspace/owner/revision/recording and subscription/process foreign keys. Atomic reservation checks workspace, system, account and deployment limits, including transfer to a full workspace. Real MariaDB tests reject cross-scope/owner associations; populated upgrade preserves the preexisting accounts/preferences/two-system state. |
+| R21/R23–R25/R34/R38/R47/R49/R50, AT30/AT31/AT34/AT38/AT68/AT92/AT96–AT100 | `LiveViewer` measures each pane, virtualizes exact UTC order, applies independent literal overrides, distinguishes receipt/pause/stop, reports retained/filtered/evicted/visible counts and offers explicit resume. `frontend/e2e/live.spec.ts` uses same-context pages for both roles, different/same systems, stale frames/responses, theme persistence, duplication/reload, slow/closed pages, account-wide logout, two × five sources, bounded history/archive work and visible eviction. Screenshots and first-DOM-insertion timing/resource artifacts are under `verification/stage-5`. |
+
+Executed commands and actual results, including initial failures and remaining
+platform/release limits, are recorded in [STATUS.md](../progress/STATUS.md).
+Local container/browser evidence does not qualify Ubuntu/Rocky deployment,
+the full proxy/browser process memory envelope, sustained production operation,
+or the Stage 08 offline release gate. The paced capacity scenario reserves two
+times five subscriptions in one browser context/account, holds one page's
+delivery and runs two simultaneous historical investigations, each containing
+an exact 16 MiB/65,536-event archive. It requires first-DOM p95 at most 2 seconds
+at 1–5 physical appends/s, matching active-job/resource evidence, complete
+archive counts and stable Stop. Stage 06 investigation tooling and Stage 07
+Ansible reconciliation are not marked complete by these tests.

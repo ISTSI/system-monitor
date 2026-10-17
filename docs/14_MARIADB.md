@@ -117,6 +117,46 @@ and uses POSIX paths; credentials remain in ignored, access-restricted files.
 
 ## Storage and query contract
 
+Stage 05 revision `0009_live` adds `live_sessions` and `live_subscriptions`.
+Composite foreign keys bind sessions to project revision, workspace/owner, and
+optional recorded investigation/owner; subscriptions bind to the same session
+owner and same-system process identity. The existing singleton security lock
+serializes quota reservations across workspace/project/account/deployment scopes.
+Moving a detached session checks the target workspace's remaining quota too.
+Interrupted/stopped sessions retain metadata but consume no subscription slots.
+Startup detaches pages, marks old monitors interrupted and clears reservations
+without opening SSH. Collection deletion clears terminal recording links in the
+same transaction before removing the owned investigation.
+
+Background live validation and established-socket dispatch use fresh nonlocking
+reads, including current login/account versions and workspace ownership/lease.
+Each socket validation obtains the security singleton, login/account, scoped
+monitor and workspace in one fresh joined read. Shared pure validators preserve
+the same account, expiry, ownership and lease rules used by locked controls;
+every protected frame and ACK performs its own check. Filter frames wait until
+the committed database version and engine reset agree.
+Selected source routes share one bounded transaction for project-scoped trust,
+credential bindings and approvals; they use the same rules as individual source
+checks. Only simultaneous unfinished validations may share work; completed
+grants are never cached. Control mutations and quota reservations retain locks.
+The bounded authorization/supervisor deadlines still fail closed.
+
+Explicit recordings reuse `history_jobs`, `history_sources` and `history_events`.
+They preserve exact original bytes in generated private cache files and record
+the mapping from original byte ranges to retained cache offsets. SQL stores the
+canonical original provenance and IDs. File writes finish and fsync before the
+event transaction commits and before publication; rollback restores the prior
+file length. These are partial captured ranges, with explicit scan/retention/gap
+limitations, rather than complete original files. Offline queries need no target
+access. Active recording cancellation stops the relevant live subscription and
+retains a cancelled partial investigation. Normal monitor stop retains a partial
+investigation; complete-source raw downloads remain unavailable for these ranges.
+Enabling recording settles activation and retained-history backfill together,
+even when the HTTP caller cancels. Shared capture rechecks newly enabled
+recorders after awaited peer callbacks before making new events visible. A
+recording failure stops that monitor, retains its partial investigation and
+leaves another consumer of the same source running.
+
 Use InnoDB tables, utf8mb4 and a deliberate binary collation. Normalize unique usernames/entity-name keys with the same application Unicode casefold rule instead of depending on database default case/accent matching. IDs remain immutable ASCII strings or UUIDs with binary/ASCII comparison; preserve imported fixture IDs exactly. Use lowercase snake_case schema identifiers and explicit index names. Table name case rules must not depend on the build OS.
 
 Store canonical event time as signed BIGINT integer UTC microseconds, nullable for parse errors. Keep `timestamp_original`, raw text, source IDs, member ordinal, offsets and original-byte hashes. Preserve the existing deterministic order `(timestamp_us, process_id, source_revision_id, member ordinal with null mapped to -1, byte_start, event_id)` from the engine contract; do not introduce DB collation ordering that changes golden results. Internal timestamps remain exact, never floating point. Render UTC strings and keep `[from,to)` semantics unchanged.

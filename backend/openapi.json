@@ -2092,6 +2092,523 @@
         "x-permission": "download.read"
       }
     },
+    "/api/v1/projects/{project_id}/live-sessions": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Create",
+        "operationId": "create_api_v1_projects__project_id__live_sessions_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "live.create"
+      },
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Listing",
+        "operationId": "listing_api_v1_projects__project_id__live_sessions_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "live.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Get",
+        "operationId": "get_api_v1_projects__project_id__live_sessions__identifier__get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "live.read"
+      }
+    },
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/filters": {
+      "put": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Filters",
+        "operationId": "filters_api_v1_projects__project_id__live_sessions__identifier__filters_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveFilterInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "live.filter"
+      }
+    },
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/history": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "History Rows",
+        "operationId": "history_rows_api_v1_projects__project_id__live_sessions__identifier__history_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveHistoryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "live.history"
+      }
+    },
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/save": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Save",
+        "operationId": "save_api_v1_projects__project_id__live_sessions__identifier__save_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveControlInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "live.save"
+      }
+    },
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/attach": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Attach",
+        "operationId": "attach_api_v1_projects__project_id__live_sessions__identifier__attach_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveAttachInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveSessionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "workspace.attach"
+      }
+    },
+    "/api/v1/projects/{project_id}/live-sessions/{identifier}/stop": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Stop",
+        "operationId": "stop_api_v1_projects__project_id__live_sessions__identifier__stop_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LiveControlInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Stop Api V1 Projects  Project Id  Live Sessions  Identifier  Stop Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "live.stop"
+      }
+    },
+    "/api/v1/projects/{project_id}/usage": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Usage",
+        "operationId": "usage_api_v1_projects__project_id__usage_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveUsageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "live.read"
+      }
+    },
     "/api/v1/projects/{project_id}/connections/{connection_id}/access": {
       "get": {
         "summary": "Access",
@@ -4239,6 +4756,574 @@
         ],
         "title": "InspectResponse"
       },
+      "LiveAttachInput": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Workspace Id"
+          },
+          "expected_lease_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Lease Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "workspace_id",
+          "expected_lease_revision"
+        ],
+        "title": "LiveAttachInput"
+      },
+      "LiveControlInput": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Workspace Id"
+          },
+          "lease_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Lease Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "workspace_id",
+          "lease_revision"
+        ],
+        "title": "LiveControlInput"
+      },
+      "LiveCreateInput": {
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/HistoricalFilter"
+          },
+          "per_process_filters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HistoricalFilter"
+            },
+            "type": "object",
+            "maxProperties": 200,
+            "title": "Per Process Filters"
+          },
+          "seed_rows": {
+            "type": "integer",
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Seed Rows"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "merged",
+              "split"
+            ],
+            "title": "Mode"
+          },
+          "seed_rows_by_process": {
+            "additionalProperties": {
+              "type": "integer",
+              "maximum": 500.0,
+              "minimum": 1.0
+            },
+            "type": "object",
+            "maxProperties": 200,
+            "title": "Seed Rows By Process"
+          },
+          "project_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Project Id"
+          },
+          "project_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Project Revision"
+          },
+          "workspace_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Workspace Id"
+          },
+          "process_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Process Ids"
+          },
+          "record": {
+            "type": "boolean",
+            "title": "Record"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "filter",
+          "per_process_filters",
+          "seed_rows",
+          "mode",
+          "seed_rows_by_process",
+          "project_id",
+          "project_revision",
+          "workspace_id",
+          "process_ids",
+          "record"
+        ],
+        "title": "LiveCreateInput"
+      },
+      "LiveEvent": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version"
+          },
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "process_id": {
+            "type": "string",
+            "title": "Process Id"
+          },
+          "server_id": {
+            "type": "string",
+            "title": "Server Id"
+          },
+          "process_name_snapshot": {
+            "type": "string",
+            "title": "Process Name Snapshot"
+          },
+          "server_name_snapshot": {
+            "type": "string",
+            "title": "Server Name Snapshot"
+          },
+          "raw_line": {
+            "type": "string",
+            "title": "Raw Line"
+          },
+          "timestamp_original": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Original"
+          },
+          "timestamp_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Utc"
+          },
+          "timestamp_us": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Us"
+          },
+          "received_at": {
+            "type": "string",
+            "title": "Received At"
+          },
+          "parse_status": {
+            "type": "string",
+            "title": "Parse Status"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Metadata"
+          },
+          "source": {
+            "$ref": "#/components/schemas/HistoricalSourceProvenance"
+          },
+          "late_arrival": {
+            "type": "boolean",
+            "title": "Late Arrival",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "project_id",
+          "event_id",
+          "process_id",
+          "server_id",
+          "process_name_snapshot",
+          "server_name_snapshot",
+          "raw_line",
+          "timestamp_original",
+          "timestamp_utc",
+          "timestamp_us",
+          "received_at",
+          "parse_status",
+          "metadata",
+          "source"
+        ],
+        "title": "LiveEvent"
+      },
+      "LiveFilterInput": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Workspace Id"
+          },
+          "lease_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Lease Revision"
+          },
+          "global_filter": {
+            "$ref": "#/components/schemas/HistoricalFilter"
+          },
+          "per_process_filters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HistoricalFilter"
+            },
+            "type": "object",
+            "maxProperties": 200,
+            "title": "Per Process Filters"
+          },
+          "requested_rows": {
+            "type": "integer",
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Requested Rows",
+            "default": 30
+          },
+          "layout": {
+            "type": "string",
+            "enum": [
+              "merged",
+              "split"
+            ],
+            "title": "Layout",
+            "default": "merged"
+          },
+          "seed_rows_by_process": {
+            "additionalProperties": {
+              "type": "integer",
+              "maximum": 500.0,
+              "minimum": 1.0
+            },
+            "type": "object",
+            "maxProperties": 200,
+            "title": "Seed Rows By Process"
+          },
+          "expected_filter_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Filter Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "workspace_id",
+          "lease_revision",
+          "expected_filter_version"
+        ],
+        "title": "LiveFilterInput"
+      },
+      "LiveHistoryInput": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Workspace Id"
+          },
+          "lease_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Lease Revision"
+          },
+          "requested_rows": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Rows"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "workspace_id",
+          "lease_revision"
+        ],
+        "title": "LiveHistoryInput"
+      },
+      "LiveListResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LiveSessionResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "items"
+        ],
+        "title": "LiveListResponse"
+      },
+      "LiveSessionResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "title": "Workspace Id"
+          },
+          "lease_revision": {
+            "type": "integer",
+            "title": "Lease Revision"
+          },
+          "filter_version": {
+            "type": "integer",
+            "title": "Filter Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "process_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Process Ids"
+          },
+          "recording": {
+            "type": "boolean",
+            "title": "Recording"
+          },
+          "investigation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Id"
+          },
+          "layout": {
+            "type": "string",
+            "enum": [
+              "merged",
+              "split"
+            ],
+            "title": "Layout"
+          },
+          "global_filter": {
+            "$ref": "#/components/schemas/HistoricalFilter"
+          },
+          "per_process_filters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HistoricalFilter"
+            },
+            "type": "object",
+            "title": "Per Process Filters"
+          },
+          "requested_rows": {
+            "type": "integer",
+            "title": "Requested Rows"
+          },
+          "seed_rows_by_process": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Seed Rows By Process"
+          },
+          "detached": {
+            "type": "boolean",
+            "title": "Detached"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/LiveSnapshot"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "session_id",
+          "workspace_id",
+          "lease_revision",
+          "filter_version",
+          "status",
+          "process_ids",
+          "recording",
+          "investigation_id",
+          "layout",
+          "global_filter",
+          "per_process_filters",
+          "requested_rows",
+          "detached",
+          "snapshot"
+        ],
+        "title": "LiveSessionResponse"
+      },
+      "LiveSnapshot": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/LiveEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "diagnostics": {
+            "items": {
+              "$ref": "#/components/schemas/LiveEvent"
+            },
+            "type": "array",
+            "title": "Diagnostics"
+          },
+          "counters": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Counters"
+          },
+          "sources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "coverage": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Coverage"
+          },
+          "filter_version": {
+            "type": "integer",
+            "title": "Filter Version",
+            "default": 1
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "LiveSnapshot"
+      },
+      "LiveUsageResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Counts"
+          },
+          "limits": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Limits"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "workspace_id",
+          "counts",
+          "limits"
+        ],
+        "title": "LiveUsageResponse"
+      },
       "LoginInput": {
         "properties": {
           "username": {
@@ -5440,6 +6525,80 @@
           "expected_revision"
         ],
         "title": "RevisionInput"
+      },
+      "LiveFrame": {
+        "additionalProperties": false,
+        "properties": {
+          "protocol_version": {
+            "const": 2,
+            "default": 2,
+            "title": "Protocol Version",
+            "type": "integer"
+          },
+          "type": {
+            "enum": [
+              "snapshot",
+              "events",
+              "status",
+              "filter_applied",
+              "gap",
+              "resync_required",
+              "counters",
+              "heartbeat",
+              "error",
+              "stopped"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "project_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "session_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "filter_version": {
+            "minimum": 1,
+            "title": "Filter Version",
+            "type": "integer"
+          },
+          "seq": {
+            "minimum": 1,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "sent_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "Sent At",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "type",
+          "project_id",
+          "workspace_id",
+          "session_id",
+          "filter_version",
+          "seq",
+          "sent_at",
+          "payload"
+        ],
+        "title": "LiveFrame",
+        "type": "object"
       }
     }
   }

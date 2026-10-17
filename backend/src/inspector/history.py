@@ -36,6 +36,7 @@ from inspector.persistence.models import (
     HistoryEvent,
     HistoryJob,
     HistorySource,
+    LiveSession,
     Project,
     TopologyState,
     User,
@@ -1193,6 +1194,15 @@ class HistoryManager:
             )
             try:
                 # Scoped SQL deletes avoid materializing each retained event.
+                await session.execute(
+                    update(LiveSession)
+                    .where(
+                        LiveSession.project_id == project_id,
+                        LiveSession.investigation_id == job_id,
+                        LiveSession.owner_user_id == actor.user_id,
+                    )
+                    .values(investigation_id=None, recording=False)
+                )
                 for model in (HistoryDownload, HistoryCursor, HistoryEvent, HistorySource):
                     await session.execute(
                         delete(model).where(model.project_id == project_id, model.job_id == job_id)

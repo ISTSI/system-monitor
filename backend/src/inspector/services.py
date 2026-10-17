@@ -11,6 +11,8 @@ from inspector.errors import DomainError
 from inspector.persistence.models import (
     Audit,
     HistoryJob,
+    LiveSession,
+    LiveSubscription,
     Project,
     ProjectRevision,
     SecurityState,
@@ -38,13 +40,19 @@ def validate_metadata(name: str, description: str) -> None:
         raise DomainError("INVALID_REQUEST", "Invalid system metadata.", 422)
 
 
-async def current_actor(session: AsyncSession, principal: Principal) -> Principal:
-    guard = await session.scalar(
-        select(SecurityState).where(SecurityState.id == 1).with_for_update()
-    )
+async def current_actor(
+    session: AsyncSession, principal: Principal, *, lock: bool = True
+) -> Principal:
+    query = select(SecurityState).where(SecurityState.id == 1)
+    guard = await session.scalar(query.with_for_update() if lock else query)
     if guard is None:
         raise DomainError("NOT_READY", "Security state is unavailable.", 503)
-    user = await session.get(User, principal.user_id, with_for_update=True, populate_existing=True)
+    user = await session.get(User, principal.user_id, with_for_update=lock, populate_existing=True)
+    return _validated_actor(user, principal)
+
+
+def _validated_actor(user: User | None, principal: Principal) -> Principal:
+    """Apply the same actor checks to freshly queried locked or joined rows."""
     if (
         user is None
         or not user.enabled
@@ -119,7 +127,20 @@ async def list_projects(
                 description=p.description,
                 revision=p.revision,
                 archived=p.archived,
-                own_live_sessions=0,
+                own_live_sessions=int(
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(LiveSession)
+                        .where(
+                            LiveSession.project_id == p.id,
+                            LiveSession.owner_user_id == principal.user_id,
+                            LiveSession.status.in_(
+                                ["starting", "following", "reconnecting", "blocked"]
+                            ),
+                        )
+                    )
+                    or 0
+                ),
             )
             for p in projects
         ]
@@ -204,6 +225,15 @@ async def set_project_archived(
     if project.revision != expected_revision or project.archived == archived:
         raise DomainError("REVISION_CONFLICT", "System has changed; reload before saving.", 409)
     if archived:
+        active_live = await session.scalar(
+            select(func.count())
+            .select_from(LiveSubscription)
+            .where(LiveSubscription.project_id == project_id)
+        )
+        if active_live:
+            raise DomainError(
+                "COLLECTION_ACTIVE", "Stop this system's live monitors before archiving.", 409
+            )
         active_capture = await session.scalar(
             select(HistoryJob.id)
             .where(
@@ -351,4 +381,19 @@ async def get_workspace(
     elif workspace.state == "active":
         workspace.expires_us = now_us + WORKSPACE_LEASE_US
     await session.flush()
-    return workspace_response(workspace)
+    response = workspace_response(workspace)
+    response["live_session_ids"] = list(
+        (
+            await session.scalars(
+                select(LiveSession.id)
+                .where(
+                    LiveSession.project_id == context.project_id,
+                    LiveSession.workspace_id == workspace_id,
+                    LiveSession.owner_user_id == principal.user_id,
+                    LiveSession.status.in_(["starting", "following", "reconnecting", "blocked"]),
+                )
+                .limit(200)
+            )
+        ).all()
+    )
+    return response

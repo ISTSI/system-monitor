@@ -105,6 +105,48 @@ Return errors as `{"error":{"code":"ACCESS_DENIED","message":"...","details":{},
 
 ## WebSocket authentication
 
+Stage 05 implements the live routes above, plus `GET /projects/{project_id}/live-sessions`
+for the owner's bounded session list. Create uses `contracts/live-request.schema.json`
+verbatim: `project_id`, `project_revision`, `workspace_id`, `process_ids`, `mode`,
+`seed_rows`, `seed_rows_by_process`, `filter`, `per_process_filters`, and `record`.
+An explicitly mismatched project is 422 and a stale project revision is 409;
+neither starts SSH. Per-process row targets must belong to the selection.
+
+Control bodies contain `workspace_id` and `lease_revision`. Filter updates add
+`expected_filter_version`, `global_filter`, `per_process_filters`, `requested_rows`,
+`seed_rows_by_process`, and `layout`. History accepts an optional `requested_rows`
+top-up. `/save` idempotently starts recording retained and future raw events into
+an owned historical investigation; it returns the live session and investigation
+ID. Session responses use `layout`, `requested_rows`, `global_filter` and a typed
+`snapshot` with `events`, `diagnostics`, `counters`, `sources` and `coverage`.
+`/attach` requires `workspace_id` and `expected_lease_revision`; an occupied lease
+returns 409, and moving to a full workspace returns 429 without changing leases.
+Stop, refilter, history, save and transfer serialize against the same session
+control boundary. The Administrator cross-owner stop exception returns only
+project/session IDs and stopped state, never filters or a content snapshot.
+
+The protocol 2 hello envelope carries the exact project/workspace/session and
+filter version; payload is `{csrf_token, lease_revision, last_seq?}`. Ack payload
+is `{last_seq}`; viewport updates use the versioned HTTP filter operation. Both reject unknown fields, oversized messages,
+wrong scope and invalid sequence ranges. The socket validates exact Origin and
+Host before acceptance. Server event batches use `payload.items` as required by
+`contracts/live-frame.schema.json`; late-arrival flags are strings in event
+`metadata.late_arrival`, preserving the canonical event contract. HTTP/snapshot
+`LiveEvent` adds a typed `late_arrival` flag. Expired replay supplies an explicit
+`resync_required` with a replacement retained snapshot. Output frames are bounded
+by actual serialized bytes; deployment limits below 32 KiB are diagnosed before
+capture instead of being raised implicitly. The explicit Uvicorn `websockets`
+adapter enforces 16 KiB incoming messages across fragments and a 16-message
+receive queue. The wsproto/SansIO adapters do not honor this Uvicorn queue
+setting and are not selected. Application hello/ack validation also enforces
+16 KiB and a 100-message/second ceiling. Actual TCP tests cover the transport
+limits; ASGI-only message tests cannot establish wire buffering behavior.
+
+Restart marks live rows interrupted and releases all subscription reservations.
+It never recreates SSH or ephemeral replay. A new page requires an explicit new
+monitor after interruption; detached in-memory monitors can transfer through
+the explicit attach operation within the bounded reconnect lease.
+
 Validate cookie session, current account state/role and session ownership, plus exact allowed Origin, route project and owning workspace/control lease during handshake. Do not enable wildcard origins. Require an initial `hello` within five seconds containing the session-bound CSRF token, protocol version, optional last sequence and current filter version. Send no log data before it validates. No passwords, session tokens or CSRF values belong in socket URLs/access logs. Recheck session expiry/auth-version/enabled state before protected dispatch and with a watchdog no slower than two seconds. Close on logout, revocation, role change or DB loss; do not wait for the ordinary 15-second heartbeat. Recheck ownership on replay/backfill and reject cross-user session IDs. Apply message-size/rate limits. This follows the threat model in [S10, S11].
 
 ## Frame contract

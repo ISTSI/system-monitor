@@ -30,6 +30,7 @@ from inspector.database import create_engine, local_state_lock, supervisor_guard
 from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
 from inspector.history import NONTERMINAL, HistoryManager, build_history_router
+from inspector.live import LiveManager, build_live_router
 from inspector.security import issue_token, require_admin, token_hash
 from inspector.source_access import SourceAccess, build_source_access_router
 from inspector.ssh_access import SSHAccess, build_ssh_access_router
@@ -180,7 +181,13 @@ def create_app(config: Config | None = None) -> FastAPI:
                     # Restart never resumes collection or claims any old page's workspace.
                     from sqlalchemy import update
 
-                    from inspector.persistence.models import HistoryJob, HistorySource, Workspace
+                    from inspector.persistence.models import (
+                        HistoryJob,
+                        HistorySource,
+                        LiveSession,
+                        LiveSubscription,
+                        Workspace,
+                    )
 
                     async with app.state.sessions.begin() as session:
                         await foundation.initialize_settings(session, config)
@@ -200,14 +207,34 @@ def create_app(config: Config | None = None) -> FastAPI:
                             .where(HistorySource.status.in_(["queued", "collecting"]))
                             .values(status="partial", error_code="BACKEND_RESTART")
                         )
+                        await session.execute(
+                            update(LiveSession)
+                            .where(
+                                LiveSession.status.in_(
+                                    ["starting", "following", "reconnecting", "blocked"]
+                                )
+                            )
+                            .values(status="interrupted", error_code="BACKEND_RESTART")
+                        )
+                        from sqlalchemy import delete
+
+                        await session.execute(delete(LiveSubscription))
                     app.state.ssh_access = SSHAccess(config, app.state.sessions, supervisor)
                     app.state.source_access = SourceAccess(app.state.ssh_access)
                     app.state.history = HistoryManager(
                         config, app.state.sessions, supervisor, app.state.source_access
                     )
+                    app.state.live = LiveManager(
+                        config,
+                        app.state.sessions,
+                        supervisor,
+                        app.state.source_access,
+                        app.state.history,
+                    )
                     try:
                         yield
                     finally:
+                        await app.state.live.close()
                         await app.state.history.close()
         finally:
             app.state.supervisor = None
@@ -304,11 +331,17 @@ def create_app(config: Config | None = None) -> FastAPI:
                     request.url.path,
                 )
             )
+            live_filter = bool(
+                re.fullmatch(
+                    r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/live-sessions(?:/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/filters)?",
+                    request.url.path,
+                )
+            )
             maximum_body = (
                 config.config_upload_bytes * 6 + 512
                 if topology_upload
                 else 25_624_576
-                if history_query
+                if history_query or live_filter
                 else 16384
             )
             chunks, size = [], 0
@@ -671,6 +704,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.include_router(build_account_router(transaction, authenticated, protected_write))
     app.include_router(build_topology_router(transaction, authenticated, protected_write))
     app.include_router(build_history_router(transaction, authenticated, protected_write))
+    app.include_router(build_live_router(transaction, authenticated, protected_write))
     app.include_router(build_ssh_access_router(transaction, authenticated, protected_write))
     app.include_router(build_source_access_router(transaction, authenticated, protected_write))
     bundled = Path(__file__).parent / "web"
@@ -703,4 +737,14 @@ def create_app(config: Config | None = None) -> FastAPI:
             )
         return FileResponse(frontend / "index.html", media_type="text/html")
 
+    original_openapi = app.openapi
+
+    def openapi_with_live_frames() -> dict:
+        from inspector.live import LiveFrame
+
+        document = original_openapi()
+        document["components"]["schemas"]["LiveFrame"] = LiveFrame.model_json_schema()
+        return document
+
+    app.openapi = openapi_with_live_frames  # type: ignore[method-assign]
     return app

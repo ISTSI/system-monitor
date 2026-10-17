@@ -8,6 +8,7 @@ verified. Login sessions authorize users; no mutable active system is inferred.
 import asyncio
 import hashlib
 import json
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
@@ -16,17 +17,31 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import and_, case, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from inspector import foundation, services, ssh_files, ssh_transport
 from inspector.domain import Principal
 from inspector.errors import DomainError
-from inspector.persistence.models import Audit, Project, SourceAccessApproval, TopologyState
-from inspector.security import token_hash
+from inspector.persistence.models import (
+    ApplicationSetting,
+    Audit,
+    AuthSession,
+    Project,
+    ProjectCredentialBinding,
+    SecurityState,
+    SourceAccessApproval,
+    SSHCredential,
+    SSHHostTrust,
+    TopologyState,
+    User,
+)
+from inspector.security import authorize, token_hash
 from inspector.ssh_access import NetworkSnapshot, SSHAccess, route_digest
 
 T = TypeVar("T")
+_LOGGER = logging.getLogger(__name__)
 
 
 class StrictInput(BaseModel):
@@ -157,21 +172,51 @@ class SourceAccess:
         *,
         require_approval: bool,
         action: str,
+        lock: bool = True,
     ) -> SourceSnapshot:
-        actor = await self.ssh._actor(session, actor, action, session_hash)
+        actor = await self.ssh._actor(session, actor, action, session_hash, lock=lock)
         if not require_approval and action != "source_access.manage":
             raise DomainError("FORBIDDEN", "Source approval cannot be bypassed.", 403)
         manual_confirmation = (
             await foundation.settings_value(session)
         ).additional_security_measures
-        _, route = await self.ssh._profile(session, actor, project_id, connection_id, revision)
+        _, route = await self.ssh._profile(
+            session, actor, project_id, connection_id, revision, lock=lock
+        )
         roots = configured_roots(route)
         network = await self.ssh._snapshot(
-            session, actor, project_id, connection_id, revision, inspect=False
+            session, actor, project_id, connection_id, revision, inspect=False, lock=lock
         )
         approval = await session.get(
             SourceAccessApproval, (project_id, connection_id), populate_existing=True
         )
+        return self._source_snapshot(
+            actor,
+            project_id,
+            connection_id,
+            revision,
+            session_hash,
+            roots,
+            network,
+            approval,
+            manual_confirmation=manual_confirmation,
+            require_approval=require_approval,
+        )
+
+    @staticmethod
+    def _source_snapshot(
+        actor: Principal,
+        project_id: str,
+        connection_id: str,
+        revision: int,
+        session_hash: str | None,
+        roots: tuple[str, ...],
+        network: NetworkSnapshot,
+        approval: SourceAccessApproval | None,
+        *,
+        manual_confirmation: bool,
+        require_approval: bool,
+    ) -> SourceSnapshot:
         if (
             require_approval
             and manual_confirmation
@@ -220,6 +265,130 @@ class SourceAccess:
             network=network,
         )
 
+    async def prepare_many_in_transaction(
+        self,
+        session: AsyncSession,
+        actor: Principal,
+        project_id: str,
+        connection_ids: list[str],
+        revision: int,
+        session_hash: str | None,
+    ) -> dict[str, SourceSnapshot]:
+        """Fresh read-only live validation with bounded, project-scoped batch reads.
+
+        This never grants a write reservation. Control mutations continue using
+        prepare_in_transaction and its security/project locks. No loaded rows or
+        completed authorization survive this caller-owned transaction.
+        """
+        if not 1 <= len(connection_ids) <= 200 or len(set(connection_ids)) != len(connection_ids):
+            raise DomainError("INVALID_REQUEST", "Select 1 to 200 distinct connections.", 422)
+        context = (
+            await session.execute(
+                select(SecurityState, User, AuthSession, ApplicationSetting, Project, TopologyState)
+                .select_from(SecurityState)
+                .outerjoin(User, User.id == actor.user_id)
+                .outerjoin(
+                    AuthSession,
+                    AuthSession.token_hash
+                    == case((SecurityState.id == 1, session_hash), else_=None),
+                )
+                .outerjoin(ApplicationSetting, ApplicationSetting.id == SecurityState.id)
+                .outerjoin(
+                    Project, Project.id == case((SecurityState.id == 1, project_id), else_=None)
+                )
+                .outerjoin(TopologyState, TopologyState.project_id == Project.id)
+                .where(SecurityState.id == 1)
+                .execution_options(populate_existing=True)
+            )
+        ).first()
+        if context is None:
+            raise DomainError("NOT_READY", "Security state is unavailable.", 503)
+        _, user, login, settings, project, state = context
+        # Keep the ordinary actor -> permission -> login -> settings -> project
+        # validation order. Locked control paths reuse these same pure checks.
+        actor = services._validated_actor(user, actor)
+        authorize(actor, "collection.create")
+        actor = self.ssh._validated_login(actor, login)
+        if settings is None:
+            raise DomainError("NOT_READY", "Application settings are unavailable.", 503)
+        manual_confirmation = settings.additional_security_measures
+        if project is None:
+            raise DomainError("NOT_FOUND", "Resource not found.", 404)
+        routes = {
+            identifier: self.ssh._route(project, state, identifier, revision)
+            for identifier in connection_ids
+        }
+        profiles = {profile["id"]: profile for route in routes.values() for profile in route}
+        trust_rows = (
+            await session.execute(
+                select(SSHHostTrust, SourceAccessApproval)
+                .outerjoin(
+                    SourceAccessApproval,
+                    and_(
+                        SourceAccessApproval.project_id == SSHHostTrust.project_id,
+                        SourceAccessApproval.connection_id == SSHHostTrust.connection_id,
+                    ),
+                )
+                .where(
+                    SSHHostTrust.project_id == project_id,
+                    SSHHostTrust.connection_id.in_(profiles),
+                )
+                .execution_options(populate_existing=True)
+            )
+        ).all()
+        trusts = {trust.connection_id: trust for trust, _ in trust_rows}
+        approvals = {
+            trust.connection_id: approval for trust, approval in trust_rows if approval is not None
+        }
+        credential_rows = (
+            await session.execute(
+                select(ProjectCredentialBinding, SSHCredential)
+                .outerjoin(
+                    SSHCredential, SSHCredential.id == ProjectCredentialBinding.credential_id
+                )
+                .where(
+                    ProjectCredentialBinding.project_id == project_id,
+                    ProjectCredentialBinding.alias.in_(
+                        {profile["credential_ref"] for profile in profiles.values()}
+                    ),
+                )
+                .execution_options(populate_existing=True)
+            )
+        ).all()
+        credentials = {binding.alias: credential for binding, credential in credential_rows}
+        profile_credentials = {
+            identifier: credentials.get(profile["credential_ref"])
+            for identifier, profile in profiles.items()
+        }
+        return {
+            identifier: self._source_snapshot(
+                actor,
+                project_id,
+                identifier,
+                revision,
+                session_hash,
+                configured_roots(route),
+                self.ssh._network(route, trusts, profile_credentials, inspect=False),
+                approvals.get(identifier),
+                manual_confirmation=manual_confirmation,
+                require_approval=True,
+            )
+            for identifier, route in routes.items()
+        }
+
+    async def prepare_many(
+        self,
+        actor: Principal,
+        project_id: str,
+        connection_ids: list[str],
+        revision: int,
+        session_hash: str | None,
+    ) -> dict[str, SourceSnapshot]:
+        async with self.sessions.begin() as session:
+            return await self.prepare_many_in_transaction(
+                session, actor, project_id, connection_ids, revision, session_hash
+            )
+
     async def prepare(
         self,
         actor: Principal,
@@ -230,6 +399,7 @@ class SourceAccess:
         *,
         require_approval: bool = True,
         action: str = "collection.create",
+        lock: bool = True,
     ) -> SourceSnapshot:
         async with self.sessions.begin() as session:
             return await self._prepare(
@@ -241,6 +411,7 @@ class SourceAccess:
                 session_hash,
                 require_approval=require_approval,
                 action=action,
+                lock=lock,
             )
 
     async def prepare_in_transaction(
@@ -274,12 +445,23 @@ class SourceAccess:
         )
 
     async def _healthy(self) -> None:
+        began = asyncio.get_running_loop().time()
+        error_code = "unhealthy_probe"
         try:
             async with asyncio.timeout(1):
                 healthy = self.ssh.supervisor is not None and await self.ssh.supervisor.healthy()
-        except (TimeoutError, SQLAlchemyError):
+        except (TimeoutError, SQLAlchemyError) as error:
             healthy = False
+            error_code = type(error).__name__
         if not healthy:
+            _LOGGER.warning(
+                "Source persistence check failed closed: error=%s elapsed_seconds=%.3f supervisor_failed=%s supervisor_phase=%s supervisor_error=%s",
+                error_code,
+                asyncio.get_running_loop().time() - began,
+                getattr(self.ssh.supervisor, "failed", None),
+                getattr(self.ssh.supervisor, "last_failure_phase", None),
+                getattr(self.ssh.supervisor, "last_failure_code", None),
+            )
             raise DomainError(
                 "DATABASE_UNAVAILABLE",
                 "Remote access stopped because persistence is unavailable.",

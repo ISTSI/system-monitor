@@ -9,7 +9,7 @@ export class ApiError extends Error {
   }
 }
 
-async function token(): Promise<string> {
+export async function csrf(): Promise<string> {
   if (csrfToken) return csrfToken;
   const generation = authGeneration;
   const result = await request<{ csrf_token: string }>('/auth/csrf');
@@ -32,7 +32,7 @@ export function detachOnPageHide(projectId: string, workspaceId: string): void {
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.body) headers.set('Content-Type', 'application/json');
-  if (options.method && options.method !== 'GET') headers.set('X-CSRF-Token', await token());
+  if (options.method && options.method !== 'GET') headers.set('X-CSRF-Token', await csrf());
   const generation = authGeneration;
   let response: Response;
   try {

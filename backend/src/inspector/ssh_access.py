@@ -12,7 +12,7 @@ import os
 import stat
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any
@@ -200,9 +200,15 @@ class SSHAccess:
         self._attempts: deque[tuple[float, str]] = deque()
 
     async def _actor(
-        self, session: AsyncSession, actor: Principal, action: str, session_hash: str | None
+        self,
+        session: AsyncSession,
+        actor: Principal,
+        action: str,
+        session_hash: str | None,
+        *,
+        lock: bool = True,
     ) -> Principal:
-        actor = await services.current_actor(session, actor)
+        actor = await services.current_actor(session, actor, lock=lock)
         authorize(actor, action)
         # Recheck the actual login too: logout deletes it without changing auth_version.
         login = (
@@ -210,6 +216,10 @@ class SSHAccess:
             if session_hash
             else None
         )
+        return self._validated_login(actor, login)
+
+    def _validated_login(self, actor: Principal, login: AuthSession | None) -> Principal:
+        """Recheck a fresh login row without changing actor/login error order."""
         now = services.utc_now_us()
         if (
             login is None
@@ -228,11 +238,23 @@ class SSHAccess:
         project_id: str,
         connection_id: str,
         expected_revision: int | None = None,
+        *,
+        lock: bool = True,
     ) -> tuple[Project, list[dict[str, Any]]]:
         project = await services.project_in_context(
-            session, ProjectContext(project_id, actor.user_id), lock=True
+            session, ProjectContext(project_id, actor.user_id), lock=lock
         )
-        state = await session.get(TopologyState, project_id)
+        state = await session.get(TopologyState, project_id, populate_existing=not lock)
+        return project, self._route(project, state, connection_id, expected_revision)
+
+    @staticmethod
+    def _route(
+        project: Project,
+        state: TopologyState | None,
+        connection_id: str,
+        expected_revision: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Apply the same route checks to one fresh topology snapshot."""
         profiles = {item["id"]: item for item in state.config["connections"]} if state else {}
         target = profiles.get(connection_id)
         if target is None:
@@ -254,7 +276,7 @@ class SSHAccess:
                     422,
                 )
             route.append(jump)
-        return project, route
+        return route
 
     async def _credential(
         self, session: AsyncSession, project_id: str, profile: dict[str, Any]
@@ -366,17 +388,36 @@ class SSHAccess:
         revision: int,
         *,
         inspect: bool,
+        lock: bool = True,
     ) -> NetworkSnapshot:
-        _, route = await self._profile(session, actor, project_id, connection_id, revision)
+        _, route = await self._profile(
+            session, actor, project_id, connection_id, revision, lock=lock
+        )
+        trusts = {}
+        credentials = {}
+        for profile in route:
+            trusts[profile["id"]] = await session.get(
+                SSHHostTrust, (project_id, profile["id"]), populate_existing=True
+            )
+            credentials[profile["id"]] = await self._credential(session, project_id, profile)
+        return self._network(route, trusts, credentials, inspect=inspect)
+
+    def _network(
+        self,
+        route: list[dict[str, Any]],
+        trusts: Mapping[str, SSHHostTrust | None],
+        credentials: Mapping[str, SSHCredential | None],
+        *,
+        inspect: bool,
+    ) -> NetworkSnapshot:
+        """Build a network snapshot from rows read in the caller's transaction."""
         endpoints: list[ssh_transport.Endpoint] = []
         versions: list[dict[str, Any]] = []
         for index, profile in enumerate(route):
             hop_route = route if index == 0 else [profile]
-            trust = await session.get(
-                SSHHostTrust, (project_id, profile["id"]), populate_existing=True
-            )
+            trust = trusts.get(profile["id"])
             valid = bool(trust and trust.approved and trust.route_digest == route_digest(hop_route))
-            credential = await self._credential(session, project_id, profile)
+            credential = credentials.get(profile["id"])
             needs_auth = not inspect or index > 0
             if needs_auth and not valid:
                 raise DomainError(

@@ -9,6 +9,7 @@ is always a separate operation in the access service.
 import asyncio
 import ipaddress
 import socket
+import weakref
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field
@@ -20,6 +21,9 @@ from inspector.errors import DomainError
 _TIMEOUT_SECONDS = 20.0
 _CLOSE_TIMEOUT_SECONDS = 2.0
 _SLOTS = asyncio.BoundedSemaphore(4)
+_LIVE_SLOTS: weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = (
+    weakref.WeakKeyDictionary()
+)
 
 
 @dataclass(frozen=True)
@@ -174,11 +178,13 @@ async def _route(
 
 
 @asynccontextmanager
-async def _bounded_operation(*, timeout_seconds: float | None = None) -> AsyncIterator[None]:
+async def _bounded_operation(
+    *, timeout_seconds: float | None = None, slots: asyncio.BoundedSemaphore | None = None
+) -> AsyncIterator[None]:
     try:
         async with (
             asyncio.timeout(_TIMEOUT_SECONDS if timeout_seconds is None else timeout_seconds),
-            _SLOTS,
+            slots if slots is not None else _SLOTS,
         ):
             yield
     except DomainError:
@@ -255,6 +261,53 @@ async def sftp_session(
                             connection.abort()
             finally:
                 await _close(connection)
+
+
+@asynccontextmanager
+async def live_sftp_session(
+    target: Endpoint,
+    jump: Endpoint | None = None,
+    *,
+    allow_loopback: bool = False,
+) -> AsyncIterator[asyncssh.SFTPClient]:
+    """Pinned live SFTP with bounded establishment, independent lifetime slots.
+
+    Historical concurrent-host capacity must not become a lifetime cap on live
+    subscriptions. The caller atomically reserves live capacity before entry.
+    This uses the same strict destination, key, password and single-jump policy.
+    """
+    async with AsyncExitStack() as stack:
+        loop = asyncio.get_running_loop()
+        slots = _LIVE_SLOTS.setdefault(loop, asyncio.BoundedSemaphore(4))
+        async with _bounded_operation(slots=slots):
+            address, jump_connection, target_key = await stack.enter_async_context(
+                _route(target, jump, allow_loopback, authenticate_target=True)
+            )
+            assert target_key is not None
+            connection = await _authenticate(target, address, target_key, jump_connection)
+            stack.push_async_callback(_close, connection)
+            try:
+                sftp = await connection.start_sftp_client()
+            except (asyncssh.SFTPError, asyncssh.ChannelOpenError):
+                raise DomainError(
+                    "SSH_SFTP_FAILED",
+                    "SSH authenticated, but the SFTP subsystem is unavailable.",
+                    422,
+                ) from None
+        try:
+            yield sftp
+        except asyncio.CancelledError:
+            connection.abort()
+            if jump_connection:
+                jump_connection.abort()
+            raise
+        finally:
+            sftp.exit()
+            try:
+                async with asyncio.timeout(_CLOSE_TIMEOUT_SECONDS):
+                    await sftp.wait_closed()
+            except (TimeoutError, asyncssh.Error, OSError):
+                connection.abort()
 
 
 async def inspect_key(

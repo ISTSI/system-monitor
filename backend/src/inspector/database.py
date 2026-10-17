@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+import logging
 import re
 import sys
 from collections.abc import AsyncIterator, Iterator
@@ -15,9 +16,10 @@ from sqlalchemy.pool import NullPool
 
 from inspector.config import DatabaseConfig, read_secret
 
-SCHEMA_REVISION = "0008_security_setting"
+SCHEMA_REVISION = "0009_live"
 _PROBE_TIMEOUT_SECONDS = 1.0
 _DRAIN_TIMEOUT_SECONDS = 1.25
+_LOGGER = logging.getLogger(__name__)
 
 
 def validate_runtime_grants(grants: list[str], database: str) -> None:
@@ -139,6 +141,9 @@ class Supervisor:
         self.failed = False
         self._closing = False
         self._probe_task: asyncio.Task[bool] | None = None
+        self.last_failure_phase: str | None = None
+        self.last_failure_code: str | None = None
+        self._probe_phase = "idle"
 
     async def healthy(self) -> bool:
         if self.failed or self._closing:
@@ -154,28 +159,50 @@ class Supervisor:
         return await asyncio.shield(self._probe_task)
 
     async def _probe(self) -> bool:
+        began = asyncio.get_running_loop().time()
         try:
             async with asyncio.timeout(_PROBE_TIMEOUT_SECONDS):
                 return await self._healthy_locked()
-        except (Exception, asyncio.CancelledError):
+        except (Exception, asyncio.CancelledError) as error:
             self.failed = True
+            self.last_failure_phase = self._probe_phase
+            self.last_failure_code = type(error).__name__
+            if not self._closing:
+                _LOGGER.warning(
+                    "Persistence supervisor probe failed closed: phase=%s error=%s elapsed_seconds=%.3f",
+                    self._probe_phase,
+                    type(error).__name__,
+                    asyncio.get_running_loop().time() - began,
+                )
             return False
 
     async def _healthy_locked(self) -> bool:
         if self.failed:
             return False
         try:
+            self._probe_phase = "lock_owner"
             owner = await self.connection.scalar(
                 text("SELECT IS_USED_LOCK(:name)"),
                 {"name": _lock_name(self.connection, "supervisor")},
             )
+            self._probe_phase = "connection_identity"
             connection_id = await self.connection.scalar(text("SELECT CONNECTION_ID()"))
+            self._probe_phase = "commit"
             await self.connection.commit()
             if owner != self.connection_id or connection_id != self.connection_id:
                 self.failed = True
-        except Exception:
+                self.last_failure_phase = "ownership"
+                self.last_failure_code = "LOCK_OWNERSHIP_LOST"
+        except Exception as error:
             # Never silently reacquire a lost lock; a controlled restart is required.
             self.failed = True
+            self.last_failure_phase = self._probe_phase
+            self.last_failure_code = type(error).__name__
+            _LOGGER.warning(
+                "Persistence supervisor query failed closed: phase=%s error=%s",
+                self._probe_phase,
+                type(error).__name__,
+            )
         return not self.failed
 
     async def drain(self) -> None:

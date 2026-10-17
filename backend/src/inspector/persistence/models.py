@@ -660,6 +660,83 @@ class ConfigPreview(Base):
     expires_us: Mapped[int] = mapped_column(BigInteger)
 
 
+class LiveSession(Base):
+    """Persisted control lease; ephemeral capture never resumes on restart."""
+
+    __tablename__ = "live_sessions"
+    __table_args__ = (
+        PrimaryKeyConstraint("project_id", "id", name="pk_live_sessions"),
+        ForeignKeyConstraint(
+            ["project_id", "workspace_id", "owner_user_id"],
+            ["workspaces.project_id", "workspaces.id", "workspaces.owner_user_id"],
+            name="fk_live_sessions_workspace_owner",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "config_revision"],
+            ["project_revisions.project_id", "project_revisions.revision"],
+            name="fk_live_sessions_revision",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "investigation_id", "owner_user_id"],
+            ["history_jobs.project_id", "history_jobs.id", "history_jobs.owner_user_id"],
+            name="fk_live_sessions_recording_owner",
+        ),
+        UniqueConstraint("project_id", "id", "owner_user_id", name="uq_live_sessions_owner"),
+        CheckConstraint("lease_revision >= 1 AND filter_version >= 1", name="versions"),
+        CheckConstraint("recording IN (0, 1)", name="recording"),
+        Index("ix_live_sessions_owner_state", "owner_user_id", "status"),
+        Index("ix_live_sessions_workspace", "project_id", "workspace_id", "status"),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    id: Mapped[str] = mapped_column(identifier())
+    workspace_id: Mapped[str] = mapped_column(identifier())
+    owner_user_id: Mapped[str] = mapped_column(identifier())
+    auth_version: Mapped[int] = mapped_column(Integer)
+    auth_session_hash: Mapped[str] = mapped_column(verifier())
+    config_revision: Mapped[int] = mapped_column(Integer)
+    config_snapshot: Mapped[dict] = mapped_column(JSON)
+    process_ids: Mapped[list] = mapped_column(JSON)
+    lease_revision: Mapped[int] = mapped_column(Integer)
+    filter_version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(binary_text(32))
+    view: Mapped[dict] = mapped_column(JSON)
+    recording: Mapped[bool] = mapped_column(Boolean)
+    investigation_id: Mapped[str | None] = mapped_column(identifier(), nullable=True)
+    created_us: Mapped[int] = mapped_column(BigInteger)
+    detached_until_us: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(binary_text(64), nullable=True)
+
+
+class LiveSubscription(Base):
+    __tablename__ = "live_subscriptions"
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "project_id", "session_id", "process_id", name="pk_live_subscriptions"
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "session_id", "owner_user_id"],
+            ["live_sessions.project_id", "live_sessions.id", "live_sessions.owner_user_id"],
+            name="fk_live_subscriptions_session_owner",
+        ),
+        ForeignKeyConstraint(
+            ["project_id", "process_id", "process_kind"],
+            ["entity_identities.project_id", "entity_identities.id", "entity_identities.kind"],
+            name="fk_live_subscriptions_process",
+        ),
+        CheckConstraint("process_kind = 'process'", name="process_kind"),
+        Index("ix_live_subscriptions_owner", "owner_user_id"),
+        TABLE_OPTIONS,
+    )
+    project_id: Mapped[str] = mapped_column(identifier())
+    session_id: Mapped[str] = mapped_column(identifier())
+    owner_user_id: Mapped[str] = mapped_column(identifier())
+    process_id: Mapped[str] = mapped_column(identifier())
+    process_kind: Mapped[str] = mapped_column(
+        VARCHAR(16, charset="ascii", collation="ascii_bin"), default="process"
+    )
+
+
 class HistoryJob(Base):
     """Private capture and its offline investigation; never serialize the config."""
 

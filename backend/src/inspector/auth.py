@@ -74,10 +74,9 @@ def _audit(
     )
 
 
-async def _security_lock(session: AsyncSession) -> None:
-    guard = await session.scalar(
-        select(SecurityState).where(SecurityState.id == 1).with_for_update()
-    )
+async def _security_lock(session: AsyncSession, *, lock: bool = True) -> None:
+    query = select(SecurityState).where(SecurityState.id == 1)
+    guard = await session.scalar(query.with_for_update() if lock else query)
     if guard is None:
         raise DomainError("SECURITY_NOT_READY", "Security state is not initialized.", 503)
 
@@ -307,25 +306,47 @@ async def authenticate(
     *,
     renew_idle: bool = True,
     allow_password_change: bool = False,
+    lock: bool = True,
 ) -> Principal:
     if idle_timeout_us <= 0:
         raise ValueError("Session idle timeout must be positive.")
     verifier = token_hash(token)
     if verifier is None:
         raise DomainError("AUTH_REQUIRED", "Authentication is required.", 401)
-    await _security_lock(session)
-    record = (
-        await session.execute(
-            select(AuthSession, User)
-            .join(User, AuthSession.user_id == User.id)
-            .where(AuthSession.token_hash == verifier)
-            .with_for_update()
-            .execution_options(populate_existing=True)
-        )
-    ).first()
-    if record is None:
+    if not lock and renew_idle:
+        raise ValueError("Read-only authentication cannot renew login state.")
+    await _security_lock(session, lock=lock)
+    query = (
+        select(AuthSession, User)
+        .join(User, AuthSession.user_id == User.id)
+        .where(AuthSession.token_hash == verifier)
+        .execution_options(populate_existing=True)
+    )
+    record = (await session.execute(query.with_for_update() if lock else query)).first()
+    return _validated_authentication(
+        record[0] if record is not None else None,
+        record[1] if record is not None else None,
+        now_us,
+        idle_timeout_us,
+        renew_idle=renew_idle,
+        allow_password_change=allow_password_change,
+    )
+
+
+def _validated_authentication(
+    auth_session: AuthSession | None,
+    user: User | None,
+    now_us: int,
+    idle_timeout_us: int,
+    *,
+    renew_idle: bool = False,
+    allow_password_change: bool = False,
+) -> Principal:
+    """Apply identical login checks to fresh locked or joined read-only rows."""
+    if idle_timeout_us <= 0:
+        raise ValueError("Session idle timeout must be positive.")
+    if auth_session is None or user is None:
         raise DomainError("AUTH_REQUIRED", "Authentication is required.", 401)
-    auth_session, user = record
     if (
         not user.enabled
         or user.role not in ROLES

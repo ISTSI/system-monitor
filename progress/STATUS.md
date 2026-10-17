@@ -1,11 +1,11 @@
 # Implementation status — version 3
 
-**Current: Stage 04 approved SSH historical collection is complete at its review gate.** The updated local Docker app is running at `https://localhost:8445`, with the existing Stage 03 data preserved. Stage 02 data and the service on port 8444 are retained. The Stage 01 app on port 8443 remains stopped at the user's request; its VM database, SSH tunnel and data are preserved. Stage 05 has not started. Exact results and later-stage gates are recorded below; earlier blockers remain as dated history.
+**Current: Stage 05 is complete and installed locally at https://localhost:8445.** The authorized 18 October deployment applied `0009_live` and installed the exact tested Stage 05 artifact after consistent database/cache/application backups. Existing accounts, systems, settings, vault and cached investigations were preserved and verified. Stage 02 data and the service on port 8444 are retained unchanged. The Stage 01 app on port 8443 remains stopped at the user's request; its VM database, SSH tunnel and data are preserved. The isolated Stage 05 services on 8447 and synthetic SFTP are stopped. Exact results and later-stage gates are recorded below; earlier blockers remain as dated history.
 
 The UTC controls and **Additional security measures** follow-ups are now
-installed on 8445 at schema `0008_security_setting`. The checkbox defaults to
+installed on 8445, now at schema `0009_live`. The checkbox defaults to
 checked; installation preserved the existing data and security policy. See the
-installation entry at the end of this file.
+dated installation entry below.
 
 **Starting point: specification package only.** The dated entries preserve the inspection and implementation history.
 
@@ -16,7 +16,7 @@ installation entry at the end of this file.
 | 02 — Topology/config | Complete; review gate | 253 units, 30 Linux DB tests, populated upgrade, topology/foundation browser tests; evidence below |
 | 03 — Historical log engine | Complete; review gate | 321 units, 47 Linux DB tests, 17 browser cases, populated upgrade; 20 MiB ingest 9.72 s and warmed query p95 at most 240.307 ms on the recorded development machine |
 | 04 — SSH and collection | Complete; review gate | 463 Linux units (one platform skip), 89 real Linux DB/SSH tests, 23 distinct browser cases, populated upgrade and inspected UI; final evidence below |
-| 05 — Live monitoring | Not started | — |
+| 05 — Live monitoring | Complete; installed locally on 8445 | 595 unit passes plus 4 platform skips, 136 real MariaDB cases, 44 Linux engine/SFTP/TCP cases, 8 browser cases, populated upgrade; paced concurrent-archive p95 1,592 ms at 3.995 appends/s; backed-up migration and installed browser/data checks passed |
 | 06 — Investigation tools | Not started | — |
 | 07 — Import and UI completion | Not started | — |
 | 08 — Release and hardening | Not started | — |
@@ -24,7 +24,7 @@ installation entry at the end of this file.
 For each stage record changed files, requirement IDs, exact commands run, actual results, unexecuted checks and reasons, unresolved blockers and the next stage. Keep a distinction between a unit-tested adapter, an SSH integration tested in a local fixture environment, and a deployment verified on a real target OS.
 
 
-Package handoff baseline: version 3 supplied scope/import contracts and synthetic helpers. Implementation evidence is in the dated entries below. Live controllers/following and Ansible import remain later stages.
+Package handoff baseline: version 3 supplied scope/import contracts and synthetic helpers. Implementation evidence is in the dated entries below. Live capture is now covered by Stage 05; Ansible import remains Stage 07.
 
 ## 17 October 2026 — upgrade inspection and first backend review slice
 
@@ -1371,3 +1371,278 @@ The local Docker/protected-fixture and browser commands used approved elevation;
 no secret values were printed. `backend/README.md` now identifies the installed
 artifact and recovery backup. Stage 05 remains the next separately authorized
 scope; there is no remaining installation blocker.
+
+## 17–18 October 2026 — Stage 05 live monitoring review gate
+
+The user authorized Stage 05. Implemented this stage and stopped before Stage 06.
+No installation into 8444/8445, production connection, infrastructure change,
+remote file write, repository push or real-data migration was performed.
+
+Implemented supervised read-only SFTP following with approved direct/single-jump
+routes, shared host connections and reference-counted unfiltered source capture
+within complete matching project/owner/configuration/access contexts. Separate
+sessions retain private filters, pane policies, replay and workspace leases.
+Pinned seed boundaries preserve split UTF-8/partial lines and duplicate text at
+different byte positions. Reverse matching scans honor byte/line/time limits,
+per-pane measured rows, unknown-timestamp diagnostics and explicit older-history
+requests. Unknown lines cannot satisfy the timestamped seed viewport.
+
+Capture polls at 750 ms. New events wake a monotonic 500 ms merge deadline;
+idle sources do not hold a watermark. Observed rename/copytruncate, reconnects,
+gaps, backlog, retention eviction and late events remain visible. Raw buffers,
+input/output frame bytes, per-client replay and stopped-session memory are
+bounded. Refiltering uses retained raw data without SSH reconnection. Display
+pause continues collection and counters; Stop releases only that monitor.
+
+MariaDB `0009_live` adds scoped session/subscription and recording-owner foreign
+keys. Atomic quota reservation covers workspace/system/account/deployment;
+explicit transfer also checks destination workspace capacity. Stop, history,
+save, refilter and transfer serialize against the control lease. WebSockets
+validate protocol 2, exact Host/Origin, cookie/CSRF, owner/project/workspace/lease
+and filter version before protected dispatch, with a silent watchdog and bounded
+fail-closed database checks. Valid old-version ACKs queued across a filter reset
+are discarded; invalid/future references fail. Denial audits contain IDs and
+classification only. Database/supervisor loss and backend restart never restart
+SSH automatically. Administrator cross-owner stop is audited and returns no
+private snapshot/filter data.
+
+Both roles can monitor through topology or the live logs workspace. The viewer
+uses measured individual pane heights, TanStack virtualization, canonical UTC
+ordering, literal global/per-process any/all inclusion/exclusion and Unicode
+casefold, independent same-context pages, explicit detached resume and scoped
+late-frame/HTTP-response fences. Theme changes preserve streams. Global logout
+ends the shared login. Explicit recording saves retained nonmatches and new
+original-byte ranges before publication into an owned offline historical
+investigation. Stop/cancel/limits retain partial coverage. Byte limits plus a
+200,000-event recording cap are explicit; original-range cache append rolls back
+safely. These partial ranges cannot claim a complete-source raw download.
+
+Changed source/document groups:
+
+- `backend/src/inspector/live.py`, `live_engine.py`, `ssh_transport.py`, `app.py`,
+  `auth.py`, `services.py`, `source_access.py`, `ssh_access.py`, `security.py`,
+  `history.py`, `database.py`, `__main__.py`;
+  `persistence/models.py`, migration `0009_live.py`, OpenAPI, pyproject/uv lock.
+- New live engine/SFTP/control/authentication/real-TCP units and scoped live,
+  filter-reset and terminal-state MariaDB/ASGI integration regressions.
+- `frontend/src/components/LiveViewer.tsx`, `live.ts`, `SystemWorkspace.tsx`,
+  `App.tsx`, API client/generated types, semantic styles and `e2e/live.spec.ts`.
+- `scripts/prepare_stage5_runner.py`, `stage5_local.py`,
+  `stage5_sftp_fixture.py`, `verify_stage5.py`, `verify_stage5_preservation.py`.
+- Bounded Stage 05 capacity sampler and temporary diagnostic wrappers; normal
+  runtime commands never enable diagnostic instrumentation.
+- Root/backend/frontend READMEs, API/MariaDB/traceability documents,
+  `progress/DECISIONS.md`, `TOOLCHAIN.md`, `V3_SLICE_PLAN.md` and this status.
+  Original theme images, historical identity fixtures and interchange schemas
+  remain unchanged. The actual resolver added BSD-3-Clause websockets 16.1.1
+  for bounded runtime transport; MIT wsproto 1.3.2 is development-only for
+  real TCP tests. Original notices and the 54-distribution inventory are kept.
+
+Commands actually run (Python = `backend/.venv/Scripts/python.exe`):
+
+| Command/check | Final recorded result |
+|---|---|
+| `python -m pytest backend/tests/unit -q -o junit_family=legacy --junitxml=verification/stage-5/guard-final-unit.xml` | **595 passed, 4 skipped in 25.33 s**; valid JUnit contains 599 cases, no failures/errors. Windows skips cover POSIX mode bits, two privileged/POSIX symlink cases and renaming a pinned open file. Linux live coverage below exercises actual rename. Five upstream legacy WebSocket deprecation warnings are retained. Exact argv/cwd/timing: `guard-final-unit-command.json`. |
+| `python scripts/verify_stage5.py integration --suffix s5_final_all_1017` | **136 passed in 244.32 s**, no failures/skips/warnings, fresh disposable MariaDB 11.8.9 schema. Includes 106 prior integration cases and 30 live/filter/terminal cases. Full output/argv: `s5_final_all_1017.log` and `s5_final_all_1017-command.json`; independent container exit 0 also retained. |
+| `python scripts/verify_stage5.py live --suffix s5_ctx3_1017 --match <recorded selection>` | **21 passed in 67.81 s**, no SQL warnings. Actual three-query source validation and one-query socket validation; 13 target/jump trust, credential, approval, root, revision and policy mutations; live security/recording, filter-reset fence, stale maintenance after Stop/attach and two startup/Stop outcomes. Full selection/argv: `s5_ctx3_1017-command.json`. |
+| `python scripts/verify_stage5.py linux-unit` | **44 passed in 10.49 s**, including real SFTP rename/drain, copytruncate, reconnect/rekey, five sources plus idle peer, bounded proof overlap/cancellation and three real TCP message/fragment/queue tests. Five documented transport deprecations; no failures/skips. |
+| `python scripts/verify_stage5.py upgrade --suffix s2_upgrade_s5_1017b` | PASS: populated `0002_foundation_preferences` → final `0009_live`, including recording-owner foreign key. Accounts/password verification/preferences, two systems, metadata/docs/scoped entities survive; old workspaces detach. DDL remained unchanged through final verification. |
+| `python scripts/frontend.py e2e live.spec.ts`, protected synthetic accounts, `INSPECTOR_E2E_URL=https://localhost:8447`, final report `live-browser-final-eight-three-query` | **8 passed, 0 skipped/flaky/unexpected in 122.241 s**. Both roles, same/different-system same-context pages, measured pane heights, literal/per-process filters, retained refilter, pause/receipt, recording, theme stability, stale frames/HTTP, duplicate/reload/lease transfer, slow/closed page, logout, topology Monitor, real 21,000-line retention burst and concurrent capacity. |
+| `python scripts/frontend.py lint`, `typecheck`, `api:check` | PASS; `frontend-*-final.log`. Disabled-origin discovery lists eight cases without reading protected fixture/account files. |
+| `python -m ruff check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts`; corresponding `ruff format --check`; `python -m mypy src` from `backend/` | PASS: all scopes clean, **120 files formatted**, **29 source files** typed. Exact commands/logs: `guard-final-{ruff,format,mypy}-*`. |
+| `python -m unittest discover -s tests/package -q`; `python tools/validate_package.py`; `validate_schemas.py`; `validate_deployment_examples.py` | PASS: **128 package tests, 9 platform skips**; 18 schemas, 102 valid and 36 rejected negative instances; 44 static deployment checks. `package-contracts-final.json` retains actual commands/results. These are package checks, not runtime acceptance substitutes. |
+| Locked uv resolution/sync; `python scripts/collect_backend_notices.py` | Actual resolver installed runtime **websockets 16.1.1 (BSD-3-Clause)** and development **wsproto 1.3.2 (MIT)**; other locked versions preserved, **54** original distribution notice records retained. `websocket-transport-dependency.json` records evidence. |
+| `python scripts/prepare_stage5_runner.py` | Separate Stage 05 image built: `sha256:668bfc011a595c63ea4f88c29eea56c326828662dbba1cd20a18a4eacdfcd8a8`. Existing pinned Linux base reused; original `:local` tag/image preserved. Initial Stage 05 image/build records remain as history. |
+| `python scripts/stage5_local.py` with `prepare`, `migrate`, `fixture`, `up`, `configure`, `runner`, `archives`, `capacity-archive`, `paced`, `burst`, `resources`, `reset-active`, `restart`, `stop` | Guarded synthetic schema `inspector_test_s5_web_799802f49c`, generated TLS/accounts/vault and approved read-only SFTP. Only 8447/SFTP fixture services changed. Bounded reset restored five inactive generated files to 360 seed records and proved archive SHA unchanged; each full suite recreates the retention burst before capacity. Exact helper invocations/evidence retained under stage 5. |
+| `python scripts/build_stage1.py` plus source/wheel/runtime-manifest comparison | PASS in **5.868 s**: 197-module Vite build, wheel/sdist; **36** packaged source/assets and migration 0009 match current bytes, all **29** runtime source hashes match the tested restart, JS/CSS hashes match tested assets. Wheel SHA256 `1a1c1fb7f0bd0f09a217fbd7bedb6bb8dcfaca228621ee1f928b4833fe9002e7`. `final-build.json` and `final-artifact-correspondence.json`. Existing >500 kB chunk advisory retained. No installation/release inferred. |
+| Manual UI inspection | PASS: both roles/themes at 1920×1080 and 1280×720, latest five split panes, retention warnings and source coverage. Final burst: **21,373 received / 20,000 retained / 1,373 evicted**. `ui-review-final.json` and screenshots retained. |
+| `python scripts/verify_stage5_preservation.py` after fixture stop | PASS: certificate/hostname-verified readiness **200** on 8444/8445; distinct original app images and original runner tag preserved; no authenticated/state-changing requests. Both Stage 05 fixtures exited. `retained-installations.json` and `fixture-completion.json`. |
+| `git diff --check` | PASS; existing LF/CRLF conversion notices are non-fatal. Final package validator also passes after the documentation update. |
+
+Final browser measurements use the source's UTC append timestamp and first
+virtual-row DOM insertion, rather than Playwright assertion polling:
+
+- Nominal two-window/two-system five-source monitoring: **p95 1,098 ms**,
+  **16 physical appends / 32 DOM observations**, **3.99255 appends/s**. Each
+  window has an idle fifth source. Evidence:
+  `live-browser-final-eight-three-query-latency.json`.
+- Concurrent capacity after the real retention burst: **p95 1,592 ms**,
+  **8 qualifying samples**, **3.99543 physical appends/s**, **18 held frames**
+  in the other page. Both investigations finish with six sources,
+  **88,367 total events**, exactly **65,536 archive events / 16,777,216 expanded
+  archive bytes**, **18,520,102 total expanded / 18,520,236 downloaded bytes**
+  each. Probe boundaries prove two nonterminal jobs and five subscriptions per
+  system; held-page delivery cannot stall the healthy page.
+  `capacity-browser-final-eight-three-query-pass.json` and
+  `final-workload-evidence.json` retain timing, source and job evidence.
+- The separate clean focused run also passes: **p95 1,726 ms**, eight
+  qualifying samples at 3.995 appends/s. It remains separate evidence in
+  `capacity-browser-three-query-focused-pass.json`.
+
+The qualified final capacity resource snapshot at 22:35:06.760 UTC records
+application **159.1 MiB / 512 MiB**, instantaneous CPU **97.46%**, and MariaDB
+**719.4 MiB / 1 GiB**, CPU **46.24%**. Both before/after probes confirm two active
+jobs and ten subscriptions. Docker's Linux VM has **16,630,767,616 bytes**
+allocated; the Windows host has **34,073,227,264 bytes** physical memory.
+These are local snapshots, not peak RSS or full-browser/proxy measurements.
+The final entry in `resources-capacity-sixteen-mib.json` is preserved separately
+inside `final-workload-evidence.json`.
+
+The exact tested source was hashed before/after the normal-command restart:
+container start **22:32:21.357 UTC**, certificate/hostname-verified readiness
+**22:32:26.394 UTC**. No diagnostics, source changes or backend restarts occurred
+during the passing focused/full browser runs. The packaged frontend assets are
+unchanged `index-BxWBxWdK.js` and `index-DoDRv8yT.css`; their hashes and current
+wheel/source correspondence are recorded. The Stage 05 test services are now
+stopped; retained 8444/8445 services were never upgraded.
+
+Earlier failures and corrections remain in distinct artifacts:
+
+- Initial transport/browser/fixture issues included absent WebSocket transport,
+  Chromium fixture local-network permission, teardown ordering, SSH-identity
+  assertions, recording cancellation, queued old ACKs, lease/quota races,
+  oversized valid HTTP literals and merge/background-paint delay. Contracts
+  and rejection expectations were preserved.
+- The first two concurrent archive runs interrupted live capture with
+  `DATABASE_UNAVAILABLE`; one archive retained partial data. Their exact
+  original cause was not established. Fresh nonlocking validation, in-flight
+  coalescing, scoped batching and bounded supervisor checks were added and
+  tested, without caching completed grants or changing fail-closed deadlines.
+  Failure-1/failure-2 browser/socket evidence is retained.
+- Real paced runs then measured p95 **2,676 / 2,528 / 2,289 / 2,416 / 2,106 /
+  2,305 / 2,238 / 2,194 ms**. An earlier low-rate diagnostic did not meet the
+  required producer rate and is not a capacity pass. An extensive profiler
+  timed out with partial investigations; its diagnostic impact remains
+  unresolved and its missing original exception class is explicitly recorded.
+- A lean diagnostic measured 1,787 ms but exposed an explicit Stop being
+  overwritten by stale maintenance. Fresh locked intent/lease checks and
+  guarded startup transitions now have deterministic real DB regressions.
+  A later focused 1,953 ms pass was followed by a full-suite **2,079 ms**
+  failure, preserved as failure-13. Neither was substituted for the final
+  complete passing suite.
+- Final fixes retain **750 ms polls / 500 ms merge deadlines**: bounded parallel
+  fingerprint checks drain peers; unchanged cursors keep proved anchors;
+  appends reuse only the full prefix proved in that poll. Fresh common
+  source context plus two scoped joins reduce source validation to three
+  reads; each socket check uses one fresh joined read. Shared pure validators
+  preserve the ordinary locked controls' actor/login/owner/lease rules.
+  Every protected dispatch/ACK rechecks authorization. Filter frames wait for
+  the committed database version and engine reset to agree.
+- The actual transport audit showed Uvicorn's wsproto/SansIO adapters ignore
+  its receive-queue count setting. The explicit locked `websockets` adapter
+  enforces **16 KiB messages / 16 queued messages**, proven by actual TCP
+  fragmentation/backpressure tests. Upstream legacy deprecations are retained;
+  upgrades must rerun these tests. Temporary diagnostic commands were removed
+  before clean measurements. No failing threshold or fixture workload was
+  weakened.
+
+Remaining platform/release limits: verification uses local Linux containers on
+a Windows development host, not a qualified Ubuntu/Rocky installation. Direct
+Uvicorn fixture TLS does not qualify release-proxy/full-browser RSS. GNU Make is
+absent, so the recorded commands ran directly rather than through Make.
+Windows platform skips have their stated OS prerequisites; actual Linux live
+rename and transport paths passed. Window-state checks used headless Chromium
+pages in one browser context; native OS window-manager interaction was not
+exercised by that driver run. Long-duration production soak, all-image
+offline save/load/restart, OS installation, full backup/release qualification
+remain later gates. SFTP cannot prove every hidden rewrite/rotation or exactly
+once capture; transient replay is ephemeral and recordings are partial/bounded.
+
+**Stage 05 is complete within the recorded local synthetic baseline. Stop at
+this review gate. Next: `prompts/06_INVESTIGATION_TOOLS.md`, only after separate
+authorization.** No full investigation editor, correlation, bookmarks/annotations,
+bundle exchange, Ansible reconciliation or release deployment was implemented.
+Using Stage 05 on retained 8445 requires a separately authorized backed-up
+migration/install.
+
+## 18 October 2026 — Stage 05 installed into retained local 8445
+
+User authorization: “Deploy stage 5.” Upgraded only the existing local
+`runtime-stage3` service at **https://localhost:8445**. The isolated test app on
+8447 and its synthetic SFTP remain stopped; 8444 was neither restarted nor
+reconfigured. No production host, configured target SSH connection, remote
+repository or later-stage implementation was used.
+
+Installed the already tested wheel unchanged, SHA256
+`1a1c1fb7f0bd0f09a217fbd7bedb6bb8dcfaca228621ee1f928b4833fe9002e7`,
+into `.state/stage5-install/backend`. All **48 packaged application files**,
+including migrations and bundled assets, match the wheel. The served assets are
+`index-BxWBxWdK.js` and `index-DoDRv8yT.css`, with the hashes recorded at the
+review gate. The 8445 Compose override pins image
+`sha256:668bfc011a595c63ea4f88c29eea56c326828662dbba1cd20a18a4eacdfcd8a8`
+and isolated wrapper scripts. It explicitly runs one ASGI worker with the
+`websockets` adapter, **16,384-byte messages / 16 queued messages**. The original
+runner tag and all previous application artifacts remain retained.
+
+Stopped only 8445 before taking consistent SQL/cache backups. Protected recovery
+material is under `.secrets/stage5-install/pre-0009-live/`: SQL dump, raw-cache
+archive, byte/SHA and UID/GID/mode manifests, exact prior Compose/application
+files, prior backend and the unchanged vault key. The compressed SQL is
+**194,569,190 bytes**, SHA256
+`deb6df083c32ab53e381447eae5f7e902e93c791b9d86ae6cc9284b67a64e94c`.
+It uses an explicit database positional argument with no CREATE DATABASE/USE.
+Both backup archive hashes were rechecked before DDL. A matching-state recovery
+procedure is retained in `.cache/stage5-rollback.txt`; no rollback or restore
+drill was needed or performed during this deployment.
+
+Applied `0008_security_setting` → **`0009_live`** with the separate schema
+migrator while the serving supervisor was stopped. Before restart, all **35 old
+table counts** and **34 non-Alembic table checksums** were identical; the only
+new tables were empty `live_sessions` and `live_subscriptions`. After restart,
+**27 stable table counts/checksums**, all **897 original cache files /
+230,864,349 bytes**, and **957 file/directory ownership/mode entries** matched.
+Startup workspace/job/source interruption and login/audit/query activity were
+excluded from the later stable-table comparison. The earlier pre-start comparison
+covered every old table. Accounts/password verifiers, preferences, systems,
+topology, settings, credentials, trust/approval data and indexed events were
+preserved. Application config and vault source hashes are unchanged, including
+all explicit deployment limits. The runtime key is UID 10001, mode 0600 and the
+same 32 bytes; its contents were never printed.
+
+Commands actually run (repository root; locked local Python/Node; PASS):
+
+- `backend/.venv/Scripts/python.exe -m py_compile .cache/install_stage5.py`.
+- `backend/.venv/Scripts/python.exe .cache/install_stage5.py prepare`, then
+  `backup`, `seal`, `migrate`, `start`, `verify`, each as a separate phase.
+  Only `runtime-stage3` was stopped/recreated; migration used
+  `compose run --rm --no-deps migrate` with the pinned image and snapshot.
+- `.toolchains/node-v24.22.0-win-x64/node.exe --check .cache/verify_stage5_install.mjs`
+  and `.toolchains/node-v24.22.0-win-x64/node.exe .cache/verify_stage5_install.mjs`:
+  **PASS in 5.870 s**, no limitations. Both synthetic roles retained their saved
+  themes and settings permissions. Two pages per role in one browser context
+  received distinct fresh workspaces; local selections/filters/layout stayed
+  independent. All four smoke workspaces were detached without global logout.
+  Two original owned demo investigations queried successfully, including two
+  source-context reads. Actual served asset hashes matched. Catalogue, topology,
+  preferences and existing live lists were unchanged; zero external requests,
+  page errors, forbidden writes or WebSocket attempts occurred. Root and UI agent
+  inspected both installed light/dark screenshots with no visual blocker.
+- Independent read-only Docker/SQL/TLS/WSS audit: **PASS**. Actual serving UID
+  `10001:10001`, read-only root and snapshot, capability drop, no-new-privileges,
+  512 MiB memory and 128 PID ceiling are retained. Runtime SQL privileges are
+  exactly SELECT/INSERT/UPDATE/DELETE on this schema, with global USAGE only;
+  no root/migration secret is mounted. No live sessions or subscriptions started.
+  A real unauthenticated WSS upgrade with verified certificate/hostname and exact
+  Origin returned HTTP **403** before acceptance. 8444 retained its container ID,
+  start time, image and served index; its HTTPS readiness remained 200.
+- `backend/.venv/Scripts/python.exe scripts/verify_stage5_preservation.py --installed-stage5`:
+  **PASS in 4.59 s**, as did syntax and Ruff checks for the helper. The new
+  explicit mode verifies the authorized 8445 image and unchanged 8444 container,
+  original runner and stopped fixtures. Default pre-deployment expectations
+  remain intact; `retained-installations.json` was not overwritten. Final
+  `git diff --check`: **PASS**, with non-fatal LF/CRLF notices.
+
+Changed files/artifacts: `README.md`, `backend/README.md`, this status and
+`progress/V3_SLICE_PLAN.md`, `scripts/verify_stage5_preservation.py`; ignored
+operator installers/browser checks/recovery
+instructions under `.cache/`; isolated snapshot under `.state/stage5-install/`;
+the existing generated `deploy/local-mariadb/stage3-browser.compose.local.yaml`;
+protected backup files; and actual deployment evidence under
+`verification/stage-5/deployment-*.json` with `deployment-screenshots/`.
+No backend/frontend product implementation changed for installation. Earlier
+unit/MariaDB/SFTP/capacity suites were not repeated: the installed wheel/image
+are the exact tested artifacts, and the deployment ran actual migration,
+preservation, installed-browser and transport checks instead. This remains a
+local Linux-container installation, not Ubuntu/Rocky or offline-release
+qualification. There is no deployment blocker. **Stop at Stage 05; next scope
+is `prompts/06_INVESTIGATION_TOOLS.md`, only after separate authorization.**

@@ -73,3 +73,61 @@ Version 3 fixed requirements: multiple named systems per deployment; same-accoun
   Dockerfile context allowlists exclude local secrets/toolchains. Runtime receives
   only runtime credentials and makes no dependency/update/telemetry calls. Full
   Stage 08 offline release assembly remains separate from Stage 01 lifecycle tests.
+
+## Stage 05 implementation decisions — 17 October 2026
+
+- Persist live ownership, configuration snapshots, quotas and revisioned control
+  leases in MariaDB; raw source buffers/replay remain ephemeral. Restart records
+  interruption and releases reservations without reopening SSH. The same
+  singleton security lock serializes starts and transfers against all quotas.
+- Reuse raw collectors and host connections only within complete matching
+  project/owner/configuration/route/credential/trust/approval contexts. Every
+  subscription owns its filters. Acquire live connection establishment slots
+  separately from historical lifetime slots, so four historical host slots do
+  not cap the required ten live subscriptions.
+- Match the existing canonical live-create schema rather than inventing another
+  interchange shape. Generated API responses/control models expose explicit
+  typed snapshots and lease/filter revisions. WebSocket event batches preserve
+  the canonical `payload.items` contract; late flags fit its string metadata.
+- Install a locked WebSocket implementation because minimal Uvicorn has none.
+  The initial wsproto adapter enforces message bytes but Uvicorn 0.54 ignores
+  `ws_max_queue` for that adapter and its SansIO adapter. Use Uvicorn's explicit
+  `websockets` adapter, which forwards both message-byte and message-count limits
+  to the library. Its legacy API is deprecated upstream; cap the compatible
+  major range and require actual TCP fragmentation/backpressure regressions on
+  upgrades. Keep wsproto as a development dependency for raw-wire tests. Preserve
+  actual resolver locks and original notices. Build a separate Stage 05 test
+  image; preserve retained images/services and do not install into them.
+- Record exact captured byte ranges with original offsets, not reconstructed
+  text. These recordings are explicitly partial historical investigations;
+  refuse complete-source downloads and retain committed data after stop, cancel
+  or interruption. The operational byte ceiling and 200,000-event cap prevent
+  indefinitely growing individual recordings.
+- Treat display pause as presentation state. Deadline-based merge wakeups avoid
+  an extra polling tick, while idle sources never hold a timestamp watermark.
+  Client frames and HTTP completions are fenced by scope, lease, filter version,
+  sequence and terminal state. Retention resnapshots cannot roll the view back.
+- Use fresh nonlocking reads for live background and established-socket
+  authorization. Read the selected routes' project-scoped approvals, trust and
+  credential bindings in bounded batches with the same validation/signature
+  builders as individual checks. Share only validation still in flight for the
+  same project/session; never cache a completed grant. Every protected socket
+  dispatch still revalidates current login, owner and lease. State-changing
+  controls and quota reservations retain their existing transaction locks.
+- Use one fresh joined account/login/monitor/workspace read for each established
+  socket check. Reuse pure validation rules with ordinary locked controls;
+  reduce round trips without retaining a completed authorization result. Wait
+  for database and engine filter versions to agree before constructing frames.
+- Skip durable-recorder work for unsaved monitors. Save activation and retained
+  backfill settle as one cancellation-shielded operation; shared collection
+  checks new recorder consumers again after every awaited callback. Recording
+  failure retains a partial investigation and stops only its affected monitor.
+- Preserve the specified 750 ms polling and 500 ms merge deadlines. Keep path
+  validation serial, but overlap the bounded pinned/named fingerprint reads and
+  drain every peer on error/cancellation. Keep proved anchors on an unchanged
+  cursor; after append, reuse only the full prefix proved in that poll and read
+  the new tail. Read related source configuration/approval/credential rows in
+  three scoped joins, preserving the existing validation and signature rules.
+- Maintenance actions must take the monitor's control lock and recheck current
+  state before applying an earlier scan's intent. An explicit Stop or workspace
+  transfer must not be overwritten by a stale maintenance result.

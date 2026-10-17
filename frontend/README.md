@@ -1,6 +1,6 @@
 # System Inspector web application
 
-React/TypeScript/Vite sources compile to local static assets served by FastAPI on the same HTTPS origin. No runtime npm, CDN, cloud account, fonts or Internet access is needed. The current vertical slice includes authentication, system catalogue, revisioned topology editing, account management, appearance and a virtualised historical viewer. Local fixture collection indexes real plain, ZIP and TAR.GZ events in MariaDB. Administrator SSH password storage, host-key approval and direct/single-jump connection tests are available through server details or Connections. Stage 04 adds explicit system-scoped target/root approval, configured path checks and historical SSH/SFTP retrieval. Log history labels the actual SSH or explicitly enabled local-demo transport; live following remains Stage 05.
+React/TypeScript/Vite sources compile to local static assets served by FastAPI on the same HTTPS origin. No runtime npm, CDN, cloud account, fonts or Internet access is needed. The current vertical slice includes authentication, system catalogue, revisioned topology editing, account management, appearance, historical investigation and live SFTP monitoring. Local fixture collection indexes real plain, ZIP and TAR.GZ events in MariaDB. Administrator SSH password storage, host-key approval and direct/single-jump connection tests are available through server details or Connections. Source access remains scoped to the system and configured roots. Log history labels the actual SSH or explicitly enabled local-demo transport.
 
 The top bar contains Systems, Administrator-only Accounts, Settings for both roles, and Administrator-only Admin, followed by the synthetic-demo label when enabled and the account menu. Personal appearance is changed only in Settings; deployment settings remain Administrator-only. Admin (`/admin`) contains system creation, metadata editing, archival and restoration.
 
@@ -15,6 +15,25 @@ collections automatically load Timestamped events. **Log entry** displays the
 line without its parsed timestamp prefix; **Context** retains the original.
 Both roles can delete their own finished collection with **Delete collection**
 and the confirmation dialog. Deletion removes that collection's retained data.
+
+Choose **Monitor** or **Monitor selected** from a topology selection, or open
+**Live monitor** and choose configured processes. The viewer measures its pane
+height for recent matching history. Merged and separate process panes share
+literal global filters and optional per-process filters; advanced controls
+support any/all include terms, exclude terms and server-side Unicode casefold.
+Filter changes refilter retained raw capture without reconnecting SSH.
+**Pause display** freezes displayed rows while receipt and recording continue;
+**Resume display**, **Stop this monitor**, **Record** and **Load older** have
+separate actions. Counters and source details expose retention, seed limits,
+disconnects and uncertain continuity. Unknown times have their own lane.
+
+Live controls belong to a server-issued page workspace and control lease.
+Reload/duplicate starts no collection and adopts no copied handle. A detached
+monitor appears under **Your detached monitors** with explicit **Resume in this
+window**. System switching detaches this page's monitor for its bounded lease.
+Other pages retain their filters and controls; global logout intentionally ends
+the account session in every page. Appearance updates preserve live sockets,
+session identity, filters, display pause and stream ordering.
 
 An open system uses a compact header with the System action menu and system name on the left and the system selector on the right. The Administrator menu contains Add subsystem, Add server, Add process, Add flow, List connections, List Parsers, Import configuration, Export JSON and Export YAML. Undo and Redo sit beside Documented topology. The former workspace status strip and separate topology editing button bar are removed. Use ordinary system links and the browser's tab/window actions to open another page; there is no Open separately button. Each page retains its own system and workspace state.
 
@@ -52,5 +71,34 @@ Tests use one browser context for parallel pages and check both different-system
 The browser regressions also delay real preference/session responses through logout and a subsequent login, checking that stale responses cannot restore protected content or clear the new session/CSRF token. The targeted 200% layout equivalent uses CSS 640×360 with deviceScaleFactor 2: the same layout and physical pixel budget as a 1280×720 viewport at 200% zoom. This is explicitly a layout equivalent, not browser toolbar zoom automation. Keyboard focus, dialog scrolling, process selection and horizontal overflow are checked. Set INSPECTOR_E2E_URL=https://localhost:8445, INSPECTOR_E2E_REPORT_STAGE=stage-3 and INSPECTOR_E2E_ACCOUNTS to .secrets/stage3-browser/accounts.json (absolute path). Reports are under verification/stage-3; set INSPECTOR_E2E_REPORT_NAME to a distinct lowercase basename when preserving separate runs. Repeated runs against the temporary VM need fresh synthetic account fixtures or expiry of the bounded workspace grace period; deployment quotas are retained during tests.
 
 Dependency/license evidence is in [the collected inventory](../third_party/frontend/README.md). Package notices are copied from the actual installed artifacts; packages without separate license texts retain their published package metadata and README. These are development-platform notices; release assembly must collect notices for its own platform as well.
+
+The Stage 05 browser suite uses the isolated generated SFTP fixture and HTTPS
+origin `https://localhost:8447`; see `scripts/stage5_local.py`. Set
+`INSPECTOR_E2E_URL=https://localhost:8447`,
+`INSPECTOR_E2E_REPORT_STAGE=stage-5`,
+`INSPECTOR_E2E_ACCOUNTS` to the absolute protected
+`.secrets/stage5-browser/accounts.json` path and
+`INSPECTOR_E2E_LOCAL_ASSETS=1` after building, then run
+`python scripts/frontend.py e2e live.spec.ts`. The suite writes only through
+the local synthetic fixture controller; application SSH remains read-only.
+It checks both roles, same-context independent pages, explicit reattachment,
+late stale frames, delayed clients, global logout and two five-source systems
+including an idle source. Chromium's local-network-access test permission is
+granted only to the generated loopback fixture origin for its WSS stream.
+Latency uses the synthetic line's UTC timestamp and a MutationObserver at first
+DOM insertion, with separate receipt and display timings. Actual results are
+recorded in `progress/STATUS.md`.
+
+The capacity case creates a bounded 16 MiB regular ZIP member through the fixture
+controller, then collects it in both systems while ten live subscriptions remain
+active and one page's delivery is held. Its producer writes at 250 ms intervals
+inside one asynchronous fixture process, preserving browser responsiveness and
+recording the actual write rate. Resource evidence includes the surrounding job
+states; direct fixture TLS and page JavaScript heap measurements do not qualify
+the release proxy or full browser process memory.
+
+This suite is opt-in: any other origin skips the live cases without reading the
+ignored fixture metadata or protected account fixture. Generated test accounts are
+never application defaults.
 
 Version/engine references: [official Node release index](https://nodejs.org/dist/index.json), [Vite compatibility](https://vite.dev/guide/), [Playwright browsers](https://playwright.dev/docs/browsers). These are connected build references, not runtime dependencies.
