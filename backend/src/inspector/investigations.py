@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any, Literal
 from uuid import uuid4
@@ -46,6 +48,91 @@ class RevisionInput(StrictInput):
     expected_revision: int = Field(ge=0)
 
 
+class PinGroup(StrictInput):
+    id: str = Field(pattern=ID_PATTERN)
+    description: str = Field(max_length=10000)
+    bookmark_ids: list[Annotated[str, Field(pattern=ID_PATTERN)]] = Field(
+        min_length=1, max_length=100
+    )
+    created_us: int = Field(ge=0, le=9_007_199_254_740_991)
+
+    @model_validator(mode="after")
+    def unique_bookmarks(self) -> "PinGroup":
+        if len(set(self.bookmark_ids)) != len(self.bookmark_ids):
+            raise ValueError("A pin group must reference each bookmark once.")
+        return self
+
+
+class PinEventInput(HistoricalContextInput):
+    event_id: str = Field(pattern=ID_PATTERN)
+    before: Literal[0] = 0
+    after: Literal[0] = 0
+
+
+class PinCreate(RevisionInput):
+    description: str = Field(default="", max_length=10000)
+    events: list[PinEventInput] = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def unique_events(self) -> "PinCreate":
+        if len({event.event_id for event in self.events}) != len(self.events):
+            raise ValueError("Select each event once per pin group.")
+        return self
+
+
+class PinUpdate(RevisionInput):
+    description: str = Field(max_length=10000)
+    events: list[PinEventInput] | None = Field(default=None, min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def unique_events(self) -> "PinUpdate":
+        if "events" in self.model_fields_set and self.events is None:
+            raise ValueError("Omit events to keep the existing pin selection.")
+        if self.events is not None and len({event.event_id for event in self.events}) != len(
+            self.events
+        ):
+            raise ValueError("Select each event once per pin group.")
+        return self
+
+
+@asynccontextmanager
+async def pin_deadline() -> AsyncIterator[None]:
+    try:
+        async with asyncio.timeout(30):
+            yield
+    except TimeoutError:
+        raise DomainError(
+            "PIN_TIMEOUT", "Pinning selected events exceeded its time budget.", 408
+        ) from None
+
+
+def pin_groups(state: dict) -> list[dict]:
+    """Typed server-owned extension of the existing personal analysis JSON."""
+    groups = [PinGroup.model_validate(group).model_dump() for group in state.get("pin_groups", [])]
+    identities = [group["id"] for group in groups]
+    bookmarks = [bookmark for group in groups for bookmark in group["bookmark_ids"]]
+    if (
+        len(groups) > 1000
+        or len(set(identities)) != len(identities)
+        or len(set(bookmarks)) != len(bookmarks)
+    ):
+        raise ValueError("Invalid pin group identities or membership.")
+    return groups
+
+
+def with_pin_groups(state: dict, groups: list[dict]) -> dict:
+    candidate = {**state, "pin_groups": groups}
+    return {**state, "pin_groups": pin_groups(candidate)}
+
+
+def pruned_pin_groups(state: dict, bookmark_ids: set[str]) -> list[dict]:
+    return [
+        {**group, "bookmark_ids": retained}
+        for group in pin_groups(state)
+        if (retained := [key for key in group["bookmark_ids"] if key in bookmark_ids])
+    ]
+
+
 class SavedWorkspaceInput(RevisionInput):
     title: str = Field(min_length=1, max_length=200)
     process_ids: list[Annotated[str, Field(pattern=ID_PATTERN)]] = Field(
@@ -87,6 +174,7 @@ class SavedWorkspaceResponse(StrictInput):
     collection_references: list[str]
     availability: Literal["retained", "partial", "unavailable"]
     source_snapshot_revision: int
+    pin_groups: list[PinGroup] = Field(default_factory=list, max_length=1000)
 
 
 class BookmarkCreate(HistoricalContextInput):
@@ -118,6 +206,7 @@ class BookmarkResponse(StrictInput):
     investigation_id: str
     revision: int
     items: list[BookmarkItem]
+    pin_groups: list[PinGroup] = Field(default_factory=list, max_length=1000)
 
 
 class CorrelationInput(HistoricalQueryInput):
@@ -248,6 +337,7 @@ async def bookmark_response(session: AsyncSession, job: HistoryJob) -> dict:
         project_id=job.project_id,
         investigation_id=job.id,
         revision=saved.revision if saved else 0,
+        pin_groups=pin_groups(saved.state) if saved else [],
         items=[
             dict(
                 bookmark_id=row.id,
@@ -301,7 +391,10 @@ def build_investigation_router(
         saved = await revise(session, job, payload.expected_revision)
         if saved.expired and payload.pinned:
             raise DomainError("SOURCE_EXPIRED", "Unavailable source data cannot be pinned.", 410)
-        saved.state = payload.model_dump(by_alias=True, exclude={"expected_revision", "pinned"})
+        saved.state = with_pin_groups(
+            payload.model_dump(by_alias=True, exclude={"expected_revision", "pinned"}),
+            pin_groups(saved.state),
+        )
         saved.pinned = payload.pinned
         await session.flush()
         return await workspace_response(session, job)
@@ -315,6 +408,240 @@ def build_investigation_router(
         return await bookmark_response(
             session, await checked_job(session, actor, project_id, job_id)
         )
+
+    @router.post(
+        "/pins",
+        response_model=BookmarkResponse,
+        status_code=201,
+        openapi_extra={"x-permission": "bookmark.write"},
+    )
+    async def create_pin(
+        project_id: str,
+        job_id: str,
+        payload: PinCreate,
+        request: Request,
+        actor: Writer,
+        session: Session,
+    ) -> dict:
+        await session.commit()
+        async with pin_deadline(), request.app.state.history.use_capture(project_id, job_id):
+            await authenticated(request, session)
+            job = await checked_job(
+                session, actor, project_id, job_id, lock=True, action="investigation.write"
+            )
+            saved = await revise(session, job, payload.expected_revision)
+            count, retained_bytes = (
+                await session.execute(
+                    select(
+                        func.count(),
+                        func.coalesce(
+                            func.sum(func.octet_length(InvestigationBookmark.context)), 0
+                        ),
+                    ).where(
+                        InvestigationBookmark.project_id == project_id,
+                        InvestigationBookmark.job_id == job_id,
+                    )
+                )
+            ).one()
+            if count + len(payload.events) > 1000:
+                raise DomainError(
+                    "LIMIT_REACHED", "This investigation has reached its bookmark limit.", 429
+                )
+            created = services.utc_now_us()
+            groups = pin_groups(saved.state)
+            group: dict = dict(
+                id=str(uuid4()),
+                description=payload.description,
+                bookmark_ids=[],
+                created_us=created,
+            )
+            byte_count = retained_bytes + len(
+                json.dumps(
+                    [*groups, {**group, "bookmark_ids": ["0" * 36] * len(payload.events)}],
+                    ensure_ascii=True,
+                ).encode()
+            )
+            rows = []
+            for event in payload.events:
+                context_input = HistoricalContextInput.model_validate(
+                    event.model_dump(by_alias=True, exclude={"event_id"})
+                )
+                context = await historical_context(
+                    session, actor, project_id, job_id, event.event_id, context_input
+                )
+                byte_count += len(json.dumps(context, ensure_ascii=True).encode())
+                if byte_count > 33_554_432:
+                    raise DomainError(
+                        "LIMIT_REACHED",
+                        "Pinned context exceeds the 32 MiB investigation budget.",
+                        413,
+                    )
+                anchor = next(item["event"] for item in context["items"] if item["is_anchor"])
+                bookmark_id = str(uuid4())
+                group["bookmark_ids"].append(bookmark_id)
+                rows.append(
+                    InvestigationBookmark(
+                        project_id=project_id,
+                        job_id=job_id,
+                        id=bookmark_id,
+                        owner_user_id=actor.user_id,
+                        event_id=event.event_id,
+                        reference_event_id=event.event_id,
+                        annotation="",
+                        pin_context=True,
+                        context=context,
+                        process_name_snapshot=anchor["process_name_snapshot"],
+                        server_name_snapshot=anchor["server_name_snapshot"],
+                        created_us=created,
+                    )
+                )
+                await asyncio.sleep(0)
+            await authenticated(request, session)
+            saved.state = with_pin_groups(saved.state, [*groups, group])
+            session.add_all(rows)
+            await session.flush()
+            return await bookmark_response(session, job)
+
+    @router.patch(
+        "/pins/{pin_id}",
+        response_model=BookmarkResponse,
+        openapi_extra={"x-permission": "bookmark.write"},
+    )
+    async def edit_pin(
+        project_id: str,
+        job_id: str,
+        pin_id: str,
+        payload: PinUpdate,
+        request: Request,
+        actor: Writer,
+        session: Session,
+    ) -> dict:
+        await session.commit()
+        async with pin_deadline(), request.app.state.history.use_capture(project_id, job_id):
+            await authenticated(request, session)
+            job = await checked_job(
+                session, actor, project_id, job_id, lock=True, action="investigation.write"
+            )
+            saved = await saved_row(session, job)
+            groups = pin_groups(saved.state) if saved else []
+            original = next((group for group in groups if group["id"] == pin_id), None)
+            if original is None:
+                raise not_found()
+            saved = await revise(session, job, payload.expected_revision)
+            replacement = {**original, "description": payload.description}
+            conditions = [
+                InvestigationBookmark.project_id == project_id,
+                InvestigationBookmark.job_id == job_id,
+            ]
+            if payload.events is not None:
+                conditions.append(InvestigationBookmark.id.not_in(original["bookmark_ids"]))
+                replacement["bookmark_ids"] = [str(uuid4()) for _ in payload.events]
+            groups = [replacement if group["id"] == pin_id else group for group in groups]
+            count, retained_bytes = (
+                await session.execute(
+                    select(
+                        func.count(),
+                        func.coalesce(
+                            func.sum(func.octet_length(InvestigationBookmark.context)), 0
+                        ),
+                    ).where(*conditions)
+                )
+            ).one()
+            if payload.events is not None and count + len(payload.events) > 1000:
+                raise DomainError(
+                    "LIMIT_REACHED", "This investigation has reached its bookmark limit.", 429
+                )
+            byte_count = retained_bytes + len(json.dumps(groups, ensure_ascii=True).encode())
+            rows = []
+            created = services.utc_now_us()
+            for event, bookmark_id in zip(
+                payload.events or [],
+                replacement["bookmark_ids"] if payload.events is not None else [],
+                strict=True,
+            ):
+                context_input = HistoricalContextInput.model_validate(
+                    event.model_dump(by_alias=True, exclude={"event_id"})
+                )
+                context = await historical_context(
+                    session, actor, project_id, job_id, event.event_id, context_input
+                )
+                byte_count += len(json.dumps(context, ensure_ascii=True).encode())
+                if byte_count > 33_554_432:
+                    raise DomainError(
+                        "LIMIT_REACHED",
+                        "Pinned context exceeds the 32 MiB investigation budget.",
+                        413,
+                    )
+                anchor = next(item["event"] for item in context["items"] if item["is_anchor"])
+                rows.append(
+                    InvestigationBookmark(
+                        project_id=project_id,
+                        job_id=job_id,
+                        id=bookmark_id,
+                        owner_user_id=actor.user_id,
+                        event_id=event.event_id,
+                        reference_event_id=event.event_id,
+                        annotation="",
+                        pin_context=True,
+                        context=context,
+                        process_name_snapshot=anchor["process_name_snapshot"],
+                        server_name_snapshot=anchor["server_name_snapshot"],
+                        created_us=created,
+                    )
+                )
+                await asyncio.sleep(0)
+            if byte_count > 33_554_432:
+                raise DomainError(
+                    "LIMIT_REACHED", "Pinned context exceeds the 32 MiB investigation budget.", 413
+                )
+            await authenticated(request, session)
+            if payload.events is not None:
+                await session.execute(
+                    delete(InvestigationBookmark).where(
+                        InvestigationBookmark.project_id == project_id,
+                        InvestigationBookmark.job_id == job_id,
+                        InvestigationBookmark.id.in_(original["bookmark_ids"]),
+                    )
+                )
+                session.add_all(rows)
+            saved.state = with_pin_groups(saved.state, groups)
+            await session.flush()
+            return await bookmark_response(session, job)
+
+    @router.post(
+        "/pins/{pin_id}/delete",
+        response_model=BookmarkResponse,
+        openapi_extra={"x-permission": "bookmark.write"},
+    )
+    async def delete_pin(
+        project_id: str,
+        job_id: str,
+        pin_id: str,
+        payload: RevisionInput,
+        actor: Writer,
+        session: Session,
+    ) -> dict:
+        job = await checked_job(
+            session, actor, project_id, job_id, lock=True, action="investigation.write"
+        )
+        saved = await saved_row(session, job)
+        groups = pin_groups(saved.state) if saved else []
+        group = next((item for item in groups if item["id"] == pin_id), None)
+        if group is None:
+            raise not_found()
+        saved = await revise(session, job, payload.expected_revision)
+        await session.execute(
+            delete(InvestigationBookmark).where(
+                InvestigationBookmark.project_id == project_id,
+                InvestigationBookmark.job_id == job_id,
+                InvestigationBookmark.id.in_(group["bookmark_ids"]),
+            )
+        )
+        saved.state = with_pin_groups(
+            saved.state, [item for item in groups if item["id"] != pin_id]
+        )
+        await session.flush()
+        return await bookmark_response(session, job)
 
     @router.post(
         "/bookmarks",
@@ -363,9 +690,15 @@ def build_investigation_router(
                     InvestigationBookmark.job_id == job_id,
                 )
             )
+            saved = await saved_row(session, job)
+            group_bytes = len(
+                json.dumps(pin_groups(saved.state) if saved else [], ensure_ascii=True).encode()
+            )
             if (
                 payload.pin_context
-                and (retained_bytes or 0) + len(json.dumps(context, ensure_ascii=True).encode())
+                and (retained_bytes or 0)
+                + group_bytes
+                + len(json.dumps(context, ensure_ascii=True).encode())
                 > 33_554_432
             ):
                 raise DomainError(
@@ -441,8 +774,15 @@ def build_investigation_router(
         row = await session.get(InvestigationBookmark, (project_id, job_id, bookmark_id))
         if row is None:
             raise not_found()
-        await revise(session, job, payload.expected_revision)
+        saved = await revise(session, job, payload.expected_revision)
         await session.delete(row)
+        groups = [
+            {**group, "bookmark_ids": [key for key in group["bookmark_ids"] if key != bookmark_id]}
+            for group in pin_groups(saved.state)
+        ]
+        saved.state = with_pin_groups(
+            saved.state, [group for group in groups if group["bookmark_ids"]]
+        )
         await session.flush()
         return await bookmark_response(session, job)
 

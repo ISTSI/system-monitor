@@ -2,7 +2,8 @@
 
 import pytest
 
-from inspector.auth import _validated_authentication
+from inspector.app import LoginInput
+from inspector.auth import REMEMBER_SESSION_US, _validated_authentication
 from inspector.errors import DomainError
 from inspector.persistence.models import AuthSession, User
 
@@ -75,3 +76,55 @@ def test_fresh_authentication_rejects_nonpositive_idle_budget():
     login, user = records()
     with pytest.raises(ValueError):
         _validated_authentication(login, user, 600, 0)
+
+
+def test_remembered_session_survives_idle_but_never_renews_its_thirty_day_end():
+    login, user = records()
+    login.remember_me = True
+    login.expires_us = login.created_us + REMEMBER_SESSION_US
+    before_end = login.expires_us - 1
+    actor = _validated_authentication(login, user, before_end, 200, renew_idle=True)
+    assert actor.user_id == user.id
+    assert login.last_seen_us == before_end
+    assert login.expires_us == login.created_us + REMEMBER_SESSION_US
+    with pytest.raises(DomainError) as expired:
+        _validated_authentication(login, user, login.expires_us, 200)
+    assert expired.value.code == "AUTH_REQUIRED"
+
+
+@pytest.mark.parametrize("change", ["disabled", "role", "version", "future"])
+def test_remembered_session_never_bypasses_account_or_creation_checks(change):
+    login, user = records()
+    login.remember_me = True
+    if change == "disabled":
+        user.enabled = False
+    elif change == "role":
+        user.role = "unrecognized"
+    elif change == "version":
+        user.auth_version += 1
+    now = 99 if change == "future" else 800
+    with pytest.raises(DomainError) as expired:
+        _validated_authentication(login, user, now, 200)
+    assert expired.value.code == "AUTH_REQUIRED"
+
+
+def test_ordinary_thirty_day_config_still_uses_the_configured_idle_policy():
+    login, user = records()
+    login.remember_me = False
+    login.expires_us = login.created_us + REMEMBER_SESSION_US
+    with pytest.raises(DomainError):
+        _validated_authentication(login, user, 700, 200)
+
+
+@pytest.mark.parametrize("choice", [True, False])
+def test_login_remember_choice_is_optional_and_strictly_boolean(choice):
+    assert LoginInput(username="user", password="secret").remember_me is False
+    assert LoginInput(username="user", password="secret", remember_me=choice).remember_me is choice
+
+
+@pytest.mark.parametrize("choice", ["true", "false", 1, 0, None, [], {}])
+def test_login_rejects_coerced_or_malformed_remember_choice(choice):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        LoginInput(username="user", password="secret", remember_me=choice)

@@ -52,6 +52,7 @@ class EmptyInput(BaseModel):
 class LoginInput(EmptyInput):
     username: str = Field(min_length=1, max_length=128)
     password: SecretStr = Field(min_length=1, max_length=1024)
+    remember_me: bool = Field(default=False, strict=True)
 
 
 class ProjectInput(EmptyInput):
@@ -459,13 +460,15 @@ def create_app(config: Config | None = None) -> FastAPI:
         if len(login_attempts) >= 10:
             raise DomainError("LIMIT_REACHED", "Login rate limit reached; retry later.", 429)
         login_attempts.append(now)
+        now_us = services.utc_now_us()
         credentials = await auth.login(
             session,
             payload.username,
             payload.password.get_secret_value(),
-            services.utc_now_us(),
+            now_us,
             config.idle_timeout_us,
             config.absolute_timeout_us,
+            remember_me=payload.remember_me,
         )
         response = JSONResponse(
             {
@@ -477,12 +480,9 @@ def create_app(config: Config | None = None) -> FastAPI:
                 "must_change_password": credentials.principal.must_change_password,
             }
         )
-        _cookie(
-            response, SESSION_COOKIE, credentials.token, config.absolute_timeout_us // 1_000_000
-        )
-        _cookie(
-            response, CSRF_COOKIE, credentials.csrf_token, config.absolute_timeout_us // 1_000_000
-        )
+        max_age = (credentials.expires_us - now_us) // 1_000_000
+        _cookie(response, SESSION_COOKIE, credentials.token, max_age)
+        _cookie(response, CSRF_COOKIE, credentials.csrf_token, max_age)
         response.delete_cookie(
             PRE_CSRF_COOKIE, path="/", secure=True, httponly=True, samesite="strict"
         )

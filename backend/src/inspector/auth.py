@@ -42,6 +42,8 @@ from inspector.security import (
     verify_password,
 )
 
+REMEMBER_SESSION_US = 30 * 24 * 60 * 60 * 1_000_000
+
 
 @dataclass(frozen=True)
 class SessionCredentials:
@@ -235,6 +237,8 @@ async def login(
     now_us: int,
     idle_timeout_us: int,
     absolute_timeout_us: int,
+    *,
+    remember_me: bool = False,
 ) -> SessionCredentials:
     if idle_timeout_us <= 0 or absolute_timeout_us <= 0:
         raise ValueError("Session timeouts must be positive.")
@@ -281,6 +285,7 @@ async def login(
         await session.flush()
         raise DomainError("INVALID_CREDENTIALS", "Invalid username or password.", 401)
     token, csrf = issue_token(), issue_token()
+    expires_us = now_us + (REMEMBER_SESSION_US if remember_me else absolute_timeout_us)
     session.add(
         AuthSession(
             token_hash=token_hash(token),
@@ -289,13 +294,23 @@ async def login(
             csrf_hash=token_hash(csrf),
             created_us=now_us,
             last_seen_us=now_us,
-            expires_us=now_us + absolute_timeout_us,
+            expires_us=expires_us,
+            remember_me=remember_me,
         )
     )
     principal = _principal(user)
     _audit(session, "auth.login", now_us, principal=principal)
     await session.flush()
-    return SessionCredentials(token, csrf, principal, now_us + absolute_timeout_us)
+    return SessionCredentials(token, csrf, principal, expires_us)
+
+
+def session_expired(auth_session: AuthSession, now_us: int, idle_timeout_us: int) -> bool:
+    """Remembered sessions survive inactivity, with an unrenewable absolute end."""
+    return (
+        now_us < auth_session.created_us
+        or now_us >= auth_session.expires_us
+        or (not auth_session.remember_me and now_us - auth_session.last_seen_us >= idle_timeout_us)
+    )
 
 
 async def authenticate(
@@ -351,9 +366,7 @@ def _validated_authentication(
         not user.enabled
         or user.role not in ROLES
         or user.auth_version != auth_session.auth_version
-        or now_us < auth_session.created_us
-        or now_us >= auth_session.expires_us
-        or now_us - auth_session.last_seen_us >= idle_timeout_us
+        or session_expired(auth_session, now_us, idle_timeout_us)
     ):
         raise DomainError("AUTH_REQUIRED", "Authentication is required.", 401)
     if renew_idle:

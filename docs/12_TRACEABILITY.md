@@ -2,6 +2,206 @@
 
 All 56 requirements map to application acceptance targets. The requirement table is not a test-result report; implemented evidence and remaining limits appear below it.
 
+The 18 October 2026 live-event presentation follow-up extends R17/R21/R23/R25/
+R34/R49: live and historical tables share compact row geometry, metadata cells,
+safe text/highlight rendering and theme styles. The expanded
+[isolated browser suite](../frontend/e2e/live_notices.spec.ts) passes **6/6**,
+covering direct historical/live presentation parity, UTC in a non-UTC browser,
+long literal text/horizontal scrolling, timestamp diagnostics/late arrivals,
+measured merged and per-process seeds, live following/anchors, display pause
+with continuing counters and independent same-context pages. The
+[browser report](../verification/live-events-presentation/browser-test-only.json)
+and inspected light/dark/merged/split captures are explicitly component evidence
+with mocked HTTP/WebSockets. All 20 frontend unit tests, API type consistency,
+lint, TypeScript and production build pass. No new backend/MariaDB/SFTP or
+deployment evidence is claimed; Stage 08 remains separate. Exact commands and
+scope appear in [STATUS.md](../progress/STATUS.md).
+
+The subsequent explicit **“Deploy to 8449.”** authorization installed this exact
+frontend artifact on **https://localhost:8449** without a backend/schema change.
+[Installed-browser evidence](../verification/live-events-preview/browser.json)
+checks actual served hashes, retained 20px history rows, empty live merged/split
+headers, two independent same-context pages and both themes/viewports without
+starting capture. Installation and backup receipts under
+`verification/live-events-preview/` verify preserved stable database contents,
+original sessions, configuration/cache and other services. This adds installed
+presentation evidence, not a new live-SFTP workload or Stage 08 release gate.
+
+The 18 October 2026 Live monitor clarification follows R26/R32/R34/R49:
+process references use `server: process`, including selection, filters, detached
+monitors, source status, panes and copied rows. Ended selections say previous
+monitor; code-only stream errors preserve the backend code, and source gaps
+identify their process and explain uncertain log coverage without inferring
+process health. [Isolated browser regressions](../frontend/e2e/live_notices.spec.ts)
+pass 3/3 against the real component with explicitly mocked HTTP/WebSockets:
+visiting/selection/tab return starts no capture, an explicit Monitor starts once,
+labels/copy use names, and source/error/terminal notices persist correctly.
+The [browser receipt](../verification/stage-7/browser-live-notices-test-only.json)
+and inspected light/dark screenshots are component evidence, not fresh backend,
+MariaDB, SSH or installed-preview verification. All 20 frontend unit tests, API
+type consistency, lint, TypeScript and production build pass. No deployment or
+Stage 08 release qualification is included; exact commands and limitations are
+recorded in [STATUS.md](../progress/STATUS.md).
+
+The 18 October 2026 pin/range follow-up extends R17/R31/R33/R49 with
+process-grouped pin previews, compact description/View rows, Cancel/Save/Modify,
+restored selection and an explicit update-or-create choice. Atomic replacement
+preserves pin identity and rejects partial/stale/cross-scope writes. Independent
+acquisition/display UTC ranges, immutable captured process lists and bounded
+display queries remain consistent across saved state and offline bundles.
+One stable personal tools panel survives collection changes and repeated loads.
+[Pin browser cases](../frontend/e2e/event_pins.spec.ts),
+[range/window cases](../frontend/e2e/collection_ranges.spec.ts),
+[pin helper tests](../frontend/tests/investigation-pins.test.mjs),
+[MariaDB pin cases](../backend/tests/integration/test_grouped_pins.py) and
+historical/bundle regressions cover these changes. Final verification passes
+6/6 browser cases plus a strengthened same-process grouping case, 39/39 Linux/
+MariaDB integration cases, 838 backend unit tests (four Windows platform skips)
+and 20 frontend unit tests. Both themes were inspected at 1280x720 and
+1920x1080. Exact commands, earlier failures, evidence and limits are in the
+latest [status entries](../progress/STATUS.md). Following the separate **Apply
+changes to 8449 instance** authorization, the verified backend/frontend are now
+installed on 8449 with unchanged schema0015. Actual HTTPS asset hashes, backend
+contract, retained-data browser checks, independent pages and stable database/
+cache preservation pass. The protected backup and previous package support a
+scoped rollback. 8445 remains unchanged and Stage 08 remains separate.
+
+The 18 October 2026 connection-copy follow-up extends R13/R34/R39/R49:
+Administrator **Copy** actions in the connection list and saved editor open a
+page-local Add connection draft with the saved profile fields and a fresh
+editable stable ID. Existing unique-name validation remains; the draft prompts
+for a new name. [Browser cases](../frontend/e2e/connection_copy.spec.ts) verify
+all prefilled fields (direct and jump routing, empty/multiple roots), cancel
+without a write, duplicate-ID errors, saving only a new profile, unchanged source
+and server assignments, no inherited host-key approval, same-context workspace
+isolation, another system unchanged, Inspector restrictions and Polish labels.
+The final real local MariaDB/browser run passes **2/2 in 7.1 seconds**;
+**17/17** frontend unit tests, API consistency, lint, typecheck and build pass.
+Both themes at 1280×720 and 1920×1080 are captured under
+`verification/connection-copy/screenshots/`; the final report is
+`verification/stage-7/browser-connection-copy.json`. Exact commands and retained
+earlier attempts are recorded in `progress/STATUS.md`. Source/build verification
+uses local browser asset substitution; deployment and Stage 08 remain separate.
+
+Following the separate **Deploy to 8449** authorization, the exact tested Copy
+build is served through a read-only frontend overlay. The backend/schema
+`0015_remember_login`, 43 stable tables, original web sessions, full state/cache
+manifests and every other service identity are preserved. Actual-served Copy,
+cancel and same-context draft/role checks pass with no asset substitution or
+configuration/preference writes. Receipts and screenshots are under
+`verification/connection-copy-preview/`; rollback restores the previous Compose
+with the same backend/schema. The source gate above and Stage 08 remain distinct.
+
+The explicit **“Update the 8449 environment”** authorization installed the
+current topology/login and Filters/pins frontend/backend together on the
+retained review preview, applying `0015_remember_login`. The stopped-service
+SQL/state/cache backup, preservation of all 49 table counts and 47 unchanged
+checksums through migration, exact existing session columns, and 43 stable
+tables after startup/browser verification are recorded under
+`verification/topology-login-preview/`. Actual-served browser checks verify
+30-day secure remembered cookies, correct frame parents/first-root paths,
+retained 37-row investigation, Filters/Pin cancellation, role restrictions and
+independent same-context workspaces. Only smoke-created sessions/workspaces
+were cleaned up. All original cached bytes/ownership and other service
+identities are preserved. Earlier compatible-login preview descriptions below
+record superseded rollouts; 8445 remains unchanged and Stage 08 is separate.
+
+The latest 18 October 2026 user-requested events-view follow-up refines
+R18/R21/R24/R30–R34/R41/R49. Historical filters now open through **Filters** in
+the events table, with independent removable literal terms, UTC bounds,
+global/per-process matching and an explicit draft/apply/cancel boundary. This
+latest explicit request moves historical controls out of the earlier primary
+Contains-string design; live-filter behavior remains unchanged. **Rows** and
+**Viewport** sit at the right of the results footer, process choices show
+`server name: process name` with IDs on hover, and the redundant pane help is
+removed.
+
+Row marks retain original `(project_id,event_id)` identities and their applied
+query context across pages/panes/filters in one collection. **Pin** atomically
+saves up to 100 selected entries as one described personal workspace card.
+[Historical pin services](../backend/src/inspector/investigations.py),
+[offline/bundle services](../backend/src/inspector/investigation_bundles.py),
+[grouped-pin MariaDB cases](../backend/tests/integration/test_grouped_pins.py),
+[bundle unit cases](../backend/tests/unit/test_investigation_bundles.py) and
+[browser cases](../frontend/e2e/event_pins.spec.ts) cover the grouped identity,
+shared-description, revision, owner/project, retention and sanitized exchange
+contract. Existing bookmark context remains source-local. Groups use typed JSON
+in current MariaDB analysis rows; there is no new DDL or event-ID migration.
+[Filter dialog](../frontend/src/components/HistoricalFiltersDialog.tsx) and
+[events-view browser cases](../frontend/e2e/events_table.spec.ts) implement the
+control/draft changes; existing historical, SSH, language and investigation
+callers use that dialog. Actual pass/fail commands, browser inspection and any
+preview rollout are recorded separately in `progress/STATUS.md`. This entry
+records implementation scope and test links, not a deployment or Stage 08 gate.
+
+The subsequent 18 October events-view control follow-up extends R18/R21/R24/R34/R49:
+page size sits below results; the checkbox-based Show process picker sits beside
+Result layout in both modes, retaining its full applied process option set.
+Merged selection queries the enabled subset with scoped filters and pagination;
+split visibility preserves mounted pane pages/scroll. No selection has an
+explicit empty state. Pane arrangement stays visible, disabled in Merged and
+retaining its choice. **17/17** frontend unit tests and **9/9 browser cases in
+49.6 seconds** pass, with generated API consistency, lint, typecheck and build.
+The final report is `verification/stage-7/event-controls-browser-final.json`.
+The authorized 8449 review preview serves these controls with actual-asset/UI
+verification in `verification/event-controls-preview/`. Product and preview
+builds differ only in the preview's existing compatible login. Commands,
+corrected failures, inspected captures and rollback are in `progress/STATUS.md`.
+Port 8445 and Stage 08 remain outside this update.
+
+The 18 October 2026 separate-process-pane follow-up extends R18/R21/R24/R34/R49:
+every applied process has independent bounded result pages, including processes
+absent from a merged page. Show process focuses a named/host/ID-labelled pane;
+Stacked and 2/3/4 columns preserve the mounted pane pages. Failed pagination
+retains rows and retries its own cursor. Two concurrent cached queries, scoped
+per-process filters and snapshot checks bound and isolate loading. The expanded
+real local MariaDB/SFTP suite passes **7/7 in 36.2 seconds**, including the
+existing result-controls regressions, same-context duplicate-page independence,
+and both themes at 1280×720 / 1920×1080 / 640×720. **17/17** frontend unit tests,
+API consistency, lint, typecheck and build pass. The final report is
+`verification/stage-7/process-panes-browser-final.json`; actual commands,
+earlier attempts and inspected screenshots are recorded in `progress/STATUS.md`.
+Following the separate **Update the preview on port 8449** authorization, the
+pane changes are served on 8449 with its prior compatible login and unchanged
+backend/schema. Actual served-asset hashes and browser checks, without asset
+substitution or collection, pass in `verification/process-panes-preview/`.
+Port 8445 is unchanged, and Stage 08 remains separate.
+
+The 18 October topology/login source follow-up extends R05/R06/R10/R34 with
+Administrator frame **+** actions, parent preselection, collapsed-parent
+creation and keyboard/focus behavior. R13/R15 process creation now proposes
+`app.log` below the first connection log root while preserving manual paths.
+R04/R35 authentication adds explicit opt-in fixed 30-day sessions through
+inactivity/browser restart, enforced across HTTP, SSH, live and downloads;
+R37/R44 gain executable session and migration evidence.
+Migration `0015_remember_login` preserves existing ordinary session policy;
+downgrade revokes remembered sessions. The populated upgrade/downgrade test
+passes, as do **833 backend unit tests**, **50 focused MariaDB/API tests**,
+**17 frontend unit tests** and **3 browser tests**. Existing platform skips
+and exact commands are documented in `progress/STATUS.md`. Browser coverage
+includes same-context independent workspaces, Inspector restrictions, English
+and Polish controls and both themes at 1280×720/1920×1080. Evidence is under
+`verification/topology-login/` and
+`verification/stage-7/topology-login-browser-final.json`. This source change
+is not installed on 8445 or the retained 8449 review preview; Stage 08 remains
+separate.
+
+The subsequent 18 October 2026 results-controls correction covers R18 historical
+pagination/layout, R24 applied literal-filter preservation, R34 keyboard/popup
+interaction and R49 page-local presentation. The expanded five-case real
+MariaDB/SFTP suite in `frontend/e2e/events_table.spec.ts` passes **5/5** in
+26.4 seconds. It checks immediate 10/50/measured pagination without applying
+draft edits, cursor reset/history, exhausted results, query errors/retry,
+ten-row automatic collection loading, distinct five/single process panes, and
+outside-click/Escape column-picker dismissal including full screen. Existing
+same-context page independence, both themes and viewport checks also pass.
+The report is `verification/stage-7/events-table-controls-browser-final.json`;
+commands, corrected test-fixture assumptions and inspection evidence are in
+`progress/STATUS.md`. The correction is available for user review on the isolated
+8449 fixture with actual served-asset/browser checks recorded under
+`verification/results-controls-preview/`. It is not deployed to the installed
+8445 application and does not advance Stage 08.
+
 The 18 October 2026 user-requested events-table follow-up extends R17/R18/R34
 UTC presentation, R31 context access and R49 independent page presentation.
 `frontend/tests/utc-date-time.test.mjs` verifies second-precision metadata without

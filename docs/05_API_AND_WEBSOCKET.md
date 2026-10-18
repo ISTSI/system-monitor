@@ -90,6 +90,9 @@ the complete request/response shapes.
 | `GET/POST /investigations/{id}/bookmarks` | List/create owned bookmark with annotation, context request, context pin and expected analysis revision |
 | `PATCH /investigations/{id}/bookmarks/{bookmark_id}` | Revision-checked annotation and context pin |
 | `POST /investigations/{id}/bookmarks/{bookmark_id}/delete` | Revision-checked bookmark removal |
+| `POST /investigations/{id}/pins` | Atomically retain 1–100 selected events as one described pin group |
+| `PATCH /investigations/{id}/pins/{pin_id}` | Revision-checked description and optional atomic selection replacement |
+| `POST /investigations/{id}/pins/{pin_id}/delete` | Remove the group and its member bookmarks atomically |
 | `GET /investigations/{id}/sources/{source_id}/provenance` | Raw/index availability, parse counts, observed extrema, captured ranges and limitations |
 | `POST /investigations/{id}/expire` | Explicitly expire terminal, unpinned source bytes/index while retaining saved state and pinned context |
 | `POST /bundles/export/preview` | Investigation ID and literal redaction terms/replacement; full sanitized preview |
@@ -100,6 +103,9 @@ the complete request/response shapes.
 | `GET /bundle-investigations[/{id}]` | Compact owned offline list or full detail with origin provenance |
 | `GET/PATCH /bundle-investigations/{id}/workspace` | Revisioned private analysis separate from immutable imported events |
 | `GET/POST/PATCH/DELETE /bundle-investigations/{id}/bookmarks[/{bookmark_id}]` | Private annotations/context pins with expected analysis revision |
+| `POST /bundle-investigations/{id}/pins` | Create a described group from retained offline event identities |
+| `PATCH /bundle-investigations/{id}/pins/{pin_id}` | Update the private offline group's description and optional selection |
+| `POST /bundle-investigations/{id}/pins/{pin_id}/delete` | Remove the offline group and its member bookmarks |
 | `POST /bundle-investigations/{id}/correlation` | Exact/literal chronological offline trace |
 | `POST /bundles/previews/{preview_id}/cancel` | Discard own session-bound staged preview and its download grants |
 | `POST /bundle-investigations/{id}/query` | Retained offline UTC/literal query with scoped cursor |
@@ -112,6 +118,36 @@ and 32 MiB of pinned context. An unpinned bookmark has nullable context; a new
 context can be pinned only from retained events. Full-investigation pins protect
 the source cache. Context pins preserve event text/provenance independently of
 original source-file bytes. Deletion requires unpinning/removing bookmarks.
+
+Pin creation accepts `{expected_revision, description, events}`. Each event
+contains `event_id`, exact UTC `from`/`to`, a global `filter` and
+`per_process_filters`; these label saved context against the query associated
+with that selected event. Optional `before`/`after` fields are fixed to zero.
+The server reads the anchor from the authorized capture; clients never submit log text,
+ownership or replacement event identities. A request allows 1–100 distinct
+events and a description of up to 10,000 Unicode characters, including empty.
+All member snapshots and the group commit together, advancing the shared
+analysis revision once. Source lookup, permission, limit, timeout or revision
+errors leave no partial group. Preparation has a 30-second deadline. Members
+count toward the existing 1,000-bookmark limit; context and group metadata share
+the 32 MiB budget.
+
+Workspace and bookmark responses expose
+`pin_groups: [{id, description, bookmark_ids, created_us}]`, defaulting to an
+empty list for older analysis. Group IDs and membership are server-owned;
+ordinary workspace PATCH preserves them. Pin PATCH accepts
+`{expected_revision, description, events?}`. Omitting `events` edits only the
+description, including after source expiry. Supplying a nonempty, distinct
+1–100-event list replaces all group members atomically after the same scoped
+lookup and limits as creation, preserving the group ID and creation time.
+Null, empty, stale or invalid selections leave the old group unchanged.
+Group deletion accepts
+`{expected_revision}`. Group routes return the updated bookmark response with
+all groups and the new revision. Both roles operate only within their own
+investigation and route project; the same 404/409 ownership/revision rules apply
+to historical and offline copies. Each grouped member retains one source-local
+anchor, so grouping across sources does not combine surrounding context or
+change event IDs. Cache expiry preserves pinned anchors and shared descriptions.
 
 Historical query input also accepts optional `correlation: {mode,field,value}`.
 Exact mode compares a complete parsed value case-sensitively; literal mode uses
@@ -128,6 +164,14 @@ remain provenance in private offline tables, without active entity associations
 in the selected destination project. Previews and downloads bind project, owner,
 login/auth version, content revision and expiry. Import starts no connection.
 
+The current 1.0 document also accepts optional `pin_groups`. Membership must
+reference bookmarks present in that document, with unique group IDs and no
+bookmark shared between groups. Export prunes groups to included bookmarks and
+omits empty groups. Literal redaction includes shared descriptions; importing
+older documents without groups yields an empty list. Offline edits preserve
+the original imported document and project its current personal groups on
+re-export.
+
 Prefix all routes with `/api/v1`. Use same-origin HTTPS with server-side cookie sessions. Validation errors include field paths and a stable machine code; never expose stack traces, passwords or full connection strings. Generate OpenAPI from Pydantic and generate frontend types; do not maintain incompatible handwritten duplicates. JSON Schemas in `contracts/` define shared payload semantics.
 
 ## Route inventory and access
@@ -138,7 +182,7 @@ Prefix all routes with `/api/v1`. Use same-origin HTTPS with server-side cookie 
 |---|---|---|
 | `GET /ui/bootstrap` | Minimal public product/default-theme information; no inventory or auth metadata | Public, bounded |
 | `GET /auth/session`, `GET /auth/csrf` | Safe account/role/preference state and session/pre-session CSRF token | Appropriate session/pre-session context |
-| `POST /auth/login`, `POST /auth/logout` | Protected/rate-limited login/logout; logout ends protected sockets | Session lifecycle |
+| `POST /auth/login`, `POST /auth/logout` | Protected/rate-limited login/logout; login accepts optional strict boolean `remember_me` (default false) for fixed 30-day authentication; logout ends protected sockets | Session lifecycle |
 | `GET /me/preferences`, `PATCH /me/preferences` | Own appearance with revision precondition and field allowlist | Both, own |
 | `POST /me/password` | Change own password; revoke sessions; special restricted forced-change flow | Both, own |
 | `GET/POST /admin/users`, `PATCH /admin/users/{id}` | Account list/create/role/enabled state; last-Admin invariant | Administrator |
@@ -228,6 +272,14 @@ changes invalidate pending guarded remote operations.
 Project update payloads include `expected_revision`; the commit atomically increments the revision. Import previews are server-held objects bound to the explicit project ID, inventory-source ID where applicable, current owner, authorization version, content/manifest hash, project revision and mapping choices, with a short expiry. A role change invalidates prior administrative previews. Commit cannot substitute different content. Use equivalent preconditions for filter and investigation updates to prevent stale tabs overwriting changes.
 
 Historical queries use process IDs, exact canonical UTC `from` and `to`, global/per-process filters, `limit` (default 200, maximum 1000), and an opaque cursor bound to the project ID, owner, investigation ID, query hash and snapshot revision. Cursor pagination uses the deterministic sort key, not OFFSET over a mutating live table. `items`, `next_cursor`, `matched_count` when known, `coverage`, `parse_issue_count` and `source_snapshot_revision` are distinct fields. A query over an unfinished collection is explicitly partial and cannot provide a falsely final count.
+
+The acquisition interval in the collection/job is immutable historical scope;
+display query bounds are independent and intersect it for timestamped results.
+Display filtering starts no collection and changes no source plan. Diagnostic
+records and source-local context remain available independently of timestamp
+filters. New bundle 1.0 exports carry paired optional
+`origin.collection_from`/`origin.collection_to` for the same boundary during
+offline query/correlation; older bundles without them remain readable.
 
 Return errors as `{"error":{"code":"ACCESS_DENIED","message":"...","details":{},"request_id":"..."}}`. Required codes include AUTH_REQUIRED, CSRF_FAILED, FORBIDDEN, NOT_FOUND, DATABASE_UNAVAILABLE, SESSION_REVOKED, LAST_ADMIN_REQUIRED, REVISION_CONFLICT, HOST_KEY_UNKNOWN, HOST_KEY_CHANGED, CREDENTIALS_REJECTED, ACCESS_DENIED, SOURCE_MISSING, UNSUPPORTED_ARCHIVE, ARCHIVE_REJECTED, PARSE_FAILED, LIMIT_REACHED, CANCELLED, CURSOR_EXPIRED, SOURCE_CHANGED, RESYNC_REQUIRED, WORKSPACE_IN_USE, PROJECT_ARCHIVED, INVENTORY_UNSUPPORTED, INVENTORY_CONFLICT and PREVIEW_EXPIRED. `details` is sanitised and contains only useful field/source IDs and safe diagnostics.
 

@@ -44,7 +44,7 @@ def enable_demo(foundation, tmp_path):
     foundation.app.state.history.config = config
 
 
-async def start(client, project_id, processes=None):
+async def start(client, project_id, processes=None, *, from_=FROM, to=TO):
     base = f"/api/v1/projects/{project_id}"
     workspace = await client.post(base + "/workspaces", json={})
     assert workspace.status_code == 201, workspace.text
@@ -52,8 +52,8 @@ async def start(client, project_id, processes=None):
         "workspace_id": workspace.json()["workspace_id"],
         "transport": "local_demo",
         "process_ids": processes or CASES[0]["request"]["process_ids"],
-        "from": FROM,
-        "to": TO,
+        "from": from_,
+        "to": to,
     }
     plan = await client.post(base + "/collections/plan", json=payload)
     assert plan.status_code == 200, plan.text
@@ -111,6 +111,61 @@ async def test_all_golden_queries_full_event_provenance_and_diagnostic_lane(foun
             oracle["project_id"] = foundation.project_a
             oracle["received_at"] = event["received_at"]
             assert event == oracle
+
+
+async def test_display_range_cannot_expand_collection_but_context_and_diagnostics_remain(
+    foundation, tmp_path
+):
+    enable_demo(foundation, tmp_path)
+    async with foundation.client(foundation.database.administrator) as admin:
+        await seed(admin, foundation.project_a)
+    async with foundation.client(foundation.alice) as client:
+        start_time, end_time = "2026-10-16T12:00:00.000000Z", "2026-10-16T12:00:02.000000Z"
+        created, _, _ = await start(client, foundation.project_a, from_=start_time, to=end_time)
+        job = await finished(client, foundation.project_a, created["job_id"])
+        assert job["status"] == "completed", job
+        base = f"/api/v1/projects/{foundation.project_a}/investigations/{created['job_id']}"
+        query = {
+            "process_ids": CASES[0]["request"]["process_ids"],
+            "from": FROM,
+            "to": TO,
+            "limit": 200,
+        }
+        wide = await client.post(base + "/query", json=query)
+        assert wide.status_code == 200, wide.text
+        expected = {
+            event["event_id"]
+            for event in EVENTS
+            if event["timestamp_utc"] is not None
+            and start_time <= event["timestamp_utc"] < end_time
+        }
+        assert {event["event_id"] for event in wide.json()["items"]} == expected
+        assert any(event["timestamp_utc"] == start_time for event in wide.json()["items"])
+        assert not any(event["timestamp_utc"] == end_time for event in wide.json()["items"])
+        tight = await client.post(
+            base + "/query", json={**query, "from": "2026-10-16T12:00:01.000000Z"}
+        )
+        assert tight.status_code == 200, tight.text
+        assert tight.json()["items"] and len(tight.json()["items"]) < len(expected)
+        outside = await client.post(base + "/query", json={**query, "from": end_time, "to": TO})
+        assert outside.status_code == 200 and outside.json()["items"] == []
+        diagnostic = await client.post(base + "/query", json={**query, "lane": "diagnostic"})
+        assert diagnostic.status_code == 200, diagnostic.text
+        assert len(diagnostic.json()["items"]) == 1
+        assert diagnostic.json()["items"][0]["timestamp_us"] is None
+        anchor = next(
+            event
+            for event in wide.json()["items"]
+            if event["timestamp_utc"] == start_time and event["process_id"] == "p-ingest-a"
+        )
+        context = await client.post(
+            base + f"/events/{anchor['event_id']}/context",
+            json={"from": start_time, "to": end_time, "before": 1, "after": 0},
+        )
+        assert context.status_code == 200, context.text
+        assert len(context.json()["items"]) == 2
+        assert context.json()["items"][0]["event"]["timestamp_utc"] < start_time
+        assert context.json()["items"][0]["outside_time_bounds"] is True
 
 
 async def test_cursor_scope_owner_job_predicate_snapshot_and_context(foundation, tmp_path):

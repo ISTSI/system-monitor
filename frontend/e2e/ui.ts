@@ -1,10 +1,78 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { components } from '../src/api/schema';
+
+type HistoricalFiltersInput = Partial<Pick<components['schemas']['HistoricalQueryInput'], 'from' | 'to' | 'filter' | 'per_process_filters'>>;
+
+export async function setHistoricalCollectionRange(page: Page, input: { from: string; to: string }): Promise<void> {
+  const range = page.getByRole('group', { name: 'Collection time range', exact: true });
+  await range.getByLabel('From UTC (inclusive)', { exact: true }).fill(input.from);
+  await range.getByLabel('To UTC (exclusive)', { exact: true }).fill(input.to);
+}
+
+export async function openHistoricalFilters(page: Page) {
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+export async function fillHistoricalFilters(page: Page, input: HistoricalFiltersInput) {
+  const dialog = await openHistoricalFilters(page);
+  if (input.from !== undefined) await dialog.getByLabel('From UTC (inclusive)', { exact: true }).fill(input.from);
+  if (input.to !== undefined) await dialog.getByLabel('To UTC (exclusive)', { exact: true }).fill(input.to);
+  if (input.filter !== undefined || input.per_process_filters !== undefined) {
+    const clear = dialog.getByRole('button', { name: 'Clear content filters', exact: true });
+    if (await clear.isEnabled()) await clear.click();
+    const scopes: [string, components['schemas']['HistoricalFilter'] | undefined][] = [['', input.filter], ...Object.entries(input.per_process_filters ?? {})];
+    for (const [scope, filter] of scopes) {
+      if (!filter) continue;
+      await dialog.getByLabel('Filter scope', { exact: true }).selectOption(scope);
+      if (scope) {
+        const matching = dialog.locator('details');
+        if (await matching.getAttribute('open') === null) await matching.locator('summary').click();
+        await dialog.getByLabel('Process include matching', { exact: true }).selectOption(filter.include_mode);
+        await dialog.getByLabel('Process case sensitive', { exact: true }).setChecked(filter.case_sensitive);
+      } else {
+        await dialog.getByLabel('Global include matching', { exact: true }).selectOption(filter.include_mode);
+        await dialog.getByLabel('Global case sensitive', { exact: true }).setChecked(filter.case_sensitive);
+      }
+      for (const kind of ['include', 'exclude'] as const) {
+        await dialog.getByLabel('Filter action', { exact: true }).selectOption(kind);
+        for (const term of filter[kind] ?? []) {
+          await dialog.getByLabel('Log content', { exact: true }).fill(term);
+          await dialog.getByRole('button', { name: 'Add filter', exact: true }).click();
+        }
+      }
+    }
+  }
+  return dialog;
+}
+
+export async function applyHistoricalFilters(page: Page): Promise<void> {
+  const dialog = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await dialog.getByRole('button', { name: 'Apply filters', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+}
+
+export async function setHistoricalFilters(page: Page, input: HistoricalFiltersInput): Promise<void> {
+  await fillHistoricalFilters(page, input);
+  await applyHistoricalFilters(page);
+}
+
+export async function expectHistoricalContentFilters(page: Page, expected: string[]): Promise<void> {
+  const dialog = await openHistoricalFilters(page);
+  expect(await dialog.locator('.history-filter-list code').allTextContents()).toEqual(expected);
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+}
 
 // Opt-in source verification against a running local API without replacing its
 // deployed bundle. Every page in the context uses the same fresh build.
 export async function serveBuiltAssets(context: BrowserContext, baseURL: string): Promise<void> {
+  // Installed-preview verification must exercise the files served by HTTPS.
+  if (process.env.INSPECTOR_E2E_SERVED_ASSETS === '1') return;
   const directory = resolve(process.env.INSPECTOR_E2E_ASSET_DIR ?? 'dist');
   if (!existsSync(resolve(directory, 'index.html'))) throw new Error('Build the frontend before enabling local browser assets.');
   const origin = new URL(baseURL).origin;

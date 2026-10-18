@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { serveBuiltAssets, setAppearance, submitSignIn } from './ui';
+import { applyHistoricalFilters, expectHistoricalContentFilters, fillHistoricalFilters, openHistoricalFilters, serveBuiltAssets, setAppearance, setHistoricalCollectionRange, setHistoricalFilters, submitSignIn } from './ui';
 import type { components } from '../src/api/schema';
 
 type Query = components['schemas']['HistoricalQueryInput'];
@@ -57,8 +57,7 @@ async function collect(page: Page, preview = true) {
   const processes = page.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox');
   expect(await processes.count()).toBe(5);
   for (const process of await processes.all()) await process.check();
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(from));
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(to));
+  await setHistoricalCollectionRange(page, { from: displayUtc(from), to: displayUtc(to) });
   await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
   if (preview) {
     await page.getByRole('button', { name: 'Preview collection plan', exact: true }).click();
@@ -84,24 +83,10 @@ async function collect(page: Page, preview = true) {
 }
 
 async function apply(page: Page, input: Query) {
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(input.from));
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(input.to));
-  await page.getByLabel('Contains string', { exact: true }).fill(input.filter?.include?.[0] ?? '');
-  const advanced = page.locator('.advanced-filter').first();
-  if (!(await advanced.evaluate(element => element.hasAttribute('open')))) await advanced.locator('summary').click();
-  await page.getByLabel('Additional include terms (one per line)', { exact: true }).fill(input.filter?.include?.slice(1).join('\n') ?? '');
-  await page.getByLabel('Exclude terms (one per line)', { exact: true }).fill(input.filter?.exclude?.join('\n') ?? '');
-  await page.getByLabel('Include mode', { exact: true }).selectOption(input.filter?.include_mode ?? 'any');
-  await page.getByLabel('Case sensitive', { exact: true }).setChecked(input.filter?.case_sensitive ?? true);
-  const personal = page.locator('.advanced-filter').nth(1);
-  if (!(await personal.evaluate(element => element.hasAttribute('open')))) await personal.locator('summary').click();
-  const configuration = JSON.parse(readFileSync(resolve('../examples/project.example.json'), 'utf8')) as { processes: { id: string; name: string }[] };
-  for (const process of configuration.processes) {
-    await page.getByLabel(`Contains string for ${process.name}`, { exact: true }).fill(input.per_process_filters?.[process.id]?.include?.[0] ?? '');
-    await page.getByLabel(`Exclude string for ${process.name}`, { exact: true }).fill(input.per_process_filters?.[process.id]?.exclude?.[0] ?? '');
-  }
+  await fillHistoricalFilters(page, { from: input.from, to: input.to,
+    filter: input.filter ?? { include: [], exclude: [], include_mode: 'any', case_sensitive: true }, per_process_filters: input.per_process_filters ?? {} });
   const response = page.waitForResponse(result => result.url().endsWith('/query') && result.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Apply filter', exact: true }).click();
+  await applyHistoricalFilters(page);
   const result = await response;
   expect(result.status()).toBe(200);
   const body = await result.json() as Results;
@@ -133,20 +118,24 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   const emoji512 = '\u{1f642}'.repeat(512); const emoji513 = emoji512 + '\u{1f642}';
   const unicodeQuery: Query = { ...golden('literal-correlation-substring').request, filter: { include: [emoji512], include_mode: 'all', exclude: [], case_sensitive: true } };
   expect((await apply(page, unicodeQuery)).matched_count).toBe(0);
-  async function rejectsOversizedTerm(label: string) {
+  async function rejectsOversizedTerm(scope = '') {
     let sent = 0; const count = (request: { url: () => string }) => { if (request.url().endsWith('/query')) sent += 1; };
     page.on('request', count);
     try {
-      await page.getByLabel(label, { exact: true }).fill(emoji513);
-      await page.getByRole('button', { name: 'Apply filter', exact: true }).click();
-      await expect(page.getByRole('alert')).toContainText('512 Unicode characters');
+      const dialog = await openHistoricalFilters(page);
+      await dialog.getByLabel('Filter scope', { exact: true }).selectOption(scope);
+      await dialog.getByLabel('Log content', { exact: true }).fill(emoji513);
+      await dialog.getByRole('button', { name: 'Add filter', exact: true }).click();
+      await expect(dialog.getByRole('alert')).toContainText('512 Unicode characters');
+      expect(await dialog.locator('.history-filter-list code').allTextContents()).not.toContain(emoji513);
       expect(sent).toBe(0);
+      await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
     } finally { page.off('request', count); }
   }
-  await rejectsOversizedTerm('Contains string');
+  await rejectsOversizedTerm();
   const unicodeProcessQuery: Query = { ...unicodeQuery, filter: { include: ['phase=accepted'], include_mode: 'all', exclude: [], case_sensitive: true }, per_process_filters: { 'p-ingest-a': { include: [emoji512], include_mode: 'all', exclude: [], case_sensitive: true } } };
   expect((await apply(page, unicodeProcessQuery)).matched_count).toBe(0);
-  await rejectsOversizedTerm('Contains string for ingest-instance-a');
+  await rejectsOversizedTerm('p-ingest-a');
   const csrf = await page.request.get('/api/v1/auth/csrf');
   const headers = { Origin: new URL(page.url()).origin, 'X-CSRF-Token': (await csrf.json() as { csrf_token: string }).csrf_token };
   for (const body of [unicodeQuery, unicodeProcessQuery]) {
@@ -156,7 +145,10 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
     else invalid.filter!.include = [emoji513];
     const rejected = await page.request.post(`/api/v1/projects/${systemA}/investigations/${investigation}/query`, { headers, data: invalid }); expect(rejected.status()).toBe(422);
   }
-  await page.getByLabel('Rows per result page', { exact: true }).selectOption('10');
+  const resized = page.waitForResponse(result => result.url().endsWith('/query') && result.request().method() === 'POST');
+  await page.getByLabel('Rows', { exact: true }).selectOption('10');
+  expect((await resized).status()).toBe(200);
+  await expect(page.locator('.history-result-body')).toHaveAttribute('aria-busy', 'false');
   const fixture = golden('literal-correlation-substring');
   const firstPage = await apply(page, fixture.request);
   expect(firstPage.items.map(event => event.event_id)).toEqual(fixture.expected_event_ids.slice(0, 10));
@@ -169,7 +161,10 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   await page.getByRole('button', { name: 'Previous result page', exact: true }).click();
   const previousPage = await (await previousResponse).json() as Results;
   expect(previousPage.items.map(event => event.event_id)).toEqual(fixture.expected_event_ids.slice(0, 10));
-  await page.getByLabel('Rows per result page', { exact: true }).selectOption('0');
+  const measured = page.waitForResponse(result => result.url().endsWith('/query') && result.request().method() === 'POST');
+  await page.getByLabel('Rows', { exact: true }).selectOption('0');
+  expect((await measured).status()).toBe(200);
+  await expect(page.locator('.history-result-body')).toHaveAttribute('aria-busy', 'false');
   await apply(page, { ...golden('literal-correlation-substring').request, filter: { include: ['phase=accepted'], include_mode: 'all', exclude: [], case_sensitive: true } });
   await page.locator('.virtual-logs').scrollIntoViewIfNeeded();
   await expect(page.locator('.virtual-logs')).toHaveJSProperty('scrollLeft', 0);
@@ -203,7 +198,7 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
       await drawer.getByRole('button', { name: 'Close dialog', exact: true }).click();
     }
   }
-  await page.getByRole('button', { name: 'Clear filter', exact: true }).click();
+  await setHistoricalFilters(page, { filter: { include: [], exclude: [], include_mode: 'all', case_sensitive: true }, per_process_filters: {} });
   await page.getByRole('button', { name: /^Diagnostic lane/ }).click();
   await expect(page.getByTestId('match-count')).toContainText('diagnostic records');
   await expect(page.locator('.virtual-logs')).toContainText('NOT_A_TIMESTAMP');
@@ -221,7 +216,7 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   await page.getByRole('button', { name: 'Timestamped events', exact: true }).click();
   const merged = await apply(page, golden('literal-correlation-substring').request);
   expect(merged.items.every(event => event.timestamp_utc !== null && event.timestamp_utc >= from && event.timestamp_utc < to)).toBe(true);
-  for (const drawer of await page.locator('.advanced-filter').all()) if (await drawer.evaluate(element => element.hasAttribute('open'))) await drawer.locator('summary').click();
+  await expect(page.getByRole('button', { name: 'Filters', exact: true })).toBeVisible();
   await expect(page.locator('.virtual-logs')).toHaveJSProperty('scrollLeft', 0);
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
@@ -253,7 +248,9 @@ test('Inspector collects real plain/ZIP/TAR fixtures, refilters literal Unicode 
   await page.reload(); await expect(page.getByTestId('investigation-id')).toHaveText(investigation);
   await expect(page.getByTestId('match-count')).toHaveText(`${timestampedEvents.length} matches`);
   await expect(page.locator('.virtual-logs .log-event').first()).toBeVisible();
-  await expect(page.getByLabel('From UTC (inclusive)', { exact: true })).toHaveValue(displayUtc(from));
+  const restoredFilters = await openHistoricalFilters(page);
+  await expect(restoredFilters.getByLabel('From UTC (inclusive)', { exact: true })).toHaveValue(displayUtc(from));
+  await restoredFilters.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
   await expect(page.getByRole('button', { name: 'Preview collection plan', exact: true })).toBeEnabled();
   expect(external).toEqual([]);
@@ -267,7 +264,7 @@ test('same-account pages isolate different/same-system history and reject forged
   expect(await other.getByTestId('workspace-id').innerText()).not.toBe(firstWorkspace);
   await apply(page, golden('unicode-casefold').request);
   await apply(other, golden('duplicate-text-retained').request);
-  await expect(page.getByLabel('Contains string', { exact: true })).toHaveValue('STRASSE');
+  await expectHistoricalContentFilters(page, ['STRASSE']);
   await expect(page.getByTestId('match-count')).toHaveText('1 matches');
   const origin = new URL(page.url()).origin;
   const csrfResponse = await page.request.get('/api/v1/auth/csrf');
@@ -284,20 +281,21 @@ test('same-account pages isolate different/same-system history and reject forged
   const duplicate = await context.newPage(); const duplicateErrors: string[] = []; duplicate.on('pageerror', error => duplicateErrors.push(error.message)); await duplicate.goto(page.url());
   await expect(duplicate.getByTestId('investigation-id')).toHaveText(first);
   expect(await duplicate.getByTestId('workspace-id').innerText()).not.toBe(firstWorkspace);
-  await expect(duplicate.getByLabel('Contains string', { exact: true })).toHaveValue('');
+  await expectHistoricalContentFilters(duplicate, []);
   await apply(duplicate, golden('duplicate-text-retained').request);
   await expect(page.getByTestId('match-count')).toHaveText('1 matches');
-  await expect(page.getByLabel('Contains string', { exact: true })).toHaveValue('STRASSE');
+  await expectHistoricalContentFilters(page, ['STRASSE']);
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(size);
     for (const theme of ['light', 'dark'] as const) {
       await setAppearance(page, theme);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-      await page.locator('.advanced-filter').first().scrollIntoViewIfNeeded();
+      const filterDialog = await openHistoricalFilters(page);
       await capture(page, `administrator-filter-${theme}-${size.width}x${size.height}`);
-      await expect(page.getByLabel('Contains string', { exact: true })).toHaveValue('STRASSE');
-      await expect(other.getByLabel('Contains string', { exact: true })).toHaveValue('phase=retried');
-      await expect(duplicate.getByLabel('Contains string', { exact: true })).toHaveValue('phase=retried');
+      await expect(filterDialog.locator('.history-filter-list code')).toHaveText('STRASSE');
+      await filterDialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await expectHistoricalContentFilters(other, ['phase=retried']);
+      await expectHistoricalContentFilters(duplicate, ['phase=retried']);
     }
   }
   expect(otherErrors).toEqual([]); expect(duplicateErrors).toEqual([]);
@@ -373,7 +371,7 @@ test('direct collection loads log entries, reopens retained results, and deletes
     expect((await page.request.get(`/api/v1/projects/${systemA}/investigations/${second}`)).status()).toBe(200);
     await expect(other.getByTestId('workspace-id')).toHaveText(otherWorkspace);
     await expect(other.getByTestId('investigation-id')).toHaveText(second);
-    await expect(other.getByLabel('Contains string', { exact: true })).toHaveValue('STRASSE');
+    await expectHistoricalContentFilters(other, ['STRASSE']);
     await expect(other.getByTestId('match-count')).toHaveText('1 matches');
     await apply(other, golden('duplicate-text-retained').request);
     await expect(other.getByTestId('match-count')).toHaveText('2 matches');
@@ -385,7 +383,7 @@ test('direct collection loads log entries, reopens retained results, and deletes
   } finally { page.off('request', countPreview); await other.close(); }
 });
 
-test('invalid UTC input blocks collection and topology selection opens page-local historical scope', async ({ page }) => {
+test('invalid UTC collection ranges block planning and topology selection opens page-local historical scope', async ({ page }) => {
   await login(page, 'inspector');
   await page.goto(`/systems/${systemA}/topology`);
   await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
@@ -407,19 +405,20 @@ test('invalid UTC input blocks collection and topology selection opens page-loca
   await expect(page).toHaveURL(new RegExp(`/systems/${systemA}/logs$`));
   await expect(page.getByTestId('workspace-id')).toHaveText(workspace);
   await expect(page.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox', { checked: true })).toHaveCount(1);
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill('2026-02-30 12:00:00');
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).focus();
-  await tabTo('Preview collection plan');
-  await page.keyboard.press('Enter');
+  const range = page.getByRole('group', { name: 'Collection time range', exact: true });
+  await expect(page.getByRole('button', { name: 'Filters', exact: true })).toBeDisabled();
+  let remoteOperations = 0;
+  const count = (request: { url(): string }) => { if (/\/(collections(?:\/plan)?|query)$/.test(request.url())) remoteOperations += 1; };
+  page.on('request', count);
+  await range.getByLabel('From UTC (inclusive)', { exact: true }).fill('2026-02-30 12:00:00');
+  await range.getByLabel('To UTC (exclusive)', { exact: true }).focus();
+  await tabTo('Preview collection plan'); await page.keyboard.press('Enter');
   await expect(page.getByRole('alert')).toContainText('invalid');
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(to));
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(from));
-  await tabTo('Preview collection plan');
-  await page.keyboard.press('Enter');
-  await expect(page.getByRole('alert')).toContainText('earlier');
-  await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Collect sources', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('earlier');
+  await range.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(to));
+  await range.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(from));
+  await tabTo('Preview collection plan'); await page.keyboard.press('Enter');
+  await expect(page.getByRole('alert')).toContainText('From must be earlier than the exclusive To bound.');
+  expect(remoteOperations).toBe(0); page.off('request', count);
   await expect(page.getByTestId('collection-state')).toHaveCount(0);
   for (const theme of ['light', 'dark'] as const) {
     await setAppearance(page, theme);
@@ -427,8 +426,8 @@ test('invalid UTC input blocks collection and topology selection opens page-loca
     await page.getByRole('alert').scrollIntoViewIfNeeded();
     await capture(page, `inspector-invalid-utc-${theme}`);
   }
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(displayUtc(from));
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(displayUtc(to));
+  await setHistoricalCollectionRange(page, { from: displayUtc(from), to: displayUtc(to) });
+  await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
   await tabTo('Preview collection plan');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('/var/log/inspector-demo/ingest/app.log');
@@ -438,16 +437,18 @@ test('invalid UTC input blocks collection and topology selection opens page-loca
 test.describe('UTC date and time controls', () => {
   test.use({ timezoneId: 'America/Los_Angeles' });
 
-  test('manual seconds and date/time selectors keep UTC bounds and plans local to each page', async ({ page, context }) => {
+  test('manual seconds and date/time selectors keep collection bounds and plans local to each page', async ({ page, context }) => {
     test.setTimeout(120000);
     await login(page, 'inspector'); await open(page);
     expect(await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone)).toBe('America/Los_Angeles');
-    const start = page.getByLabel('From UTC (inclusive)', { exact: true });
-    const end = page.getByLabel('To UTC (exclusive)', { exact: true });
+    await page.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox').first().check();
+    const range = page.getByRole('group', { name: 'Collection time range', exact: true });
+    const start = range.getByLabel('From UTC (inclusive)', { exact: true });
+    const end = range.getByLabel('To UTC (exclusive)', { exact: true });
     await expect(start).toHaveValue(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
     await expect(end).toHaveValue(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
-    await expect(page.locator('.history-time-help').first()).toContainText('To is excluded');
-    await page.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox').first().check();
+    await expect(range).toContainText('The start is inclusive and the end is exclusive.');
+    await expect(page.getByRole('button', { name: 'Filters', exact: true })).toBeDisabled();
     await start.fill('2026-10-16 11:59:59'); await end.fill('2026-10-16 12:00:03');
 
     const duplicate = await context.newPage();
@@ -455,12 +456,13 @@ test.describe('UTC date and time controls', () => {
     try {
       await open(duplicate);
       expect(await duplicate.getByTestId('workspace-id').innerText()).not.toBe(await page.getByTestId('workspace-id').innerText());
-      const duplicateStart = await duplicate.getByLabel('From UTC (inclusive)', { exact: true }).inputValue();
-      const duplicateEnd = await duplicate.getByLabel('To UTC (exclusive)', { exact: true }).inputValue();
       await expect(duplicate.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox', { checked: true })).toHaveCount(0);
+      const duplicateRange = duplicate.getByRole('group', { name: 'Collection time range', exact: true });
+      const duplicateStart = await duplicateRange.getByLabel('From UTC (inclusive)', { exact: true }).inputValue();
+      const duplicateEnd = await duplicateRange.getByLabel('To UTC (exclusive)', { exact: true }).inputValue();
 
       for (const [bound, time, expected] of [['From', '12:00:00', displayUtc(from)], ['To', '12:00:02', displayUtc(to)]] as const) {
-        await page.getByRole('button', { name: `Choose ${bound} UTC date and time`, exact: true }).click();
+        await range.getByRole('button', { name: `Choose ${bound} UTC date and time`, exact: true }).click();
         const picker = page.getByRole('dialog', { name: `Choose ${bound} UTC date and time`, exact: true });
         const date = picker.getByLabel(`${bound} UTC date`, { exact: true });
         const clock = picker.getByLabel(`${bound} UTC time`, { exact: true });
@@ -481,23 +483,22 @@ test.describe('UTC date and time controls', () => {
       }
       await previewBounds(from, to);
 
-      await page.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
+      await range.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
       let picker = page.getByRole('dialog', { name: 'Choose From UTC date and time', exact: true });
       await picker.getByLabel('From UTC time', { exact: true }).fill('12:00:01');
       await picker.getByRole('button', { name: 'Cancel', exact: true }).click();
       await expect(start).toHaveValue(displayUtc(from));
-      await expect(page.getByRole('button', { name: 'Collect sources', exact: true })).toBeVisible();
+      await expect(range.getByRole('button', { name: 'Choose From UTC date and time', exact: true })).toBeFocused();
       await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Choose From UTC date and time', exact: true })).toBeFocused();
-      await page.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
+      await range.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
       picker = page.getByRole('dialog', { name: 'Choose From UTC date and time', exact: true });
       await picker.getByLabel('From UTC time', { exact: true }).fill('12:00:01');
       await picker.getByRole('button', { name: 'Use date and time', exact: true }).click();
       await expect(start).toHaveValue('2026-10-16 12:00:01');
       await expect(page.getByRole('button', { name: 'Collect sources', exact: true })).toBeVisible();
       await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
-      await expect(duplicate.getByLabel('From UTC (inclusive)', { exact: true })).toHaveValue(duplicateStart);
-      await expect(duplicate.getByLabel('To UTC (exclusive)', { exact: true })).toHaveValue(duplicateEnd);
+      await expect(duplicateRange.getByLabel('From UTC (inclusive)', { exact: true })).toHaveValue(duplicateStart);
+      await expect(duplicateRange.getByLabel('To UTC (exclusive)', { exact: true })).toHaveValue(duplicateEnd);
       await expect(duplicate.getByRole('dialog')).toHaveCount(0);
       await expect(duplicate.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
 
@@ -505,7 +506,8 @@ test.describe('UTC date and time controls', () => {
       const countPlan = (request: { url: () => string }) => { if (request.url().endsWith('/collections/plan')) invalidPlans += 1; };
       page.on('request', countPlan);
       try {
-        for (const [invalid, reason] of [['2026-02-30 12:00:00', 'invalid'], ['2026-10-16 24:00:00', 'invalid'], [displayUtc(to), 'earlier'], ['2026-10-16 12:00:03', 'earlier']]) {
+        await end.fill(displayUtc(to));
+        for (const [invalid, reason] of [['2026-02-30 12:00:00', 'invalid'], ['2026-10-16 24:00:00', 'invalid'], [displayUtc(to), 'From must be earlier'], ['2026-10-16 12:00:03', 'From must be earlier']]) {
           await start.fill(invalid);
           await page.getByRole('button', { name: 'Preview collection plan', exact: true }).click();
           await expect(page.getByRole('alert')).toContainText(reason);
@@ -514,21 +516,21 @@ test.describe('UTC date and time controls', () => {
         expect(invalidPlans).toBe(0);
       } finally { page.off('request', countPlan); }
 
-      // Existing canonical values remain usable when pasted; displaying seconds
-      // does not discard an untouched precise API bound.
+      // Pasted API values preserve microseconds until a calendar edit commits seconds.
       const preciseFrom = '2026-10-16T12:00:00.123456Z'; const preciseTo = '2026-10-16T12:00:02.987654Z';
       await start.fill(preciseFrom); await end.fill(preciseTo);
       await expect(start).toHaveValue(displayUtc(from)); await expect(end).toHaveValue(displayUtc(to));
       await previewBounds(preciseFrom, preciseTo);
-      await page.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
+      await range.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
       picker = page.getByRole('dialog', { name: 'Choose From UTC date and time', exact: true });
       await picker.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toBeVisible();
       await previewBounds(preciseFrom, preciseTo);
       for (const bound of ['From', 'To']) {
-        await page.getByRole('button', { name: `Choose ${bound} UTC date and time`, exact: true }).click();
+        await range.getByRole('button', { name: `Choose ${bound} UTC date and time`, exact: true }).click();
         await page.getByRole('dialog', { name: `Choose ${bound} UTC date and time`, exact: true }).getByRole('button', { name: 'Use date and time', exact: true }).click();
-        await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
       }
+      await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toHaveCount(0);
       await previewBounds(from, to);
       await start.fill('2026-10-16 11:59:59'); await end.fill('2026-10-16 12:00:03');
       await start.fill(displayUtc(from)); await end.fill(displayUtc(to));
@@ -540,7 +542,7 @@ test.describe('UTC date and time controls', () => {
           await setAppearance(page, theme);
           await start.scrollIntoViewIfNeeded();
           await capture(page, `inspector-utc-seconds-${theme}-${size.width}x${size.height}`);
-          await page.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
+          await range.getByRole('button', { name: 'Choose From UTC date and time', exact: true }).click();
           picker = page.getByRole('dialog', { name: 'Choose From UTC date and time', exact: true });
           await expect(picker.getByLabel('From UTC date', { exact: true })).toHaveValue('2026-10-16');
           await capture(page, `inspector-utc-picker-${theme}-${size.width}x${size.height}`);
@@ -553,7 +555,7 @@ test.describe('UTC date and time controls', () => {
       await page.setViewportSize({ width: 640, height: 720 });
       for (const theme of ['light', 'dark'] as const) {
         await setAppearance(page, theme);
-        await page.getByRole('button', { name: 'Choose To UTC date and time', exact: true }).click();
+        await range.getByRole('button', { name: 'Choose To UTC date and time', exact: true }).click();
         const narrowPicker = page.getByRole('dialog', { name: 'Choose To UTC date and time', exact: true });
         await expect(narrowPicker).toBeVisible();
         expect(await narrowPicker.evaluate(element => {

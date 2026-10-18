@@ -16,7 +16,7 @@ from sqlalchemy.pool import NullPool
 
 from inspector.config import DatabaseConfig, read_secret
 
-SCHEMA_REVISION = "0014_languages"
+SCHEMA_REVISION = "0015_remember_login"
 _PROBE_TIMEOUT_SECONDS = 1.0
 _DRAIN_TIMEOUT_SECONDS = 1.25
 _LOGGER = logging.getLogger(__name__)

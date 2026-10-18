@@ -2,6 +2,63 @@
 
 The application includes the real backend, MariaDB migrations, local accounts, persistent appearance, independent system workspaces and the Stage 02 topology/configuration implementation. Administrators edit nested diagrams, documentation, flows and named views, with revision checks, undo/redo and explicit configuration import previews. Inspectors navigate a safe read-only projection. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Stage 03 adds the historical parser, safe archives, MariaDB event index and virtualised query/context viewer. Stage 04 adds encrypted passwords, explicit host-key and source/root approval, configured path checks, and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds supervised live SFTP capture, scoped WebSockets, independent per-page controls, retained literal refiltering, split/merged panes and explicit recording. Stage 06 adds saved personal analysis, exact correlation traces, annotations, pinned context and previewed sanitized offline bundle exchange. Stage 07 adds the safe static Ansible file/ZIP setup wizard, system-scoped preview/reconciliation and parser draft diagnostics. Its verification is recorded in the status document; release qualification remains Stage 08. The original package description below is retained as the handoff baseline.
 
+The matching live/log event presentation is installed at **https://localhost:8449**.
+Refresh existing pages for compact live rows with separate UTC time, process,
+host and log-entry columns in merged and split panes. This frontend-only update
+preserves the backend, schema `0015_remember_login`, accounts, configuration and
+retained investigations/cache. Installed-browser and preservation checks are
+recorded in `verification/live-events-preview/` and [STATUS.md](progress/STATUS.md).
+
+The connection **Copy** action is deployed on the **https://localhost:8449**
+preview. Refresh existing pages to load it. Copy in the connection list or edit
+screen opens Add connection with the saved details and a fresh stable ID;
+choose a unique name before saving. The preview's backend/schema and retained
+configuration/investigations are preserved. Deployment checks are recorded in
+[STATUS.md](progress/STATUS.md).
+
+The reviewed events-view follow-up is installed at **https://localhost:8445**
+with schema `0014_languages`. Refresh existing pages to load it. Accounts,
+configuration and cached investigations are preserved; deployment and recovery
+evidence is recorded in [STATUS.md](progress/STATUS.md).
+
+The collection form takes its own UTC range before collection starts. **Filters**
+in the events table changes only the display of retained logs; its date range
+and process choices stay independent of the next collection's settings.
+Clicking rows marks up to 100 entries; **Pin** saves them as one personal
+investigation row with a description and **View** button. The popup groups logs
+by process and offers **Save**, **Cancel** and **Modify**. Modify restores the
+selection in the table; pressing **Pin** then offers an update or a new pin.
+Pins retain the selected text/provenance after source
+expiry and participate in previewed, redacted offline bundles. Group metadata
+uses existing MariaDB analysis JSON; no new DDL is required. **Rows** and
+**Viewport** appear at the right of the results footer, and process choices use
+`server name: process name` with immutable IDs on hover. Preview rollout and
+verification are tracked separately in [STATUS.md](progress/STATUS.md).
+
+The pin editing and separate collection/display range follow-up is now deployed
+at **https://localhost:8449**. Refresh existing pages. Accounts, configuration,
+saved investigations and log cache are preserved; schema remains
+`0015_remember_login`. The 8445 installation is unchanged. Backup, rollback and
+actual-served browser checks are recorded in [STATUS.md](progress/STATUS.md).
+
+The 18 October topology/login source follow-up adds frame **+** actions for
+servers/processes, connection-root-based log-path suggestions, and opt-in
+30-day **Remember me** authentication. It requires additive migration
+`0015_remember_login`. Isolated API, migration and browser checks pass; this
+follow-up is now available on the **8449 preview**, with its matching frontend,
+backend and migrated schema. **Remember me** is visible on login; checked logins
+last 30 days. The installed 8445 backend retains schema `0014_languages`.
+See the latest entry
+in [STATUS.md](progress/STATUS.md).
+
+The separate-process-pane preview is updated at **https://localhost:8449**.
+It includes **Show process** checkboxes beside Result layout in both layouts,
+an always-visible Pane arrangement control (disabled in Merged), page size
+below the results, and independent process pagination. The latest preview adds
+the Filters dialog and described groups of pinned log rows. Its current backend
+uses schema `0015_remember_login`; cached investigations are preserved.
+Refresh to load it.
+
 Stage 07 with the language follow-up is installed locally at
 **https://localhost:8445**, with schema `0014_languages`, following the separate
 deployment authorization on 18 October

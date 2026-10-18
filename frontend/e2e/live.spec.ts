@@ -153,10 +153,10 @@ for (const role of ['administrator', 'inspector'] as const) test(`${role} monito
   await expect(page.locator('.live-message').first()).toContainText('HIDDEN');
   await changeFilter(page, () => page.getByRole('button', { name: 'Clear live filter', exact: true }).click());
   await page.getByRole('region', { name: 'Live monitor', exact: true }).getByText('Per-process literal filters', { exact: true }).click();
-  await changeFilter(page, () => page.getByLabel('p-ingest-a Live contains string', { exact: true }).fill('VISIBLE'));
+  await changeFilter(page, () => page.getByLabel(/: ingest-instance-a Live contains string$/).fill('VISIBLE'));
   await apply(page, 'HIDDEN'); await expect(page.locator('.live-event')).toHaveCount(0);
   await apply(page, ''); await expect(page.locator('.live-message').first()).toContainText('VISIBLE');
-  await changeFilter(page, () => page.getByRole('button', { name: 'p-ingest-a Clear live filter', exact: true }).click());
+  await changeFilter(page, () => page.getByRole('button', { name: /: ingest-instance-a Clear live filter$/ }).click());
   await page.getByRole('region', { name: 'Live monitor', exact: true }).getByText('Per-process literal filters', { exact: true }).click();
   await page.getByRole('region', { name: 'Live monitor', exact: true }).getByText('Advanced literal filters', { exact: true }).click();
 
@@ -177,7 +177,11 @@ for (const role of ['administrator', 'inspector'] as const) test(`${role} monito
     await page.setViewportSize(size);
     // A resized pane may request a larger seed without reconnecting capture.
     await expect.poll(async () => {
-      const measured = await page.locator('.live-log-scroll').first().evaluate(element => Math.ceil((element.clientHeight - 30) / 30));
+      const measured = await page.locator('.live-log-scroll').first().evaluate(element => {
+        const header = element.querySelector<HTMLElement>('.log-column-headings')!.offsetHeight;
+        const row = element.querySelector<HTMLElement>('.live-event')!.getBoundingClientRect().height;
+        return Math.min(500, Math.max(1, Math.ceil((element.clientHeight - header) / row)));
+      });
       const state = await (await page.request.get(`/api/v1/projects/${systemA}/live-sessions/${monitor.session_id}`)).json() as components['schemas']['LiveSessionResponse'];
       return state.requested_rows === measured;
     }).toBe(true);
@@ -231,7 +235,8 @@ test('reload and duplicate never start SSH or steal an occupied controller; expl
   let reloadStarts = 0; page.on('request', request => { if (request.method() === 'POST' && request.url().endsWith('/live-sessions')) reloadStarts += 1; });
   await page.reload(); await page.getByRole('button', { name: /^Live monitor/ }).click();
   await expect(page.getByTestId('live-session-id')).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Your detached monitors' })).toContainText(original.session_id);
+  const detached = page.getByRole('region', { name: 'Your detached monitors' });
+  await expect(detached.locator(`[title="${original.session_id}"]`)).toContainText(': ingest-instance-a');
   expect(reloadStarts).toBe(0);
   await page.getByRole('button', { name: 'Resume in this window', exact: true }).click();
   await expect(page.getByTestId('live-session-id')).toHaveText(original.session_id);
@@ -255,9 +260,14 @@ test('same-account different-system pages keep two times five sources including 
   await expect(page.locator('.live-pane')).toHaveCount(5); await expect(second.locator('.live-pane')).toHaveCount(5);
   await page.locator('.live-log-scroll').nth(0).evaluate(element => { (element as HTMLElement).style.height = '420px'; });
   await page.locator('.live-log-scroll').nth(1).evaluate(element => { (element as HTMLElement).style.height = '150px'; });
+  const measuredPanes = await page.locator('.live-log-scroll').evaluateAll(panes => panes.map(element => {
+    const header = element.querySelector<HTMLElement>('.log-column-headings')!.offsetHeight;
+    const row = (element.querySelector<HTMLElement>('.live-event') ?? document.querySelector<HTMLElement>('.live-event')!).getBoundingClientRect().height;
+    return Math.min(500, Math.max(1, Math.ceil((element.clientHeight - header) / row)));
+  }));
   await expect.poll(async () => {
     const state = await (await page.request.get(`/api/v1/projects/${systemA}/live-sessions/${first.session_id}`)).json() as components['schemas']['LiveSessionResponse'];
-    return state.seed_rows_by_process?.['p-ingest-a'] === 13 && state.seed_rows_by_process?.['p-parser-a'] === 4;
+    return state.seed_rows_by_process?.['p-ingest-a'] === measuredPanes[0] && state.seed_rows_by_process?.['p-parser-a'] === measuredPanes[1];
   }).toBe(true);
   for (const currentPage of [page, second]) await currentPage.evaluate(() => {
     const observations: Record<string, TimingObservation> = {};

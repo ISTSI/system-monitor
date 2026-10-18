@@ -1,5 +1,6 @@
 """Real bundle parsing/redaction and offline-query semantics without a database."""
 
+import asyncio
 import copy
 import hashlib
 import io
@@ -19,6 +20,7 @@ from inspector.history import HistoricalQueryInput
 from inspector.investigation_bundles import (
     WARNING,
     BundleDocument,
+    effective_document,
     encoded,
     load_json,
     matching_events,
@@ -27,6 +29,15 @@ from inspector.investigation_bundles import (
     safe_topology,
     unpack_bundle,
 )
+from inspector.investigations import (
+    PinCreate,
+    PinUpdate,
+    pin_deadline,
+    pin_groups,
+    pruned_pin_groups,
+    with_pin_groups,
+)
+from inspector.persistence.bundle_models import OfflineAnalysis, OfflineInvestigation
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -123,6 +134,44 @@ def test_roundtrip_schema_and_unchanged_original(document):
         (ROOT / "contracts/investigation-bundle.schema.json").read_text(encoding="utf-8")
     )
     Draft202012Validator(schema).validate(document)
+
+
+def test_collection_bounds_are_optional_paired_and_clamp_offline_events(document):
+    query = HistoricalQueryInput.model_validate(
+        {
+            "process_ids": document["selection"]["process_ids"],
+            "from": document["selection"]["from"],
+            "to": document["selection"]["to"],
+        }
+    )
+    legacy = copy.deepcopy(document)
+    legacy["origin"].pop("collection_from", None)
+    legacy["origin"].pop("collection_to", None)
+    restored = unpack(pack_bundle(legacy, 10_000_000))
+    assert restored["origin"]["collection_from"] is None
+    assert len(matching_events(restored, query)) == 37
+    bounded = copy.deepcopy(document)
+    bounded["origin"].update(
+        collection_from="2026-10-16T12:00:00.000000Z",
+        collection_to="2026-10-16T12:00:02.000000Z",
+    )
+    bounded = unpack(pack_bundle(bounded, 10_000_000))
+    events = matching_events(bounded, query)
+    assert events and len(events) < 37
+    assert all(
+        "2026-10-16T12:00:00.000000Z" <= item["timestamp_utc"] < "2026-10-16T12:00:02.000000Z"
+        for item in events
+    )
+    diagnostic = matching_events(bounded, query.model_copy(update={"lane": "diagnostic"}))
+    assert len(diagnostic) == 1 and diagnostic[0]["timestamp_us"] is None
+    for changes in [
+        {"collection_to": None},
+        {"collection_from": None},
+        {"collection_to": bounded["origin"]["collection_from"]},
+        {"collection_from": "not-a-time"},
+    ]:
+        with pytest.raises(ValidationError):
+            BundleDocument.model_validate({**bounded, "origin": {**bounded["origin"], **changes}})
 
 
 def test_explicit_topology_projection_never_contains_active_configuration():
@@ -435,3 +484,147 @@ def test_unpaired_surrogate_json_is_rejected_with_sanitized_validation_error():
     assert error.value.code == "INVALID_BUNDLE"
     assert error.value.status == 422
     assert "\\ud800" not in str(error.value)
+
+
+def test_pin_request_bounds_unique_events_and_server_owned_metadata(document):
+    event = {
+        "event_id": document["events"][0]["event_id"],
+        "from": document["selection"]["from"],
+        "to": document["selection"]["to"],
+    }
+    request = {"expected_revision": 0, "description": "Shared annotation", "events": [event]}
+    assert PinCreate.model_validate(request).events[0].before == 0
+    assert PinUpdate.model_validate(request).events[0].before == 0
+    assert PinUpdate.model_validate({"expected_revision": 0, "description": "Edit"}).events is None
+    for invalid in [
+        {**request, "events": []},
+        {**request, "events": [event, event]},
+        {**request, "events": [{**event, "event_id": f"event-{index}"} for index in range(101)]},
+        {**request, "description": "x" * 10001},
+        {**request, "events": [{**event, "before": 1}]},
+        {**request, "owner_user_id": "forged"},
+        {**request, "events": [{**event, "to": event["from"]}]},
+    ]:
+        with pytest.raises(ValidationError):
+            PinCreate.model_validate(invalid)
+        with pytest.raises(ValidationError):
+            PinUpdate.model_validate(invalid)
+    with pytest.raises(ValidationError):
+        PinUpdate.model_validate({**request, "events": None})
+
+
+def grouped_document(document):
+    output = copy.deepcopy(document)
+    ids = []
+    for index, event in enumerate(output["events"][:2]):
+        bookmark_id = f"bookmark-{index}"
+        ids.append(bookmark_id)
+        output["bookmarks"].append(
+            dict(
+                id=bookmark_id,
+                event_id=event["event_id"],
+                annotation="",
+                pin_context=True,
+                context=dict(
+                    project_id=event["project_id"],
+                    event_id=event["event_id"],
+                    items=[
+                        dict(
+                            event=event,
+                            is_anchor=True,
+                            matches_filter=True,
+                            outside_time_bounds=False,
+                        )
+                    ],
+                ),
+                process_name_snapshot=event["process_name_snapshot"],
+                server_name_snapshot=event["server_name_snapshot"],
+                created_at="2026-10-18T12:00:00.000000Z",
+            )
+        )
+    output["pin_groups"] = [
+        dict(
+            id="group-a",
+            description="secret-group shared description",
+            bookmark_ids=ids,
+            created_us=1,
+        )
+    ]
+    return output
+
+
+def test_grouped_bundle_roundtrip_redaction_and_strict_membership(document):
+    grouped = grouped_document(document)
+    assert unpack(pack_bundle(grouped, 10_000_000)) == grouped
+    redacted = redact(grouped, ["secret-group"], "[HIDDEN]")
+    assert redacted["pin_groups"][0]["description"] == "[HIDDEN] shared description"
+    assert grouped["pin_groups"][0]["description"].startswith("secret-group")
+    BundleDocument.model_validate(redacted)
+    for groups in [
+        [{**grouped["pin_groups"][0], "bookmark_ids": ["foreign-bookmark"]}],
+        [*grouped["pin_groups"], {**grouped["pin_groups"][0], "id": "group-b"}],
+        [grouped["pin_groups"][0], grouped["pin_groups"][0]],
+    ]:
+        with pytest.raises(ValidationError):
+            BundleDocument.model_validate({**grouped, "pin_groups": groups})
+    legacy = {key: value for key, value in document.items() if key != "pin_groups"}
+    assert BundleDocument.model_validate(legacy).pin_groups == []
+
+
+def test_offline_group_state_is_separate_from_selection_and_survives_projection(document):
+    grouped = grouped_document(document)
+    evidence = OfflineInvestigation(
+        project_id="target-system",
+        id="offline-a",
+        owner_user_id="owner",
+        digest="a" * 64,
+        document=grouped,
+        created_us=1,
+    )
+    state = with_pin_groups(
+        {**grouped["selection"], "notes": "Personal follow-up"}, grouped["pin_groups"]
+    )
+    from inspector.investigation_bundles import offline_bookmarks
+
+    analysis = OfflineAnalysis(
+        project_id=evidence.project_id,
+        investigation_id=evidence.id,
+        owner_user_id=evidence.owner_user_id,
+        revision=1,
+        state=state,
+        bookmarks=offline_bookmarks(evidence, None),
+    )
+    projected = effective_document(evidence, analysis)
+    assert projected["pin_groups"] == grouped["pin_groups"]
+    assert "pin_groups" not in projected["selection"]
+    assert projected["selection"]["notes"] == "Personal follow-up"
+    assert projected["bookmarks"][0]["context"]["project_id"] == grouped["origin"]["project_id"]
+    BundleDocument.model_validate(projected)
+    assert evidence.document == grouped
+    retained = pruned_pin_groups(state, {"bookmark-1"})
+    assert retained[0]["bookmark_ids"] == ["bookmark-1"]
+    assert pruned_pin_groups(state, set()) == []
+    assert pin_groups(state) == grouped["pin_groups"]
+
+
+async def test_pin_deadline_reports_timeout_and_preserves_caller_cancellation(monkeypatch):
+    actual_timeout = asyncio.timeout
+    monkeypatch.setattr(
+        "inspector.investigations.asyncio.timeout", lambda _seconds: actual_timeout(0.001)
+    )
+    with pytest.raises(DomainError) as error:
+        async with pin_deadline():
+            await asyncio.sleep(1)
+    assert error.value.code == "PIN_TIMEOUT" and error.value.status == 408
+    started = asyncio.Event()
+
+    async def pending():
+        async with pin_deadline():
+            started.set()
+            await asyncio.Future()
+
+    task = asyncio.create_task(pending())
+    await started.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task

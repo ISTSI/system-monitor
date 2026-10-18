@@ -75,6 +75,9 @@ export default {
   "SSH port": "Port SSH",
   "Connection settings": "Ustawienia połączenia",
   "Edit SSH connection": "Edytuj połączenie SSH",
+  "Copy": "Kopiuj",
+  "Copy connection {name}": "Kopiuj połączenie {name}",
+  "Choose a unique name for the new connection before saving.": "Przed zapisaniem wybierz unikalną nazwę nowego połączenia.",
   "Password & connection test": "Hasło i test połączenia",
   "Source → target": "Źródło → cel",
   "Protocol": "Protokół",
@@ -458,5 +461,8 @@ export default {
   "left": "w lewo",
   "right": "w prawo",
   "up": "w górę",
-  "down": "w dół"
+  "down": "w dół",
+  "Add process to {name}": "Dodaj proces do {name}",
+  "Add server to {name}": "Dodaj serwer do {name}",
+  "Add a parser profile before adding a process.": "Dodaj profil parsera przed dodaniem procesu."
 };

@@ -1,7 +1,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { openPreferences, serveBuiltAssets, setAppearance, submitSignIn, systemAction } from './ui';
+import { applyHistoricalFilters, fillHistoricalFilters, openPreferences, serveBuiltAssets, setAppearance, setHistoricalCollectionRange, submitSignIn, systemAction } from './ui';
 import type { Config } from '../src/topology';
 
 const enabled = process.env.INSPECTOR_E2E_URL === 'https://localhost:8449';
@@ -277,14 +277,13 @@ for (const role of ['administrator', 'inspector'] as const) test(`${role} visual
   await page.getByRole('link', { name: 'Log history', exact: true }).click();
   const processes = page.getByRole('group', { name: 'Configured processes', exact: true }).getByRole('checkbox');
   for (const box of await processes.all()) await box.check();
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill('2026-10-16T12:00:00.000000Z');
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill('2026-10-16T12:00:02.000000Z');
+  await setHistoricalCollectionRange(page, { from: '2026-10-16T12:00:00.000000Z', to: '2026-10-16T12:00:02.000000Z' });
   await page.getByRole('button', { name: 'Collect sources', exact: true }).click();
   await expect(page.getByTestId('collection-state')).toHaveText('completed', { timeout: 30000 });
   await expect(page.getByTestId('match-count')).toContainText('matches');
-  await page.getByLabel('Contains string', { exact: true }).fill('REQ-0042');
+  await fillHistoricalFilters(page, { filter: { include: ['REQ-0042'], exclude: [], include_mode: 'all', case_sensitive: true }, per_process_filters: {} });
   const historicalFilter = page.waitForResponse(response => response.url().endsWith('/query') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Apply filter', exact: true }).click(); expect((await historicalFilter).status()).toBe(200);
+  await applyHistoricalFilters(page); expect((await historicalFilter).status()).toBe(200);
   await expect(page.locator('.log-message mark').first()).toHaveText('REQ-0042');
   for (const theme of ['light', 'dark'] as const) {
     await setAppearance(page, theme);

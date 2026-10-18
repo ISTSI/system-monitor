@@ -12,6 +12,16 @@ Bootstrap the first Administrator through a server-side interactive command at d
 
 Use random opaque session cookies, Secure, HttpOnly and SameSite=Strict in production, with a restricted path/domain. Store session verifier hashes server-side, not passwords or bearer tokens in browser storage. Suggested policy: 30-minute idle timeout and eight-hour absolute lifetime, configurable. Define whether deliberate user activity renews idle timeout; heartbeats alone must not defeat absolute expiry. Logout/revocation terminates streams and pending authenticated downloads.
 
+The explicit 18 October 2026 request adds opt-in **Remember me** at login.
+Remembered sessions have a fixed 30-day absolute lifetime and remain valid
+during inactivity within that interval. The server persists the explicit choice;
+it does not infer it from configured timeout values. The persistent cookie
+expires with the session, and activity cannot extend the 30-day deadline.
+Unchecked logins keep the configured ordinary idle/absolute policy. All HTTP,
+WebSocket, SSH and download checks enforce the same policy and immediate
+account/session revocation rules. Remembering authentication never remembers
+an active system or transfers a workspace control lease.
+
 Use exact Origin/Host validation, CSRF tokens for state-changing HTTP requests and authenticated WebSocket initial frames. Reject unexpected origins and oversized frames. No wildcard CORS. Protect login itself against login CSRF. Distinguish health endpoints from authenticated operational diagnostics. See OWASP session, CSRF and WebSocket guidance [S10–S12].
 
 Use HTTPS with an internal-CA/provisioned certificate; the release must not contact ACME/Let's Encrypt. HSTS only after certificate/domain deployment is correct. Configure reverse-proxy WebSocket upgrade and timeouts [S13]. Trust forwarded headers only from the known proxy.

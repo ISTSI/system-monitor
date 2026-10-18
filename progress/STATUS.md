@@ -1,6 +1,39 @@
 # Implementation status — version 3
 
-**Current: Stage 07 plus the language follow-up is installed locally at https://localhost:8445 (`0014_languages`).** The separately authorized upgrade used the exact tested artifact, a consistent protected recovery backup and separate migration credentials. Existing accounts, settings, topology, investigations and cache bytes were preserved; the 8444 installation is unchanged. Installed browser checks and independent preservation/security audits pass. Stage 01 on 8443 and the isolated 8449 fixture remain stopped. Stage 08 has not started. Exact results and limitations are recorded below; earlier blockers remain as dated history.
+**Current: Stage 07 plus the language follow-up is installed locally at https://localhost:8445 (`0014_languages`).** The separately authorized upgrade used the exact tested artifact, a consistent protected recovery backup and separate migration credentials. Existing accounts, settings, topology, investigations and cache bytes were preserved; the 8444 installation is unchanged. Installed browser checks and independent preservation/security audits pass. Stage 01 on 8443 remains stopped. The isolated 8449 review fixture now runs the current topology/login and Filters/pins frontend/backend at `0015_remember_login`, following the explicit preview-update authorization. Stage 08 has not started. Exact results and limitations are recorded below; earlier blockers remain as dated history.
+
+**Latest source follow-up (18 October 2026):** Live monitor uses `server: process`
+labels and clearer gap/error/previous-monitor notices. Three isolated component
+browser cases and 20 frontend unit tests pass, as do lint, typecheck and build.
+Both themes were visually inspected. This source follow-up is not deployed;
+installed environments and the separate Stage 08 gate remain unchanged.
+
+**Earlier requested source follow-up (18 October 2026):** pins have compact
+description/View rows, process-grouped previews, editable descriptions,
+selection modification and explicit update-or-create choice. Collection UTC
+bounds and pending processes are independent of retained display filters and
+captured process lists. All six browser cases and 39 MariaDB/Linux integration
+cases pass; see the final dated entries below. Following explicit deployment
+authorization, this follow-up is now installed on 8449 with matching backend
+and frontend, unchanged schema0015 and preserved data. Actual served-browser
+and preservation checks pass. 8445 is unchanged; Stage 08 remains separate.
+
+**Earlier topology/login follow-up (18 October 2026):** subsystem/server frame **+** buttons
+open Add server/Add process with their parent preselected. New process paths use
+the first connection log root. Login offers opt-in fixed 30-day **Remember me**.
+The source requires `0015_remember_login` and passes 833 backend unit cases,
+50 MariaDB/API cases, a populated migration/rollback check, 17 frontend unit
+cases and three browser cases. It is now deployed on the retained 8449 preview,
+with actual-served browser and data preservation checks passing; 8445 is
+unchanged. The earlier separate 8450 browser fixture remains stopped.
+
+**Results-controls source follow-up (18 October 2026):** results row-count changes now apply
+immediately, separate process panes are clearly labelled, and Columns dismisses
+on outside click/focus leaving/Escape. Five isolated browser cases, 17 frontend
+unit cases, lint and build/typecheck pass. This correction is available for
+review at https://localhost:8449; 8445 still serves the previously installed
+events-table frontend. Use the Inspector entry in the protected
+`.secrets/stage7-browser/accounts.json` for the temporary review setup.
 
 The UTC controls and **Additional security measures** follow-ups are now
 installed on 8445, now at schema `0014_languages`. The checkbox defaults to
@@ -2628,3 +2661,1293 @@ deployment required no recovery. Full backend/source suites were already passed
 for the unchanged backend and tested frontend; this turn ran deployment-specific
 checks. Native Ubuntu/Rocky/offline-release qualification remains Stage 08,
 separately authorized.
+
+## 18 October 2026 — Results pagination, process panes and column-picker correction
+
+Authorization: the user reported that changing rows and result layout appeared
+ineffective and requested outside-click dismissal of Columns. This is a narrow
+frontend correction to the completed Stage 07 UI; Stage 08 remains separate.
+
+**Changes:** `frontend/src/components/HistoricalViewer.tsx` now reloads page one
+immediately when rows changes, preserving the applied time/process/literal query
+and leaving unsubmitted edits untouched. Previous/next use the applied size.
+Measured mode uses an individual log scroll viewport with the existing bounded
+prefetch. Automatic results after collection/opening also honor the current
+size instead of overriding it with 200. Loading disables competing page-size
+changes; errors retain prior rows and visible feedback.
+
+Split layout already grouped the current page correctly. A single process, as
+in the supplied screenshot, therefore produces one pane. Distinct bordered pane
+headings now show system/process, host and row count; a pane-count message
+explains the one-process case. Layout changes remain local presentation.
+Columns retains checkbox interactions and closes on outside pointerdown,
+keyboard focus leaving or Escape. Escape restores its summary focus without
+closing full-screen results. New text has bundled Polish translations.
+
+Changed files:
+
+- `frontend/src/components/HistoricalViewer.tsx`, `frontend/src/styles.css`,
+  `frontend/src/i18n/investigation.pl.ts`.
+- `frontend/e2e/events_table.spec.ts`: three additional behavioural cases,
+  retaining the original two; useful result-region screenshot captures.
+- `frontend/e2e/historical.spec.ts`: wait for the newly immediate resize query
+  before the existing explicit Apply action; all previous assertions retained.
+- `docs/06_UI_UX.md`, `docs/12_TRACEABILITY.md`, `progress/STATUS.md`.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY scripts/stage7_local.py up` | First sandboxed attempt exited 1 (Compose access); reviewed escalation passed. Only the existing isolated 8449 application/SFTP fixture started. |
+| `PY scripts/frontend.py test` | PASS: generated API types match; **17/17** Node cases, no skips. Repeated after final source edits, also passed. |
+| `PY scripts/frontend.py lint` | PASS, including final browser test changes. |
+| `PY scripts/frontend.py typecheck` | PASS during browser-test authoring and final test edits. |
+| `PY scripts/frontend.py build` | PASS, including TypeScript; final assets `index-DjqF0-Cw.js` / `index-B92UrpVj.css`. Existing Vite >500 kB chunk advisory only. |
+| `PY scripts/frontend.py e2e events_table.spec.ts` | Final **PASS: 5/5 in 26.4 s**, no skips. Real local MariaDB/read-only synthetic SFTP and fresh build substitution; report `verification/stage-7/events-table-controls-browser-final.json`. |
+| UI inspection | Viewed actual five-pane and single-pane result-region captures, automatic ten-row collection results, light 1280×720 full screen and dark 1920×1080 full screen. Browser matrix also covers both themes at 1280×720 / 1920×1080 / 640×720. |
+| `PY scripts/stage7_local.py stop` | PASS with reviewed escalation; both isolated fixture services stopped and their data retained. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Browser environment: `INSPECTOR_E2E_URL=https://localhost:8449`, protected
+`INSPECTOR_E2E_ACCOUNTS=../.secrets/stage7-browser/accounts.json`, final
+`INSPECTOR_E2E_REPORT_NAME=events-table-controls-browser-final`. Non-origin
+requests were blocked. Only generated synthetic accounts/sources were used.
+Tests restore synthetic appearance and log out after each case.
+
+Earlier attempts are retained. `events-table-controls-browser-attempt-1.json`
+records all four then-existing cases failing before login because sandbox
+access to the protected fixture accounts was denied (`EPERM`). Reviewed
+escalation resolved access. `events-table-controls-browser-attempt-2.json`
+records **3 passed / 1 failed**: the newly authored row test incorrectly assumed
+more than 50 fixture matches; there are 37. The corrected test still requires
+the exact limit-50 request, verifies all 37 available event IDs/rows and
+exhaustion, and checks two ten-row pages. No existing contract was relaxed.
+The fifth case then added ten-row automatic collection loading coverage.
+
+Screenshots are `verification/stage-7/screenshots/events-table-*.png`, including
+`separate-process-panes`, `single-process-pane` and `row-count-new-collection`.
+The first new split screenshot showed setup instead of results; the final
+capture helper targets the actual results region, which was visually inspected.
+
+No backend, dependency, database schema or installed service changed. Full
+backend/release suites were not rerun for this frontend-only change. The older
+`historical.spec.ts` suite was not run: it targets `stage3-fixture-*` on the
+retained 8445 installation, which is outside this correction's test scope.
+Its resize path is exercised by the five passing isolated fixture cases.
+No blocker remains for the source correction. Deployment requires separate
+explicit authorization; the next numbered stage is still
+`prompts/08_OFFLINE_RELEASE.md`.
+
+## 18 October 2026 — Temporary results-controls preview left running
+
+Authorization: **“Can you leave the temporary setup running so I can verify the
+changes before deploying?”** The isolated setup is now running at
+**https://localhost:8449**, serving the exact tested frontend directly to normal
+browsers. The earlier browser-only asset substitution is unnecessary here.
+The installed 8445 application and other services retain their container/image,
+start/restart identities; no migration, seed, dependency/image download or
+production target connection occurred.
+
+Open the ready-to-review retained synthetic investigation:
+https://localhost:8449/systems/stage7-fixture-a/investigations/1356d454-15fe-41e1-b2e8-25a276def55c
+
+Sign in using the **Inspector** entry in
+`.secrets/stage7-browser/accounts.json`. Credentials remain in that protected
+file and were not printed. This collection has **37 timestamped matches** from
+five synthetic processes, with UTC bounds `2026-10-13 00:00:00` through the
+exclusive `2026-10-17 00:00:00`. New pages use their own workspace/presentation;
+choose 10 rows, split panes or Columns to review the controls.
+
+Only the generated `stage7-browser` Compose service gained a read-only mount at
+`/workspace/backend/src/inspector/web`. The frozen web assets are under
+`.state/stage7-browser/results-controls-preview/web`, with hashes and the previous
+Compose file alongside. Both fixture services use the existing pinned local
+image and remain detached/running on the loopback-only 8449 port. No product
+source changed during preview setup. The backend remains the local test source.
+Recreating this temporary fixture clears its raw-file cache; the newly collected
+data is available while the current preview runs.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY -m py_compile .cache/start_results_controls_preview.py`; `NODE --check .cache/verify_results_controls_preview.mjs` | PASS. Helpers are scoped to the existing synthetic fixture. |
+| `PY .cache/start_results_controls_preview.py` | PASS with reviewed escalation: frozen five-file build, one read-only mount, only `stage7-browser`/`stage7-sftp` started using `--no-deps --pull never`. Verified TLS/hostname/readiness and HTTP index/JS/CSS hashes; other service identities unchanged. |
+| `NODE .cache/verify_results_controls_preview.mjs` | PASS with reviewed escalation and real served assets, no substitutions: synthetic login/collection, limit 10→50→10 and rendered counts, five separate panes, outside-click/Escape dismissal and full-screen Escape ordering. Captured actual ten-row and split-pane screenshots. Services left running. |
+| `PY .cache/start_results_controls_preview.py verify` | PASS: readiness/TLS/served hashes repeated after browser verification; other container/image/start/restart identities still match. |
+| UI inspection | Viewed actual served ten-row results. Receipts and screenshots: `verification/results-controls-preview/started.json`, `browser.json`, `served-ten-rows.png`, `served-separate-panes.png`. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+The browser smoke creates only synthetic investigation/workspace state. Its
+headless browser closed; the HTTP/SFTP preview services were deliberately **not
+stopped**. To stop later, run `PY scripts/stage7_local.py stop`; the user requested
+that it stay running for review now. Restoring
+`.state/stage7-browser/results-controls-preview/previous-compose.yaml` to
+`deploy/local-mariadb/stage7-browser.compose.local.yaml` removes the frontend
+override on the next fixture recreation. Neither operation deploys to 8445.
+The previous five-case source browser suite remains the full feature evidence;
+this turn ran the served-preview smoke only. No blocker remains. Stage 08 and
+deployment to the installed application remain separately authorized work.
+
+## 18 October 2026 — Frame add actions, log-path defaults and remembered login
+
+Authorization: user requested a **+** on subsystem frames to add a server and
+on server frames to add a process, the first connection log root as the proposed
+process path, and **Remember me** with a 30-day session. This is a source
+follow-up to Stage 07; no installed-application deployment was requested.
+
+Implemented behavior:
+
+- Administrator frame **+** actions open the existing revision-checked forms
+  with the clicked immutable parent selected, including collapsed frames.
+  Creation expands ancestors in the current view. The buttons have parent-named
+  English/Polish labels, preserve keyboard focus and do not trigger drag or
+  selection. Inspector controls remain read-only; process creation requires an
+  existing parser. Existing System-menu creation remains available.
+- A new process proposes `<first connection log root>/app.log`. It uses the
+  selected server's own connection, normalizes a trailing slash and follows
+  server changes until the field is edited. Manual and existing paths are
+  preserved. Without a proposed root the required field starts empty.
+- Unchecked **Remember me** keeps configured ordinary idle/absolute timeouts
+  (default 30 minutes/eight hours). Checked stores an explicit per-login flag
+  and fixed 30-day expiry; inactivity and browser restart do not shorten it,
+  and activity does not extend it. Session/CSRF cookies remain opaque,
+  HttpOnly, Secure and SameSite=Strict. HTTP, SSH, live, historical dispatch and
+  streamed-download authorization use the effective policy. Logout and
+  account revocation still invalidate all affected windows and monitors.
+- Additive MariaDB `0015_remember_login` over `0014_languages` adds the non-null
+  boolean and 0/1 check, defaulting existing sessions to false. Downgrade revokes
+  remembered sessions before removing the flag and preserves ordinary sessions.
+  Serving needs the matching schema; migration credentials remain separate.
+
+Changed files for this follow-up (earlier results-controls edits preserved):
+
+- Backend: `app.py`, `auth.py`, `database.py`, `history.py`,
+  `investigation_bundles.py`, `persistence/models.py`, `ssh_access.py`;
+  `migrations/versions/0015_remember_login.py`; generated `backend/openapi.json`.
+- Frontend: `Login.tsx`, `SystemWorkspace.tsx`, `TopologyGraph.tsx`,
+  `TopologyEditor.tsx`, frame-action rules in `styles.css`, bundled
+  `core.pl.ts`/`topology.pl.ts`, generated `src/api/schema.d.ts`.
+- Tests/tooling: auth/source-access unit tests,
+  `test_remember_login.py`, `verify_remember_login_upgrade.py`,
+  `topology_add.spec.ts`, `remember_login.spec.ts`,
+  `scripts/verify_topology_login.py`.
+- Documentation: root/backend/frontend READMEs, `docs/05`, `06`, `07`, `12`,
+  `14`, and this status record.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`; Mypy ran from `backend`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY -m pytest backend/tests/unit -q` | Final **833 passed, 4 skipped**, 27.63 s. Existing Windows symlink privileges, pinned-file rename and POSIX permission restrictions; five existing WebSocket/uvicorn deprecation warnings. |
+| `PY -m ruff check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts` | PASS. |
+| `PY -m ruff format --check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts` | PASS: 173 files. |
+| `.venv/Scripts/python.exe -m mypy src` | PASS: 37 source files. |
+| `PY scripts/verify_topology_login.py integration` | Final **50/50 passed**, no skips, 65.93 s in new `inspector_test_login_bbebb1`, Linux Python 3.13.16/MariaDB. Covers login choice/inactivity/exact 30-day boundary, cookie flags, CSRF, global revocation, ordinary timeouts, roles, topology/revisions, SSH revocation and bundle download checks. |
+| `PY scripts/verify_topology_login.py upgrade` | PASS in fresh populated `inspector_test_rem_upgrade_69bf5e`: all seeded preexisting rows preserved, false legacy-session backfill/timestamps, boolean constraint rejection, downgrade revocation and re-upgrade. Receipt is in the matching `verification/topology-login/rem_upgrade_69bf5e.log`. |
+| OpenAPI + `PY scripts/frontend.py api:generate` | PASS: strict optional boolean with default false; generated frontend contract updated. |
+| `PY scripts/frontend.py test` | PASS: API consistency and **17/17** Node tests, including all translation keys/placeholders. |
+| `PY scripts/frontend.py lint` | PASS; repeated after the final browser locator correction, also passes. |
+| `PY scripts/frontend.py typecheck`; `PY scripts/frontend.py build` | PASS, including final test sources; 214 modules, assets `index-CdDlftjp.js` / `index-CuSTed6f.css`. Existing Vite >500 kB chunk advisory. |
+| `PY scripts/frontend.py e2e topology_add.spec.ts remember_login.spec.ts` | Final **3/3 passed in 8.0 s**, no skips; `verification/stage-7/topology-login-browser-final.json`. |
+| UI inspection | Viewed actual login and topology captures in light/dark at 1280×720 / 1920×1080. Four login captures in `verification/topology-login/screenshots/`; four topology captures `verification/stage-7/screenshots/topology-frame-add-*.png`. |
+| `PY -m unittest discover -s tests/package -q` | PASS: 128 cases, nine existing POSIX secret-permission/shell cases skipped on Windows. |
+| `PY tools/validate_package.py`; `PY tools/validate_schemas.py` | PASS: all 56 requirements mapped; 20 schemas, 102 successful/36 rejected instances. Package consistency only. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Browser environment: `INSPECTOR_E2E_URL=https://localhost:8450`,
+`INSPECTOR_E2E_ACCOUNTS=../.secrets/stage7-browser/accounts.json`,
+`INSPECTOR_E2E_REPORT_STAGE=stage-7`, report
+`topology-login-browser-final`. The new loopback-only service uses its own
+`inspector_test_ui_auth_1018` schema, current source, pinned local Stage 07 image
+and synthetic accounts. No SSH/SFTP operation or Internet request is needed.
+The tests cover same-context duplicated pages with distinct workspaces, correct
+parent/path preselection, keyboard cancellation without writes, collapsed-parent
+save, revision/undo/redo, multiple roots, empty roots, manual/existing paths,
+Polish controls, Inspector visibility, persistent-cookie fresh-context login,
+CSRF denial and global logout. Thirty-day expiry is verified using controlled
+server time in MariaDB tests, rather than waiting 30 days.
+
+Retained attempts and setup:
+
+- The first sandboxed `local_mariadb.py new-test --suffix ui_auth_1018` failed.
+  Read-only Docker diagnostics confirmed named-pipe/config Access denied;
+  reviewed escalation then provisioned only the fresh test schema. No secret
+  values were printed. Docker and protected-account browser checks used
+  reviewed escalation; no automatic-approval rejection occurred.
+- First API run (`login_9a584a.log`) had **49 passed / 1 failed**: the new test
+  expected a read-only `/auth/session` GET to renew deliberate idle activity.
+  The test now performs an actual CSRF-protected preference write and retains
+  the unchanged-expiry and exact-expiry assertions. No production timeout or
+  existing contract was relaxed. The final fresh-schema run passes all 50.
+- First browser run had **2 passed / 1 failed**: exact `getByLabel` could not
+  match a wrapping select label containing option text. The rendered form had
+  the correct parent and path. Exact accessible combobox-role locators fixed
+  only the new test, preserving every assertion; attempt two passed all three
+  in 7.0 s. Inspection then found a topology capture scrolled below the new
+  controls. Final screenshots scroll to the top and explicitly assert both
+  frame actions are in the viewport in every theme/size; all three cases pass
+  again in 8.0 s. Both earlier reports remain retained.
+- Compiled ignored helpers `.cache/start_topology_login_fixture.py` and
+  `.cache/seed_topology_login_fixture.py` created/seeded only the new 8450
+  fixture. Its initial database-only internal network made the published HTTPS
+  port unreachable; a separate browser network corrected the fixture without
+  changing product code. TLS/readiness passed, and unchanged service identity,
+  image, start/restart metadata is recorded in
+  `verification/topology-login/fixture-started.json`.
+- `PY .cache/start_topology_login_fixture.py stop` passed after browser checks:
+  only 8450 stopped; the 8449 user-review preview, its previous schema/assets
+  and cache, installed 8445/8444 applications and all other service identities
+  match their preflight state. Disposable test databases are retained.
+
+No blocker remains for this source request. The matching migration/backend/UI
+must be installed together under a separate deployment authorization. Full
+release/offline/native Ubuntu/Rocky qualification and unrelated browser/SFTP
+suites were not rerun; the relevant targeted checks above passed. Stage 08
+remains separately authorized work; existing 8449 review remains running.
+
+## 18 October 2026 — Separate process navigation and pane arrangements
+
+Authorization: user reported being unable to switch processes after choosing
+Separate process panes and requested stacked panes or 2, 3 or 4 columns. This
+is a historical-results source follow-up to Stage 07; existing unrelated
+topology/login/results-control source changes were preserved.
+
+The previous split view grouped only the current merged page. A page dominated
+by one process hid the other processes entirely. Separate panes now covers all
+processes in the applied query, with independent bounded pages, counts, context
+and previous/next controls for each. Show process lists all queried processes
+with name, host and immutable ID, or focuses one at full width. Pane arrangement
+offers Stacked, 2 columns, 3 columns and 4 columns. Focus/arrangement/column
+changes preserve mounted pane data and scroll and make no query or SSH request.
+Each process table scrolls horizontally within its pane.
+
+Incomplete merged pages load process pages with at most two concurrent retained
+queries, 15-second timeouts, cancellation and project/process/lane/snapshot
+validation. Complete first-page merged results seed panes without extra queries;
+a final merged page is never mistaken for a complete seed. Per-process filters
+are restricted to the requested process; merged cursors are never reused for a
+different process selection. Each failed page retains its prior rows and offers
+an independent retry of the failed cursor. Row-size changes use the applied
+query and preserve focused process/arrangement and unsubmitted controls. Explicit
+Apply/lane changes replace query scope and reset process focus. Merged paging
+remains independent. These controls are page-local, including duplicate pages
+in the same browser context. New text has bundled Polish translations.
+
+Changed files for this follow-up:
+
+- `frontend/src/components/HistoricalViewer.tsx`, new
+  `HistoricalProcessPanes.tsx` and extracted unchanged virtual table in
+  `HistoricalLogTable.tsx`; `frontend/src/styles.css`,
+  `frontend/src/i18n/investigation.pl.ts`.
+- `frontend/e2e/events_table.spec.ts`: retains the five existing regressions,
+  extends duplicate-page isolation, and adds genuine missing-process/pagination
+  and layout-matrix cases. Authentication uses the retained fixture's real
+  CSRF-protected API, since its backend predates the optional remembered-login
+  field; the separate login suite covers that matching newer backend/UI.
+- `frontend/README.md`, `docs/06_UI_UX.md`, `docs/12_TRACEABILITY.md`, this record.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| Local HTTPS readiness request | PASS: existing isolated `https://localhost:8449/api/v1/health/ready` returned 200. No service restarted or changed. |
+| `PY scripts/frontend.py test` | Final PASS: generated API consistency and **17/17** Node cases, no skips. Initial run during implementation caught four missing Polish keys; translations were added and the unchanged coverage passes. |
+| `PY scripts/frontend.py lint` | PASS, including final test locator edits. |
+| `PY scripts/frontend.py typecheck` | PASS. |
+| `PY scripts/frontend.py build` | PASS: 216 modules; `index-ozuVJLUF.js` / `index-DOl-cgPf.css`. Existing Vite >500 kB chunk advisory. |
+| `PY scripts/frontend.py e2e events_table.spec.ts -g 'separate panes query'` | PASS: **1/1**, 5.2 s after scoping the newly added locator to Historical investigation. |
+| `PY scripts/frontend.py e2e events_table.spec.ts` | Final PASS: **7/7**, 36.2 s, no skips. Real local MariaDB/read-only synthetic SFTP; report `verification/stage-7/process-panes-browser-final.json`. |
+| UI inspection | Viewed actual light 1920×1080 three-column, dark 1280×720 four-column full-screen, and dark 640×720 four-column result captures. Matrix covers both themes and 1280×720 / 1920×1080 / 640×720, all four arrangements plus full screen. |
+| `git -c core.safecrlf=false diff --check` | Final PASS. Initial check found an extra blank line after table extraction; removed. |
+
+Browser environment: `INSPECTOR_E2E_URL=https://localhost:8449`, protected
+`INSPECTOR_E2E_ACCOUNTS=../.secrets/stage7-browser/accounts.json`, final
+`INSPECTOR_E2E_REPORT_NAME=process-panes-browser-final`. Tests substitute only
+fresh built web assets in their own browser context. Non-origin requests are
+blocked; only generated synthetic sources/accounts are used. Tests restore
+the synthetic theme and log out after each case. Screenshots are under
+`verification/stage-7/screenshots/events-table-*`, including the layout matrix
+and `process-pane-query-error`.
+
+Earlier attempts remain recorded: attempt 1 failed all seven before login with
+sandbox `EPERM` on the protected fixture accounts. Reviewed escalation resolved
+access. Attempt 2 failed login because the unchanged 8449 backend rejects the
+newer UI's optional `remember_me` field. The compatible real API sign-in helper
+resolved that mismatch without modifying the running service/schema. Attempt 3
+passed six/seven; the new test's unscoped Per-process literal filters locator
+matched historical and live panels. Scoping it to Historical investigation
+fixed the test without weakening its assertions; attempt 4 passed the targeted
+case and the final full run passed all seven. No automatic-approval rejection
+occurred.
+
+No backend, dependency, schema or installed/review-preview assets changed in
+this follow-up. The requested 8449 preview remains running with its previous
+served assets; browser substitution did not publish the new build. Backend,
+migration, unrelated live/SSH suites and full offline/native Ubuntu/Rocky release
+checks were not rerun for this frontend-only correction. No source blocker
+remains. Deployment still requires separate explicit authorization; the next
+numbered stage remains `prompts/08_OFFLINE_RELEASE.md`.
+
+## 18 October 2026 — Process-pane preview updated on port 8449
+
+Authorization: **Update the preview on port 8449**. The running preview at
+**https://localhost:8449** now serves Show process, Stacked/2/3/4-column pane
+arrangements and independent per-process pagination directly to ordinary
+browsers. Refresh existing pages. The retained review URL still works:
+https://localhost:8449/systems/stage7-fixture-a/investigations/1356d454-15fe-41e1-b2e8-25a276def55c
+
+Updated only files inside the existing read-only frontend directory mount;
+new hashed assets were installed before atomically replacing `index.html`.
+Previous hashed assets remain available for existing pages and rollback. Every
+local Compose service's container/image/start/restart identity matches its
+preflight state, including 8449, SFTP, MariaDB and installed 8444/8445. No service
+restarted, schema/configuration changed, migration/seed ran or source collection
+started. The existing 37-match/five-process investigation remains cached.
+
+The current product Login component belongs to the separately tested
+`0015_remember_login` follow-up, while the running preview uses its older strict
+login API. An isolated copy of the frontend was therefore built with only its
+Login component replaced by the exact compatible `git show
+HEAD:frontend/src/components/Login.tsx` source. It keeps the preview's existing
+two-field login and does not expose an unsupported Remember me control. Every
+other staged source file matches the current product source by SHA-256,
+including both pane components; product sources and `frontend/dist` remain
+unchanged. The staging build first inherited the existing local dependencies
+under `frontend/.cache/process-panes-preview`, then was moved with explicitly
+verified workspace paths to
+`.state/stage7-browser/process-panes-preview/staged-frontend` so it cannot affect
+normal frontend tool scans. No dependency or image was downloaded.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`, `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY .cache/build_process_panes_preview.py` | PASS: isolated TypeScript + Vite build, five assets, exact one-file staged compatibility difference, unchanged product source hashes. JS `index-DBw_qvq9.js`, CSS `index-DOl-cgPf.css`; existing chunk-size advisory only. |
+| `PY -m py_compile .cache/build_process_panes_preview.py .cache/update_process_panes_preview.py`; `NODE --check .cache/verify_process_panes_preview.mjs` | PASS. |
+| `PY .cache/update_process_panes_preview.py` | Final PASS with reviewed escalation: backup, atomic frontend update, pinned-certificate TLS/hostname/readiness and real HTTP index/JS/CSS hashes; every service and Compose file unchanged. |
+| `NODE .cache/verify_process_panes_preview.mjs` | PASS with reviewed escalation and actual served assets, no substitutions: real browser UI login, retained 37 matches, ten-row merged page, five independently queried panes, scoped process pagination, process focus, all four arrangements, full screen, same-context duplicated pages with distinct workspaces and independent controls; logout after verification. No collection/preferences/configuration writes. |
+| `PY .cache/update_process_panes_preview.py verify` | PASS after browser smoke: real served hashes/readiness and all service identities still match; services left running. |
+| UI inspection | Viewed actual served four-column full-screen results and focused-process results. Captures: `verification/process-panes-preview/served-four-columns-fullscreen.png`, `served-focused-process.png`; inline four-column capture also retained. |
+| Product-source hash comparison; `git -c core.safecrlf=false diff --check` | PASS. |
+
+The first update-helper attempt stopped in read-only preflight with HTTP 404
+when it tried to fetch bundled license files as public routes. The backend
+publishes the SPA document and `/assets`, not standalone `/licenses` routes.
+Correcting that preflight to the same index/asset checks as the prior preview
+helper resolved it; both notice files remain bundled. No asset was changed by
+the failed attempt. No automatic-approval rejection occurred.
+
+Evidence is `verification/process-panes-preview/updated.json` and `browser.json`.
+Build provenance, current manifest and the complete prior web directory are
+under `.state/stage7-browser/process-panes-preview/`, including `previous-web/`
+and `previous-asset-manifest.json`. Rollback can atomically restore the prior
+`index.html` into `.state/stage7-browser/results-controls-preview/web/` and the
+prior asset manifest; old hashed files remain in that mount, so a container
+restart is unnecessary. Historical preview receipts were preserved.
+
+The full source suite already passed 17 frontend unit and seven browser cases
+in the preceding entry; this turn ran the served-preview smoke and isolated
+build checks. Backend, migrations, unrelated SSH/live and release suites were
+not rerun because this update changes only served frontend files. Installed
+8445, the remembered-login backend migration and Stage 08 remain separate.
+The updated 8449 preview is deliberately left running for review.
+
+## 18 October 2026 — Events toolbar, checkbox visibility and footer paging
+
+Authorization: user requested moving the results/page dropdown below the table,
+moving Show process beside Result layout with process checkboxes in either
+layout, and keeping Pane arrangement visible but locked in Merged. Refreshed
+the already-authorized 8449 review preview with the verified frontend. The
+existing source work and all installed 8444/8445 services were preserved.
+
+Implemented:
+
+- Rows per result page is always in the result footer, below the merged table
+  or process panes and alongside merged pagination. It retains immediate
+  repagination against the applied query and preserves unsubmitted controls.
+- The toolbar orders Result layout, Show process, Pane arrangement, Columns and
+  Full screen. Show process is a checkbox dropdown in both layouts, with an
+  indeterminate All processes control and names/hosts/immutable IDs. Its full
+  applied-query process option set remains available after hiding processes.
+- Merged selection queries only the enabled subset, pruning per-process filters
+  and resetting cursor/history. The original applied scope remains separate
+  from this effective query, so previously hidden or absent-page processes can
+  be restored. Counts and subsequent page/size requests describe that subset.
+  No selected processes shows an explicit empty state and disables paging,
+  without sending an empty process scope. A failed selection restores previous
+  checks and retained rows; loading disables competing changes.
+- Split checks hide/show mounted panes with no visibility query, preserving
+  each pane's page and scroll. A subset merged result can seed only compatible
+  included process panes; it cannot prove another process is empty. Existing
+  bounded workers/cancellation/snapshot checks remain. Pane arrangement stays
+  visible, disabled in Merged, with its prior value retained across layouts.
+- Both dropdown pickers support outside click, focus exit and Escape. The
+  process picker stays open through a loading checkbox change and restores its
+  checkbox focus without overriding a deliberate outside action. First Escape
+  closes the popup and retains full screen; the next exits full screen.
+- Process visibility remains local to each browser page, including duplicated
+  pages in one account/context. Successful Apply/lane changes replace the
+  applied scope and restore all checks; failures retain the current selection.
+  New labels/help are bundled in Polish.
+
+Changed source files: `frontend/src/components/HistoricalViewer.tsx`,
+`HistoricalProcessPanes.tsx`, new `ProcessVisibilityMenu.tsx`, `styles.css`,
+`i18n/investigation.pl.ts`; `frontend/e2e/events_table.spec.ts`;
+`frontend/README.md`, root `README.md`, `docs/06_UI_UX.md`,
+`docs/12_TRACEABILITY.md` and this status record. No backend, dependency or schema
+changed in this follow-up.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`, `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY scripts/frontend.py test` | PASS, repeated after the final focus fix: API types match and **17/17** Node cases, no skips. |
+| `PY scripts/frontend.py lint` | PASS, including final component/test edits. |
+| `PY scripts/frontend.py typecheck` | PASS; also included in the final build. |
+| `PY scripts/frontend.py build` | Final PASS: 217 modules, `index-DVfNnJMK.js` / `index-J_x-79Gp.css`. Existing >500 kB Vite advisory only. |
+| `PY scripts/frontend.py e2e events_table.spec.ts -g 'process layouts\|process checkboxes\|page size changed'` | PASS: **2/2**, 11.2 s. The pattern matched the two corrected cases; the ninth resize regression is covered by the final full run. |
+| `PY scripts/frontend.py e2e events_table.spec.ts` | Final PASS: **9/9**, 49.6 s, no skips; `verification/stage-7/event-controls-browser-final.json`. |
+| `PY -m py_compile .cache/build_event_controls_preview.py .cache/update_event_controls_preview.py`; `NODE --check .cache/verify_event_controls_preview.mjs` | PASS. |
+| `PY .cache/build_event_controls_preview.py` | PASS: isolated TypeScript/Vite preview build; only staged Login differs from current source, using the exact prior compatible login. Five assets; preview JS `index-CEkClDfy.js`, same CSS as source. Product sources and `frontend/dist` preserved. |
+| `PY .cache/update_event_controls_preview.py` | PASS with reviewed escalation: backup, new assets then atomic index swap in the existing mount; real pinned-certificate HTTPS readiness/index/JS/CSS hashes match. Every service/container/image/start/restart identity and Compose file unchanged; no restart/migration/seed. |
+| `NODE .cache/verify_event_controls_preview.mjs` | Final PASS with reviewed escalation: actual served assets, real UI login, retained 37 matches, footer/header geometry, merged subset counts/queries/full options, none/all, split page/scroll preservation, all arrangements, full-screen/Escape, same-context duplicate-window isolation and contained 640 px popup. No asset substitution, collection or configuration/preference writes. Logs out after checking. |
+| `PY .cache/update_event_controls_preview.py verify` | PASS: readiness, served hashes and all local service identities still match. Preview remains running. |
+| Product source/provenance comparison; `git -c core.safecrlf=false diff --check` | PASS. |
+
+Browser environment: `INSPECTOR_E2E_URL=https://localhost:8449`, protected
+`INSPECTOR_E2E_ACCOUNTS=../.secrets/stage7-browser/accounts.json`, final report
+name `event-controls-browser-final`. The source suite uses built asset
+substitution only in its own browser context and real local MariaDB/read-only
+synthetic SFTP. Non-origin requests are blocked. Tests restore the synthetic
+theme and log out. The separately served preview smoke uses no substitution
+and reopens the unchanged cached investigation at:
+https://localhost:8449/systems/stage7-fixture-a/investigations/1356d454-15fe-41e1-b2e8-25a276def55c
+
+Preserved failed/corrected checks:
+
+- `event-controls-browser-attempt-1.json`: **6 passed / 2 failed**. The new
+  outside-click test targeted a log message covered by the larger process popup;
+  it now clicks an unobscured timestamp cell and retains all dismissal/focus
+  assertions. The merged case also found a real focus bug: disabling a changed
+  checkbox during query loading closed the dropdown. The component now retains
+  the focus anchor through that temporary blur and restores it after loading.
+  The two-case attempt 2 passes; the final full run passes all nine.
+- Review found all panes off → page size changed → panes restored → Merged
+  could reuse an old limit because layout switching compared only process IDs.
+  It now compares the full effective query excluding cursor. The added ninth
+  browser regression requires a fresh exact limit-50 request and complete rows.
+- The first served-preview smoke incorrectly expected horizontal scrolling in
+  a full-width stacked table that fits at 1920 px. It now selects four columns
+  before testing horizontal scroll. The next functional smoke passed; visual
+  inspection then found the narrow screenshot captured above the events area.
+  The final capture scrolls the results to the top and asserts the summary and
+  popup are in the viewport before capture. The repeated served smoke passes.
+  These helper corrections did not change the deployed frontend.
+- No automatic-approval rejection occurred. Protected-account/browser and
+  local Docker identity checks used reviewed escalation.
+
+Visually inspected actual served dark merged partial-checkbox results with
+footer, four-column full-screen results with footer, and the contained 640×720
+process popup. Captures are in `verification/event-controls-preview/`:
+`served-merged-checkbox-subset.png`, `served-four-columns-fullscreen.png`,
+`served-narrow-process-menu.png`; inline four-column capture also retained.
+The source browser matrix covers both themes at 1280×720 / 1920×1080 / 640×720
+for all four arrangements and full screen, with existing context/column/UTC
+regressions retained.
+
+Preview receipts: `verification/event-controls-preview/updated.json` and
+`browser.json`. Isolated build provenance/manifest/staged source and prior web
+backup are under `.state/stage7-browser/event-controls-preview/`. As in the
+prior update, preview retains the existing two-field Login from Git HEAD because
+its backend predates `0015_remember_login`; all other staged source hashes match
+the current product. The generated build directory was moved with verified
+workspace paths out of `frontend/.cache` after building to avoid tool scans.
+Rollback can atomically restore `previous-web/index.html` into the existing
+`.state/stage7-browser/results-controls-preview/web/` mount and restore
+`previous-asset-manifest.json`; old hashed assets remain present. No restart is
+needed. Earlier preview receipts/backups remain intact.
+
+No blocker remains. The updated 8449 preview is left running for review; port
+8445 and the remembered-login backend/migration are unchanged. Backend,
+migration, unrelated live/SSH suites and full offline/native Ubuntu/Rocky
+qualification were not rerun for these frontend-only changes. Stage 08 remains
+the next separately authorized numbered gate.
+
+## 18 October 2026 ? events Filters window and grouped log pins; 8449 preview
+
+User-authorized events-view follow-up, including the explicit choice that multiple selected logs form **one pin with one shared description**. The existing preview-update authorization applies to HTTPS 8449 only. Stage 08 remains separately gated; installed 8445/8444 and unrelated remembered-login deployment are unchanged.
+
+Implemented behavior:
+
+- **Filters** in the events toolbar opens a separate modal with exact UTC `[from,to)` bounds, existing global/per-process literal include/exclude filters, individual removal, and an Add filter form. Any/all and case rules remain available. Apply validates and queries retained data; Cancel/X discards the dialog draft. Live filtering is unchanged.
+- Clicking a log row, Space or Enter toggles its marked state. Text selection/copy and the context eye preserve their behavior. Marks survive paging, process visibility and layout changes within that investigation, and remain local to each browser page. **Pin** opens a shared description form; successful atomic saving creates one investigation card containing all selected raw log entries and source snapshots. Failed saves preserve the selection and description. Cards support edit/delete and persist through reload, cache expiry and redacted offline bundle exchange.
+- Group creation/edit/deletion is owner-, project-, CSRF- and revision-checked in both historical and imported investigations. Up to 100 selected anchors are saved atomically, within the existing aggregate 32 MiB pin budget and a cancellation-aware 30-second deadline. Server-owned group membership lives in existing MariaDB analysis JSON; no table or migration was added. Existing bookmarks remain supported.
+- Process choices use `server name: process name`, with immutable IDs on hover. Imported process lists use the retained server-name snapshot. Removed the process-pane explanatory paragraph. **Rows** / **Viewport** sit at the right of the results footer. Existing Show process checkboxes, independent split pagination and disabled merged arrangement are retained.
+
+Changed source groups: new `HistoricalFiltersDialog.tsx`, `InvestigationPinDialog.tsx`, `investigationPins.ts`; updated historical viewer/table/panes/process menu, investigation cards, CSS and bundled Polish translations; new grouped-pin API and offline bundle handling in `investigations.py` / `investigation_bundles.py`; bundle JSON schema, generated OpenAPI and TypeScript API; new `test_grouped_pins.py`, bundle unit regressions and `event_pins.spec.ts`; updated events-table browser coverage and existing historical/investigation/language/SSH/UI callers plus shared modal helpers. Updated root/frontend/backend READMEs and domain/API/UI/traceability/MariaDB docs. Pre-existing topology/authentication/SSH changes were preserved.
+
+Commands actually run (root, using `backend/.venv/Scripts/python.exe` unless stated):
+
+| Command | Result |
+|---|---|
+| `INSPECTOR_CONFIG_FILE=.state/stage7-browser/application.yaml python -m inspector.cli openapi --output backend/openapi.json`; `python scripts/frontend.py api:generate` | PASS: actual API schema and generated client include grouped pins. CLI creates OpenAPI without starting a database lifespan. |
+| `python -m pytest backend/tests/unit -q` | **837 passed, 4 skipped** for Windows symlink/POSIX permission and pinned-file rename contracts; existing WebSocket deprecation warnings only. |
+| `python -m ruff check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts`; corresponding `ruff format --check`; `.venv/Scripts/python.exe -m mypy src` from backend | PASS; 174 format-checked files and 37 mypy source files. |
+| `python .cache/verify_grouped_pins.py` | **22/22** real Linux Python 3.13/MariaDB integration cases, no skips: investigation/bookmark compatibility, grouped ownership/system/CSRF/revision rules, atomic rollback, retention, redaction and offline import/re-export. Fresh disposable synthetic schema only. Logs `verification/grouped-pins/pins_b940b1d9*`. |
+| `python scripts/frontend.py test` | **17/17** plus generated API consistency. |
+| `python scripts/frontend.py typecheck`; `lint`; `build` | PASS. Build 219 modules; existing >500 kB chunk-size advisory remains. Repeated typecheck/lint after the final imported-label correction also PASS. |
+| `python tools/validate_schemas.py`; `python tools/validate_package.py`; `git diff --check` | PASS: 20 schemas, 102 positive/36 negative instances, 56 requirement/120 acceptance mappings. Package validation is not runtime qualification. |
+| `python scripts/frontend.py e2e events_table.spec.ts` with source assets / `pins-filters-events-attempt-1` | **10/10**, real synthetic 8449 MariaDB/SFTP, no skipped cases. |
+| `python scripts/frontend.py e2e events_table.spec.ts event_pins.spec.ts` with `INSPECTOR_E2E_SERVED_ASSETS=1`, report `pins-filters-served-final` | **13/13**, no skips/flaky cases, 2.4 minutes. Uses actual HTTPS assets, not substitutions. Row keyboard/copy/context/scroll, grouped save/edit/reload/delete/atomic failure, same-account duplicated pages, modal filters and both-theme 1280/1920/640 layouts/full screen. Final imported-label follow-up is additionally checked below. |
+| `python .cache/pins_preview_backend.py --freeze --unit` | PASS: **57** units against the exact frozen preview package. Git HEAD 0014 baseline plus only the two pin modules, excluding three unrelated remembered-login hunks. Actual frozen OpenAPI retains old Login and adds exactly six pin routes. |
+| `python .cache/build_pins_preview.py --resume-staged`; `python .cache/build_pins_preview_final.py`; `python .cache/build_pins_preview_cleanup.py` | PASS: isolated frontend TSC/Vite builds. Only staged Login uses compatible HEAD source. Final CSS `index-A4MUdSNy.css`, JS `index-CYJqYCh2.js`; product sources untouched. |
+| `python .cache/update_pins_preview.py inspect`; `update` | PASS: local synthetic scope verified, no active collection/live writer; full protected SQL and regular-file state/cache backups, ownership-preserving restoration into dedicated volumes, exact file/table checks, only 8449 service recreated. Schema stays `0014_languages`; 4 state and 1,107 cache entries preserved. |
+| `python .cache/update_pins_preview_web.py`; `python .cache/update_pins_preview_web_final.py`; `python .cache/update_pins_preview_web_cleanup.py` | PASS: publish content-hashed assets before atomic index replacement; actual TLS/HTTPS bytes match manifests, all running container identities unchanged during frontend publication. Old assets retained. |
+
+Browser environment: `INSPECTOR_E2E_URL=https://localhost:8449`, protected synthetic `INSPECTOR_E2E_ACCOUNTS=../.secrets/stage7-browser/accounts.json`, final two-file run `INSPECTOR_E2E_SERVED_ASSETS=1`. Non-origin requests are blocked. Credentials are excluded from output, screenshots, traces and video. Production targets and accounts were not used.
+
+Preserved failed/corrected checks:
+
+- First OpenAPI command omitted deployment configuration and failed before schema generation; rerun with the explicit local configuration succeeded, then API types were regenerated from the correct schema.
+- The initial staged-build receipt assumed incorrect notice filenames after a successful compilation. It was corrected to the actual bundled Python/Unicode notices and the immutable staged build was revalidated.
+- Initial full ESLint scanned the generated minified staging bundle under `frontend/.cache` and failed on generated code. The verified build was moved outside the frontend tree, staging helpers now retain builds there automatically, and full lint passes without changing rules.
+- Actual-served attempt 1: **10 passed / 3 failed**. The selection test tried horizontal scroll where the table fit; it now explicitly uses an 800 px viewport and asserts a real overflow precondition. Two later cases hit the unchanged login rate limit; tests now wait 60 seconds for at most one bounded retry. The final 13-case run passes all assertions.
+- No automatic approval rejection occurred. Local Docker operations and protected synthetic account reads used reviewed escalation.
+
+Preview recovery/provenance: `.state/stage7-browser/pins-preview/` contains the frozen 0014 baseline, pin-only patch, source manifests, OpenAPI and 57-unit log, first staged assets and previous web. Final assets/build receipt are in `.state/stage7-browser/pins-preview-cleanup/`; the intermediate imported-label build remains in `pins-preview-final/`; backend and publication receipts are under `verification/pins-preview/`. Protected full SQL/state/cache snapshots and original/fallback Compose files are in `.secrets/stage7-browser/pins-preview-backup/`. The fallback Compose uses the previous 0014 backend and the preserved state/cache volumes, avoiding loss of the former tmpfs data. No serving application receives migration/root credentials. Frontend rollback restores the backed-up index/manifest atomically; old content hashes remain available.
+
+Final actual-served preservation/visual check: repository Node ran `.cache/verify_pins_preview.mjs`, **PASS**. It uses the final served asset manifest (including the imported-server label correction), actual compatible UI login, no source substitutions, and the original retained investigation with **37 matches across five processes**. It verifies host/process labels and hover IDs, bottom-right Rows/Viewport, current Filters bounds/terms, row selection and a shared Pin description dialog. Both themes at 1280?720 and 1920?1080 plus full-screen results produce 12 screenshots. Filter/Pin Cancel leaves workspace and bookmarks exactly unchanged; no collection, pin write, extra query, external request or browser error occurred. Original preferences were restored and UI logout completed. `verification/pins-preview/browser.json` and adjacent PNGs preserve the evidence. Visually inspected the light 1280 Filters window, dark 1920 shared-description Pin window and light 1920 full-screen results; controls and selected rows are legible, Rows/Viewport is at the right, and the filter window scrolls to its matching/apply controls at 720 px height. Initial sandbox account reads failed before login; reviewed escalation permitted the authorized protected synthetic-account read without changing permissions or printing credentials.
+
+Legacy investigation regression: `python scripts/frontend.py e2e investigation.spec.ts` with the same 8449 synthetic accounts, `INSPECTOR_E2E_SERVED_ASSETS=1`, `INSPECTOR_E2E_LOCAL_ASSETS=0`, report `pins-filters-investigations-final`: **4/4 PASS**, no skips/flakiness, 37.2 seconds. Both roles verify exact five-process traces, legacy pinned context, saved filters/layout, scoped offline bundle import, imported `server: process` labels and hover IDs, annotation re-export and context after source expiry. Dependency selection, unsafe bundle rejection and delayed bookmark response isolation also pass. First attempt **2 passed / 2 failed** was a relative locator error in the new label assertion; using the checkbox's parent label preserves all exact caption/ID/scope assertions. Attempt 1 is retained separately. All test sessions logged out. Inspected imported-offline and expired-source retained-context screenshots; the full existing saved-workspace/provenance/redaction captures were refreshed.
+
+The 13-case suite ran before the final imported-label and pane-summary text cleanups. Imported labels are covered by the subsequent four-case suite and final served smoke; the last smoke additionally checks five split panes and absence of both the removed explanatory paragraph and remaining pane-count summary. Final typecheck/lint pass after these changes. No relevant functional check remains blocked. Older fixture-specific historical/SSH/live suites and complete Ubuntu/Rocky/offline-release qualification were not repeated; this work does not complete Stage 08. The updated 8449 preview is left running for review with existing data preserved.
+
+Final cleanup smoke rerun: **PASS, 6.61 seconds**, exact served `index-CYJqYCh2.js` / `index-A4MUdSNy.css`; five split panes with no pane-count summary or explanatory paragraph. Thirteen captures include `served-split-clean-summary.png` and the refreshed 12 theme/resolution/dialog/full-screen views. The earlier smoke report remains `browser-before-summary-cleanup.json`; latest `browser.json` passes preservation and logout checks.
+
+## 18 October 2026 — 8449 updated with remembered login and frame actions
+
+Authorization: **“Update the 8449 environment.”** The retained review preview at
+**https://localhost:8449** now serves the current matching frontend/backend,
+including **Remember me**, subsystem/server **+** actions and first-connection-
+root log-path suggestions. It retains the latest Filters, described grouped
+pins, process selection, independent pagination and pane controls. The preview
+schema is **`0015_remember_login`**. Refresh existing pages to load the new
+login and controls; the checked login option gives a fixed 30-day session.
+The installed 8445 application remains at `0014_languages` and is unchanged.
+
+The new immutable package is
+`.state/stage7-browser/topology-login-preview/backend`, containing the current
+backend source, migrations and frontend, with source/asset/OpenAPI manifests
+alongside. New JS is **`index-C04ZvtSv.js`**, CSS **`index-A4MUdSNy.css`**.
+Previous content-hashed assets and notices are retained. The frozen OpenAPI
+matches the current generated contract exactly: opt-in strict Remember-me
+boolean plus all six grouped-pin routes and retained pin-group responses.
+
+Only `stage7-browser` was stopped/recreated, using the already pinned local
+image and `--no-deps --pull never`. Its existing dedicated persistent state and
+cache volumes were reused. There was no fixture preparation, seed, reset,
+dependency download or target connection. With serving stopped, a protected
+full SQL dump, state/cache archives and ownership/mode manifests were retained
+in `.secrets/stage7-browser/topology-login-preview/`, along with previous
+Compose, frontend, configuration and rollback instructions. The state archive
+includes the unchanged private vault; the prior frozen backend/web remain
+untouched in their existing locations.
+
+Migration used only the separate integration migrator credentials and the
+exact frozen `0014_languages` → `0015_remember_login` migration. All **49 table
+counts**, **47 unchanged table checksums** and exact old login-session columns
+matched immediately afterward; existing sessions received false remember
+flags. After startup and browser checks, **43 stable tables**, all **4 state
+entries / 1,811 cache entries**, content hashes and UID/GID/modes still match.
+Startup intentionally detaches old active page workspaces. Browser-generated
+sessions, audit records, workspaces and query cursors are accounted for
+separately. All other container/image/start/restart identities match preflight,
+including the retained 8449 SFTP fixture and installed 8445/8444 applications.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY scripts/frontend.py build` | PASS: TypeScript and Vite, 219 modules, actual current Login without the old compatibility overlay. Existing >500 kB chunk advisory only. |
+| `PY -m py_compile .cache/build_topology_login_preview.py .cache/update_topology_login_preview.py`; `NODE --check .cache/verify_topology_login_8449.mjs` | PASS. Helpers independently reviewed before runtime changes. |
+| `PY .cache/build_topology_login_preview.py` | PASS: 74 frozen package files, 14 web-manifest files, exact input/source equality, current OpenAPI equality, retained older assets and no product-source changes. |
+| `PY -m pytest backend/tests/unit/test_auth_validation.py backend/tests/unit/test_source_access.py backend/tests/unit/test_investigation_bundles.py -q -p no:cacheprovider`, with frozen `PYTHONPATH` | **110/110 PASS**, no skips, 4.28 s, against the exact candidate source. |
+| `PY .cache/update_pins_preview.py inspect` | PASS: exact synthetic 8449 identity, old schema `0014_languages`, no active collection/live work; read-only preflight. |
+| `PY .cache/update_topology_login_preview.py update` | PASS: stopped-service backup, scoped migration, matching frontend/backend installation, pinned-certificate TLS/readiness, runtime security and data/service preservation. |
+| `NODE .cache/verify_topology_login_8449.mjs` | PASS: actual served frontend, real synthetic local accounts, no asset substitution or external requests. New checked login issues secure HttpOnly Strict 30-day session/CSRF cookies and authenticates a fresh cookie-only browser context. Existing ordinary login also works. |
+| `PY .cache/update_topology_login_preview.py cleanup` | PASS: only the two smoke-created authentication sessions removed by recorded hash and user ID; original session-column digest unchanged. No account-wide logout or revocation. |
+| `PY .cache/update_topology_login_preview.py verify` | PASS after browser cleanup. Repeated with receipt-count clarification as `verified-final.json`: 12 actual public HTTPS files verified; two additional bundled license files are covered by the 14-file immutable manifest. |
+| UI inspection | Viewed actual dark 1280 login with Remember me, light 1280 Add process form, dark 1920 topology with both frame **+** controls, and retained Filters/Pin captures. Browser matrix covers both themes at 1280×720 / 1920×1080. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+The actual-served browser smoke reopens the unchanged retained investigation:
+https://localhost:8449/systems/stage7-fixture-a/investigations/1356d454-15fe-41e1-b2e8-25a276def55c
+
+It verifies **37 retained matches across five processes**, current Filters and
+two selected rows in the shared-description Pin dialog, draft cancellation
+without saving/querying again, and preserved preferences/analysis/bookmarks.
+Same-context duplicated/switching pages have distinct server workspaces and
+leave the original page's two selected rows intact. Inspector frame additions
+are absent; Administrator frame buttons open the correct parent forms and
+propose the selected server connection's first root. Keyboard cancellation
+restores focus without a topology write. Four smoke-created workspaces were
+explicitly detached; test session cleanup is targeted and preserves all prior
+sessions. No collection, pin, shared-configuration or preference write occurred.
+
+Evidence is in `verification/topology-login-preview/`: `backup.json`,
+`migration.json`, `installed.json`, `browser.json`, `session-cleanup.json`,
+`verified-final.json` and 24 screenshots. The earlier `installed.json` and
+`verified.json` report 14 manifest files in the HTTP-count field; the final
+receipt separates the 12 actually fetched HTTP files from the two bundled
+notices. This is a receipt-count correction only; every public file was checked
+in each run. Source and runtime content did not change during that correction.
+Docker/protected-account operations used reviewed escalation due to sandbox
+access restrictions; no credential values were printed and no automatic
+approval rejection occurred.
+
+Recovery is concrete at
+`.secrets/stage7-browser/topology-login-preview/ROLLBACK.txt`: stop only 8449,
+explicitly downgrade to `0014_languages` with the frozen migration source and
+separate migrator, restore previous Compose and restart that service. Downgrade
+revokes remembered sessions. Do not run the old backend against schema 0015.
+Full SQL restore, if needed, requires explicit scoped recovery and revocation
+of restored web sessions before exposure. Automatic rollback was prepared and
+reviewed, **not exercised**; this update required no recovery.
+
+No blocker remains; **8449 is left running with the new login**. This operation
+changed deployment artifacts and documentation, not product implementation or
+dependencies. Existing full source/integration/migration evidence remains in
+the earlier entries; this turn ran candidate and actual-deployment checks.
+Full unrelated SSH/live suites and native Ubuntu/Rocky/offline-release
+qualification were not repeated for this preview rollout. Stage 08 and any
+8445 deployment remain separately authorized work.
+
+## 18 October 2026 - authorized events-view installation on 8445
+
+The user explicitly requested **Deploy** after reviewing the events Filters window, process panes and grouped selected-log pins. Scope is the reviewed events-view package on the retained local installation at https://localhost:8445. The independently updated 8449 topology/login preview is a separate operation; this deployment retains installed schema `0014_languages` and its matching login contract.
+
+Deployment package and preservation work:
+
+- `.cache/deploy_pins.py build` staged `.state/pins-install/backend` from the installed language package, changing only `investigations.py` and `investigation_bundles.py` to the exact frozen preview versions. All other source modules, migration files, dependency lock and runtime scripts remain the installed baseline. The staged OpenAPI equals the already tested frozen pin API, adds exactly six pin routes and retains the old login contract. No migration, image pull or dependency change is performed.
+- The frontend is the exact approved cleanup build: `index-CYJqYCh2.js`, `index-A4MUdSNy.css`, matching the successful preview smoke and browser suites. Old hashed frontend assets are retained for already-open pages.
+- Preflight verified the existing pinned image, read-only root/source, UID/GID 10001, dropped capabilities, no-new-privileges, single ASGI worker, loopback 8445 binding, runtime SELECT/INSERT/UPDATE/DELETE-only database grants, original configuration/vault, and **zero active historical/live captures**. Installed data has 54 historical jobs and three inactive live-session records.
+- Protected consistent backups are under `.secrets/pins-install/`: a **194,663,366-byte compressed SQL backup**, all **899 raw-cache files / 230,872,292 bytes**, ownership/mode manifests, the `/var/lib/system-inspector` vault-state archive, original Compose/configuration and separate vault-key copy. The existing persistent cache bind is retained. Vault runtime state was copied with exact content/owner/mode validation into `system-inspector-pins-install-state`; temporary `/tmp` request staging remains temporary. No SQL restore is performed.
+- Forty-nine tables are snapshotted; all **44 stable table counts and checksums** must match, including users, preferences, settings, topology, capture metadata/events, saved analyses and bookmarks. Auth/audit/page workspace/query-cursor/download-grant tables are explicitly volatile. File content and ownership/mode checks cover the entire retained cache and vault state.
+
+Preserved corrected checks and recovery:
+
+- First cutover attempt completed its SQL/cache/state backups and consistency checks, then the helper hit a `TypeError` while recording the backup receipt: `passed` was supplied twice. This occurred before the new package was installed. The automatic rollback successfully restarted the previous backend/frontend using the preserved state volume; **no database restore or data change** occurred. Its receipt remains `deployment-automatic-rollback.json`.
+- Fixed the receipt writer to merge an existing `passed` field. A focused local helper check verifies receipt creation and refusal to overwrite prior evidence. The resumed phase revalidates all stable data, cache/state and all backup checksums before reusing the completed backup; previous receipts remain intact.
+- A retry then stopped before cutover because the independent topology/login preview on 8449 was recreated concurrently. Read-only diagnosis confirmed unchanged 8445 database/cache/state/configuration/operational counts and old assets. The changed container's labels identify **stage7-browser.compose.local.yaml**, not the 8445 override, and its source is the separate topology/login preview. Recorded only that observed preview identity in `deployment-concurrent-preview-update.json`; all other service identities remain strict. This deployment never restarts or modifies the separate preview. Original preflight evidence is preserved.
+- The guarded retry keeps stop inside its recovery block. Old-backend rollback is allowed only before new personal analysis writes, after stable checksum comparison. After any new `pin_groups` state exists, frontend-only rollback retains the compatible new backend so group metadata remains readable. The explicit recovery notes warn against starting the old strict workspace model over new pin state; full database/cache restore is a separate authorized recovery and must revoke restored sessions before exposure.
+
+Commands and phase evidence so far: `python .cache/deploy_pins.py build`, `prepare`, `deploy` (receipt failure with successful automatic rollback), and `retry-after-backup` (strict concurrent-preview guard, then authorized retry). Reviewed local Docker/backup operations use escalation; no automatic-approval rejection occurred. Helpers inspect hashes/counts/metadata without printing credentials or raw data. Exact build, preflight, backups, independent preview observation and retry checks are in `verification/pins-install/deployment-*.json`.
+
+Cutover result: **PASS**, `verification/pins-install/deployment-installed.json`. The installed runtime uses the reviewed pin backend/frontend, remains on `0014_languages`, passes verified TLS/readiness and rejects unauthenticated WebSocket upgrade with HTTP 403. All 44 stable table counts/checksums, accounts/preferences/settings/topology/analyses, 899 cached files with their metadata, configuration and vault match the backup. Other service identities match the separately recorded retry baseline; the 8444 application is unchanged throughout. The external 8449 preview update is recorded explicitly rather than attributed to this deployment.
+
+Actual-installed browser verification: pinned repository Node ran `.cache/verify_pins_install.mjs` with reviewed access to the existing protected Stage 03 synthetic accounts. **PASS on the first installed-browser attempt, 14.063 seconds**. Receipt: `verification/pins-install/deployment-browser-20261018T153234850Z.json`.
+
+- Administrator in English and Inspector in Polish, both light/dark at 1280x720 and 1920x1080; exact real HTTPS/browser asset hashes with no source substitution. Each role reopened its own existing synthetic capture: 20 cached matches across five processes.
+- Verified Filters bounds/form, individually removable duplicate literal filters and Cancel; process labels/hover IDs; merged/split layout with stacked/2/3/4 columns, absent redundant pane text, Rows/Viewport at the right; click/Space/Enter selection and context eye; one shared Pin description dialog cancelled without saving; duplicated pages in the same context have independent selections and workspace IDs.
+- Two empty-selection POST /pins probes return 422, confirming the installed group API without creating analysis or bookmarks. Successful grouped persistence/atomicity was already verified in the predeployment real MariaDB/browser suites against these exact two backend modules.
+- Four fresh smoke workspaces created and detached, 12 retained queries and two retained contexts. No collection/SSH/target requests, WebSocket attempts, preference/configuration/analysis writes, saved pin, global logout, external requests or page errors. Existing catalogue/topology/live/history/workspace/bookmark/preference and raw-query digests are unchanged before/after. The browser contexts are closed.
+- Twenty-four explicit authenticated captures are in `verification/pins-install/deployment-screenshots/20261018T153234850Z/`. Visually inspected the English light Filters window, Polish light shared Pin description and Polish dark full-screen results/footer; selected logs, labels, controls and right-aligned footer render correctly. Password fields were cleared and no traces/video were recorded.
+
+Final post-browser audit: `python .cache/deploy_pins.py verify` **PASS**, `verification/pins-install/deployment-verified.json`. It rechecks all stable data, the full cache/state, runtime safety, TLS/assets and other service identities, and validates the actual two-role smoke receipt plus helper/approved-manifest hashes. The installed application is left running for review. `git -c core.safecrlf=false diff --check` passes. README documents the installed events slice separately from the newer 8449 remembered-login preview. No Stage 08 release or unrelated implementation/infrastructure work is claimed.
+
+## 18 October 2026 — Copy a saved connection into a new profile
+
+User-requested scope: add **Copy** to the connection view and open creation with
+the current saved profile details. This is a source/UI follow-up to Stage 07;
+no deployment or Stage 08 work is authorized by this request.
+
+Changed files and behavior:
+
+- `frontend/src/components/SystemWorkspace.tsx`: Administrator connection-list
+  Copy action and page-local source snapshot for the existing editor.
+- `frontend/src/components/TopologyEditor.tsx`: Copy in Edit connection opens
+  Add connection with the saved name, host, port, username, credential reference,
+  jump route and log roots. The generated stable ID is new and editable; saved
+  profile values remain distinct from an existing edited item. Normal save uses
+  the current system's existing revision-checked topology API. Opening/cancelling
+  changes nothing. Credential references retain their meaning; no password is
+  read or copied into the browser, and trust/approval records are not duplicated.
+- `frontend/src/i18n/topology.pl.ts`: bundled Polish Copy/accessibility labels
+  and unique-name guidance. Existing per-system name uniqueness is preserved;
+  the name is initially identical, with a prompt to choose a unique one to save.
+- `frontend/e2e/connection_copy.spec.ts`: two real local MariaDB/browser cases
+  cover Administrator copy/cancel/save and Inspector restrictions. Coverage
+  includes direct and jump profiles, empty/multiple roots, duplicate stable-ID
+  errors, unchanged source/server assignments and another system, absent new
+  host-key approval, same-context independent workspaces/drafts, and Polish Copy.
+  Test-created systems are archived and original preferences restored at cleanup.
+- `frontend/README.md`, `docs/06_UI_UX.md`, `docs/12_TRACEABILITY.md` and this
+  status record document behavior and R13/R34/R39/R49 evidence. Existing unrelated
+  working-tree changes are preserved.
+
+Commands actually run from the repository root:
+
+```powershell
+backend/.venv/Scripts/python.exe scripts/frontend.py build
+backend/.venv/Scripts/python.exe scripts/frontend.py lint
+backend/.venv/Scripts/python.exe scripts/frontend.py test
+backend/.venv/Scripts/python.exe scripts/frontend.py typecheck
+$env:INSPECTOR_E2E_URL='https://localhost:8449'
+$env:INSPECTOR_E2E_ACCOUNTS=Join-Path (Get-Location) '.secrets/stage7-browser/accounts.json'
+$env:INSPECTOR_E2E_REPORT_STAGE='stage-7'
+$env:INSPECTOR_E2E_REPORT_NAME='browser-connection-copy'
+backend/.venv/Scripts/python.exe scripts/frontend.py e2e connection_copy.spec.ts
+git -c core.safecrlf=false diff --check
+```
+
+Results: build/typecheck/lint **PASS**; generated API consistency and **17/17**
+frontend unit cases **PASS**. The final browser run passes **2/2 in 7.1 seconds**,
+with zero skips, unexpected cases, flaky cases or page/external-request errors.
+Report: `verification/stage-7/browser-connection-copy.json`. Build was repeated
+after adding the unique-name guidance, and includes final test TypeScript checks.
+The existing Vite large-chunk advisory remains non-fatal.
+
+Earlier attempts are preserved, rather than counted as successful:
+
+- `browser-connection-copy-sandbox-denied.json`: both cases could not read the
+  protected synthetic-account file (`EPERM`). The reviewed escalated test command
+  subsequently obtained that fixture access without printing credentials; no
+  automatic-approval rejection occurred.
+- `browser-connection-copy-selector-attempt.json` and
+  `browser-connection-copy-textarea-attempt.json`: Inspector passed; Administrator
+  stopped at exact `getByLabel` selectors whose DOM labels include select/textarea
+  content. Switched those two assertions to exact accessible role/name locators;
+  the expected values and behavior assertions remain unchanged.
+- `browser-connection-copy-name-attempt.json`: Inspector passed; the save attempt
+  correctly hit existing backend duplicate-name validation. Added visible guidance
+  to the copied draft and changed the save test to supply a distinct name. No
+  domain or backend validation rule was relaxed.
+
+Four authenticated screenshots at light/dark × 1280×720/1920×1080 are under
+`verification/connection-copy/screenshots/`. Visually inspected the light 1280
+and dark 1920 captures: prefilled fields, target system, new ID and name guidance
+render correctly; the smaller modal scrolls to its remaining fields/actions.
+The browser uses `serveBuiltAssets` to substitute this build only within its test
+context on the existing isolated synthetic 8449 fixture. No running application's
+assets/backend were installed or restarted. No SSH/collection/live-start request,
+production host, infrastructure change or push was involved.
+
+Blockers: none for this source change. Deployment remains a separately authorized
+action. Next stage remains Stage 08 offline-release qualification; this follow-up
+does not claim that stage or broader release gates are complete.
+
+## 18 October 2026 — Connection Copy deployed to 8449
+
+The explicit **Deploy to 8449** instruction authorized installing the reviewed
+connection-copy frontend on the retained synthetic preview only. The deployment
+is complete and **https://localhost:8449 is left running**. Refresh existing
+pages to load the new controls. Ports 8444/8445 and Stage 08 are unchanged.
+
+Deployment and preservation:
+
+- `.cache/deploy_connection_copy_preview.py build` staged
+  `.state/stage7-browser/connection-copy-preview/web` from the immutable existing
+  web package and exact tested `frontend/dist` output. The current JS is
+  `index-0Fov6-Er.js`, CSS `index-A4MUdSNy.css`; all prior hashed assets remain
+  available. The manifest contains 15 files: 13 public HTTPS files and two
+  bundled license notices. The successful source browser receipt and current
+  source/backend hashes are frozen in the build record.
+- Read-only preflight validated the exact synthetic 8449 service/database,
+  schema `0015_remember_login`, loopback port, current frozen backend, runtime
+  security and zero active historical/live captures. Deployment saved the exact
+  previous Compose, table snapshot and state/cache manifests under protected
+  `.secrets/stage7-browser/connection-copy-preview/`.
+- Only the 8449 service gained a read-only nested web overlay. Only
+  `stage7-browser` was stopped/recreated, using `--no-deps --pull never`; its
+  backend, image, accounts/configuration, schema and persistent volumes remain
+  unchanged. All other container/image/start/restart identities match preflight,
+  including 8444/8445 and the existing SFTP fixture.
+- Installation and final verification preserve **43 stable table counts and
+  checksums**, the explicit schema revision and complete state/cache content,
+  ownership and mode manifests. Configuration/vault/backend hashes and runtime
+  restrictions match. The final session cleanup also verifies the original
+  web-session column digest unchanged. Verified TLS/readiness and all **13 public
+  HTTPS asset hashes** pass.
+
+Commands actually run (`PY` is `backend/.venv/Scripts/python.exe`; `NODE` is
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command | Result |
+|---|---|
+| `PY -m py_compile .cache/deploy_connection_copy_preview.py` | PASS. |
+| `NODE --check .cache/verify_connection_copy_8449.mjs` | PASS. |
+| `PY .cache/deploy_connection_copy_preview.py build` | PASS: exact existing tested build staged, no Docker/runtime change. |
+| `PY .cache/deploy_connection_copy_preview.py inspect` | PASS: read-only scoped preflight, 49 tables. |
+| `PY .cache/deploy_connection_copy_preview.py deploy` | PASS: frontend-only install, preservation and served-asset verification. |
+| `NODE .cache/verify_connection_copy_8449.mjs` | Final PASS: actual served assets, Copy from list/edit, full saved fields/fresh editable IDs, cancel, independent same-context workspaces/drafts and Inspector restrictions. |
+| `PY .cache/deploy_connection_copy_preview.py cleanup` | PASS after each smoke attempt: only its recorded authentication sessions removed, original sessions preserved; no global logout. |
+| `PY .cache/deploy_connection_copy_preview.py verify` | PASS after final browser cleanup: stable tables, state/cache, backend/config/schema, other services, TLS and served assets. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Actual-served browser evidence is `verification/connection-copy-preview/browser.json`.
+The final run uses two synthetic accounts, creates three distinct page workspaces,
+explicitly detaches those three through acknowledged owner/CSRF-checked HTTP, and
+also retires the preceding attempt's three recorded workspaces. Both test-created
+authentication sessions are then removed by exact hash/user ID. All copied drafts
+and unsaved edits are cancelled; there are no configuration, preference, SSH,
+collection or live-start writes, external requests, page errors or global logout.
+Theme changes are DOM-only for visual checks. Ten actual-served captures cover
+list/edit Copy and Add connection in light/dark, including 1280×720 and 1920×1080.
+Visually inspected the light connection list, dark editor and dark 1280 copied
+form. Source build/lint/typecheck/17-unit/2-browser evidence from the preceding
+entry applies to the identical artifact; those unchanged source suites were not
+unnecessarily repeated during deployment.
+
+Retained smoke harness corrections:
+
+- `browser-path-attempt.json`: first smoke checked `/index.html`, which is not
+  a published document route. Corrected the test to fetch `/`; deployed assets
+  already passed the independent TLS checker. The one smoke session was removed;
+  receipt `session-cleanup-path-attempt.json`.
+- `browser-allowlist-attempt.json`: Copy/role/independent-draft checks and ten
+  screenshots passed, but the strict read-only browser allowlist blocked the
+  hidden HistoricalViewer's two existing list GETs on each of three pages.
+  Added only `/investigations` and `/bundle-investigations` GET paths, then
+  reran successfully. Its two sessions were removed and its three recorded
+  workspaces were explicitly retired in the successful next run. Receipt
+  `session-cleanup-allowlist-attempt.json` is preserved. No application code or
+  security policy changed to accommodate these harness fixes.
+
+Deployment helpers were independently reviewed before cutover. Docker/protected
+fixture operations used reviewed escalation; no credential values were printed
+and no automatic-approval rejection occurred. Other receipts are `build.json`,
+`preflight.json`, `installed.json`, `session-cleanup.json` and `verified.json`
+under `verification/connection-copy-preview/`.
+
+Recovery is concrete in
+`.secrets/stage7-browser/connection-copy-preview/ROLLBACK.txt`: run the guarded
+helper's `rollback` command to restore the saved Compose and recreate only 8449
+against the same backend/schema/data. The previous frozen package is untouched;
+no schema downgrade or SQL restore is needed. Automatic rollback was prepared
+and reviewed, not exercised. Root/frontend README and traceability now describe
+the actual deployment. No blocker remains; Stage 08 is still the next separate
+release gate.
+
+## 18 October 2026 — Pin editing and independent collection/display ranges
+
+Implemented the requested source follow-up; no retained application was deployed,
+restarted or migrated. Prior dirty changes were preserved. No new database
+migration or dependency is needed for this follow-up.
+
+- Pins are compact description/View rows. View shows one terminal block per
+  process and editable description with Save/Cancel/Modify and Delete pin.
+  Description-only operations preserve unrelated table marks. Pinned text and
+  provenance survive source expiry.
+- Modify restores anchors into the event table. Pin then asks whether to update
+  or create a new pin. Atomic revision-checked replacement preserves group ID
+  and creation time; failed lookups, limits, scope or revision checks preserve
+  the existing group. Historical and offline investigations support both paths.
+- Keep one stable investigation tools component across collection loads/changes,
+  clearing stale metadata and resetting bundle-transfer state per investigation.
+  Completion refreshes workspace availability; available partial captures may
+  Modify. Browser assertions verify one tools panel after operations/reloads.
+- Visible collection UTC bounds and pending process selection are independent
+  of display UTC/literal filters. Filter scope uses the captured process list,
+  including empty sources. Filtering neither starts collection nor invalidates
+  a next-collection plan. Reopen restores original collection bounds separately
+  from saved display state.
+- Timestamped queries intersect exact integer UTC `[from,to)` acquisition and
+  display bounds. Original bytes, out-of-range source context and unknown-time
+  diagnostics remain retained. New bundle 1.0 exports preserve optional paired
+  `origin.collection_from`/`collection_to` through import/list/query/correlation/
+  reexport. Older bundles retain their existing replay semantics.
+
+Changed files for this follow-up: HistoricalViewer, HistoricalFiltersDialog,
+InvestigationTools, InvestigationPinDialog, new PinLogPreview, investigationPins,
+styles and Polish dictionaries; new pin helper tests and collection_ranges
+browser spec, event_pins spec, shared browser helpers and historical/events/
+investigation/SSH/language/UI-acceptance setup callers; backend history,
+investigations and investigation_bundles modules, history/bundle/grouped-pin
+integration and bundle unit tests; regenerated OpenAPI, frontend API types and
+bundle schema; README/frontend README and domain/API/UI/traceability docs.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`; repository root
+unless specified, `PYTHONPATH=backend/src` for backend checks):
+
+| Command | Result |
+|---|---|
+| `PY -m pytest backend/tests/unit -q -rs -p no:cacheprovider` | PASS: 838, four Windows skips below. |
+| `PY .cache/verify_grouped_pins.py` | PASS: first focused MariaDB run, 24/24. |
+| `PY .cache/verify_pin_workflow.py` | PASS: final fresh-schema Linux/MariaDB regression, 39/39, zero skips, 105.41 s. |
+| `PY -m mypy src` (cwd backend, same venv) | PASS: 37 source files. |
+| `PY -m ruff check --config backend/pyproject.toml` + the seven changed backend source/test files | PASS. |
+| `PY -m ruff format --check --config backend/pyproject.toml` + the same seven paths | PASS. |
+| `PY -m inspector.cli openapi --output backend/openapi.json` with `INSPECTOR_CONFIG_FILE=examples/deployment-policy.example.yaml` | PASS, no lifespan/remote work. |
+| `PY scripts/frontend.py api:generate` and `api:check` | PASS: types match. |
+| `PY scripts/frontend.py lint`, `typecheck`, `test`, `build` | PASS: 20 Node tests and bundled build; existing Vite chunk-size advisory. |
+| `PY tools/validate_schemas.py` | PASS: 20 schemas, 102 positive/36 negative validations. |
+| `PY tools/validate_package.py` | PASS. |
+| `PY -m unittest discover -s tests/package -q` | PASS: 128 tests, nine existing gated skips. |
+| `PY .cache/pin_range_browser_check.py prepare`, `migrate`, `start`, `stop` | PASS: new disposable localhost:8450 fixture only, schema0015, DML app, generated accounts, synthetic local-demo logs. Corrected seeding succeeded through `.cache/pin_range_diagnose.py`. |
+| `PY scripts/frontend.py e2e event_pins.spec.ts collection_ranges.spec.ts` | Final PASS: 6/6 in 27.0 s. |
+| `PY scripts/frontend.py e2e event_pins.spec.ts --grep 'Modify restores'` | PASS: strengthened same-process grouping/availability/update/copy case, 1/1 in 7.3 s. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Ruff's exact paths were `backend/src/inspector/{investigations,investigation_bundles,history}.py`,
+`backend/tests/integration/{test_grouped_pins,test_history,test_investigation_bundles}.py`
+and `backend/tests/unit/test_investigation_bundles.py` (expanded paths passed to
+the commands). Browser environment was `INSPECTOR_E2E_URL=https://localhost:8450`,
+`INSPECTOR_E2E_ACCOUNTS=C:\_Projects\system-monitor\.secrets\pin-range-check\accounts.json`,
+`INSPECTOR_E2E_REPORT_STAGE=stage-7`, report names `pin-range-followup-final` and
+`pin-range-same-process`. Current built assets were substituted within the test
+context; no retained frontend was replaced. Same-context duplicate pages use
+distinct server workspaces and independent selection/filter/acquisition state.
+No external requests or browser errors occurred.
+
+Reports: `verification/stage-7/pin-range-followup-final.json`,
+`pin-range-same-process.json`; final database evidence:
+`verification/pin-workflow/pin_flow_a974533f.log` and its exact-command JSON.
+Visually inspected light/dark pin popups at 1280x720 and 1920x1080, the two-line
+same-process terminal, and collection controls in both themes. Captures are in
+`verification/pin-range-check/screenshots/` and
+`verification/stage-7/screenshots/collection-ranges-*`.
+
+Earlier failures are preserved: first browser run passed 5/6 and exposed stale
+partial availability hiding Modify after completion. The metadata refresh and
+partial-data eligibility fix pass the full rerun and stronger grouping case.
+A first schema suffix exceeded the helper's 20-character maximum and was
+refused before provisioning. Dedicated fixture setup also encountered
+unsupported Compose `run --pull` syntax and a nested read-only script mount;
+only the new test helper/override was corrected.
+
+Four Windows unit skips: privileged history-retention symlink creation, Linux
+open-handle rename behavior, POSIX SSH permissions and synthetic SSH-file
+symlink creation (`WinError 1314`). The 39-case integration suite runs on Linux/
+MariaDB with zero skips. Browser data is synthetic local-demo; this does not
+requalify SSH transport, the full Stage 07 matrix or Stage 08 offline release.
+The dedicated 8450 service is stopped (exit0); its database is retained for
+review. Cleanup verified 8445/8449, MariaDB and existing SSH fixtures still
+running. No implementation blocker remains. Next: separate deployment
+authorization if requested, or the existing Stage 08 release gate.
+
+## 18 October 2026 — Authorized pin/range deployment to 8449
+
+User authorization: **“Apply changes to 8449 instance.”** The verified pin
+editing and independent collection/display-range follow-up is now served at
+**https://localhost:8449**. Refresh existing pages. Matching frontend/backend
+are installed; schema remains `0015_remember_login`. Accounts, configuration,
+saved investigations and captured data are preserved. 8445/8444 are unchanged.
+This does not complete or begin the separate Stage 08 release gate.
+
+Preparation and cutover:
+
+- Independently reviewed the guarded deployment and installed-browser helpers.
+  A new frozen package has 74 backend files, changing only `history.py`,
+  `investigations.py` and `investigation_bundles.py`. The merged web directory
+  has 17 files, including the exact browser-tested five-file build and retained
+  older hashed assets. Existing dependency metadata, migrations and other
+  Python modules match the preceding deployed package.
+- Read-only preflight verified the exact loopback8449 service, schema0015,
+  runtime security, expected backend/web mounts, no active capture/subscription
+  work, no inventory uploads/previews or raw staging, and current served hashes.
+  The target had 49 tables, 113 historical jobs, 21 saved investigations and 18
+  bookmarks; these stable contents remain unchanged.
+- Stopped only `stage7-browser` and made a consistent **10,498,617-byte SQL
+  backup**, state/cache archives and exact Compose recovery files under protected
+  `.secrets/stage7-browser/pin-range-preview/`. Before/after stopped-service
+  snapshots and state/cache manifests match. Backup manifests cover four state
+  and 1,811 cache entries, including ownership/mode and content checksums.
+- Replaced only that service's two read-only backend/frontend mounts; the
+  integration service and other Compose settings are unchanged. Recreated only
+  8449 with `--no-deps --pull never`. No migration, image/dependency download,
+  target-host connection or database/cache restore was performed.
+- Installation and final verification preserve all **43 stable table counts and
+  checksums**, schema, full state/cache manifests, configuration and original
+  login identity/CSRF/auth-version/deadline/Remember me fields. Normal original
+  session activity may only increase. Other containers retain identical IDs,
+  image IDs, start times and restart counts, including 8445/8444 and SSH fixtures.
+  Nonroot/read-only/capability/secret-mount restrictions remain intact. Verified
+  TLS/readiness, all **15 public HTTPS file hashes** and the installed backend's
+  optional pin replacement/bundle acquisition-bound contracts pass.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`, `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`; repository root):
+
+| Command | Result |
+|---|---|
+| `PY -m py_compile .cache/deploy_pin_range_preview.py` | PASS. |
+| `NODE --check .cache/verify_pin_range_8449.mjs` | PASS; targeted helper lint also passes. |
+| `PY .cache/deploy_pin_range_preview.py build` | PASS: frozen existing tested artifact, no Docker/runtime mutation. |
+| `PY .cache/deploy_pin_range_preview.py inspect` | PASS: read-only preflight. |
+| `PY .cache/deploy_pin_range_preview.py deploy` | PASS: consistent backups, scoped cutover, installation/preservation verification. |
+| `SI_VERIFY_PIN_RANGE_8449=1 NODE .cache/verify_pin_range_8449.mjs` | PASS: actual served UI/assets, retained data and independent same-context pages. |
+| `PY .cache/deploy_pin_range_preview.py cleanup` | PASS: only the one recorded temporary smoke login removed; original sessions preserved. |
+| `PY .cache/deploy_pin_range_preview.py verify` | PASS after browser cleanup: data/cache/config/schema, original sessions, runtime contract, TLS/assets and other services. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Actual-served browser evidence is `verification/pin-range-preview/browser.json`.
+The smoke uses the generated Inspector account and existing retained evidence
+only in `stage7-fixture-a`. It checks Remember me remains visible/unchecked,
+one investigation tools panel, separate acquisition/display controls, captured
+process choices despite editing the next collection, three retained queries,
+and distinct workspaces in two pages of one browser context. It opens the new
+terminal pin popup and cancels it. The inspected synthetic history did not have
+grouped pins, so the existing-group Modify/update/create branch remains covered
+by the preceding exact-artifact disposable-browser and MariaDB suites; the
+installed smoke deliberately creates no saved content. No asset substitution,
+external requests, browser errors, SSH/collection/live starts, preference/config
+writes or global logout occurred. Both created workspaces were explicitly
+detached before deleting only its recorded authentication session.
+
+Six actual-served screenshots cover the selected-pin popup and investigation
+controls in light/dark, including 1280x720 and 1920x1080. Visually inspected the
+dark pin popup and light1280 investigation screen. Existing source verification
+(6 browser cases plus strengthened grouping case, 39 MariaDB cases, 838 backend
+and 20 frontend unit passes, lint/types/build) applies to this identical frozen
+artifact; unchanged suites were not rerun during deployment. Receipts are
+`build.json`, `preflight.json`, `backup.json`, `installed.json`, `browser.json`,
+`session-cleanup.json` and `verified.json` under
+`verification/pin-range-preview/`.
+
+One preparation-only build attempt stopped safely before staging because the
+previous frozen package contains no `uv.lock`. The helper now verifies unchanged
+`pyproject.toml` and freezes the current lock hash; no dependency or runtime
+change was involved. Independent review also separated old retained asset hashes
+from current browser-loaded hashes and checks the new API through installed
+runtime introspection rather than an older static OpenAPI snapshot. No cutover
+or installed-browser check failed. Reviewed sandbox escalation was used for
+local Docker/protected fixture operations; no credentials were printed and no
+automatic-approval rejection occurred.
+
+Recovery: `.secrets/stage7-browser/pin-range-preview/ROLLBACK.txt` documents
+`PY .cache/deploy_pin_range_preview.py rollback`, which validates the retained
+artifacts, restores the exact previous Compose and recreates only8449. It needs
+no schema downgrade or SQL restore; old source/assets and current data remain.
+Later bundles using the new optional origin bounds require the updated backend;
+a future source rollback must account for later new-format imports rather than
+discarding them. The read-only smoke created no such data. Automatic rollback
+was prepared and reviewed, not exercised. No deployment blocker remains;
+8449 is left running. Next gate remains the separate Stage 08 release scope.
+
+## 18 October 2026 — Live monitor explanation and process labels (source only)
+
+User reported gap/error notices after visiting Live monitor and requested
+`server: process` references. Read-only lifecycle review confirms opening the
+tab lists sessions/usage and does not create capture. Explicit Monitor (also
+the topology Monitor action) creates it; an existing monitor stays mounted and
+continues while another workspace section is visible. The screenshot alone
+cannot establish the originating action or red error code. The old selection
+summary said monitoring whenever any session existed, including ended sessions.
+`TRANSPORT_DISCONNECTED` covers retryable source reads, including unavailable
+files, rather than proving a network failure or process-health problem. The
+red generic text discarded backend code-only guard/recording errors.
+
+Changed `frontend/src/components/LiveViewer.tsx`: name-based process choices,
+per-process filter labels, panes, status/details, detached monitors and copied
+rows; previous-monitor summary after termination; readable gap explanation
+and affected process when validated against the owned selection; backend error
+code alongside the generic stream error. Updated bundled Polish strings in
+`frontend/src/i18n/investigation.pl.ts`. Adjusted affected selectors in existing
+`frontend/e2e/live.spec.ts` and `stage7_soak.spec.ts`, including detached-monitor
+identity checked through its title attribute. Updated `docs/06_UI_UX.md` and
+`docs/12_TRACEABILITY.md`. Preserved unrelated existing dirty work.
+
+Added five explicitly TEST-ONLY `frontend/e2e/live_notices.*` files: real-component
+harness, intercepted HTTP/WS regression cases and isolated Playwright/Vite
+lifecycle. Vite uses `configFile: false`, loopback port5189 and no API proxy;
+the default installed-application suite skips these cases. These are component
+browser tests, not new MariaDB/SSH integration evidence. Tests cover no start
+on visit/checkbox/tab return, one explicit start and continued existing capture,
+all friendly labels/copy, process-attributed gaps, preserved error codes and
+ended-session controls/summary. Inspected the full-page light/dark captures.
+
+Commands actually run, from `frontend`, with
+`.toolchains/node-v24.22.0-win-x64` prepended to PATH for npm:
+
+| Command | Result |
+|---|---|
+| `../.toolchains/node-v24.22.0-win-x64/npm.cmd test` | PASS: API generated types match; 20/20 frontend unit tests, including complete bundled translation keys/placeholders. `verification/live-monitor-notices/unit.log`. |
+| `../.toolchains/node-v24.22.0-win-x64/npm.cmd run lint` | PASS, including final browser harness/setup. `verification/live-monitor-notices/lint-final.log`. |
+| `../.toolchains/node-v24.22.0-win-x64/npm.cmd run build` | PASS: TypeScript no-emit and production Vite build. Existing >500kB chunk warning; exit0. `verification/live-monitor-notices/build-final.log`. |
+| `../.toolchains/node-v24.22.0-win-x64/node.exe node_modules/@playwright/test/cli.js test --config e2e/live_notices.playwright.config.ts` | Final PASS: 3/3, zero skips/flaky/unexpected, 3.554s reported duration with clean automatic shutdown. `verification/stage-7/browser-live-notices-test-only.json`. |
+| `git diff --check -- frontend/src/components/LiveViewer.tsx frontend/e2e/live.spec.ts frontend/e2e/stage7_soak.spec.ts docs/06_UI_UX.md docs/12_TRACEABILITY.md progress/STATUS.md` (repository root) | PASS. |
+
+Earlier browser assertions also passed, but Playwright's Windows webServer
+child teardown hung; stopped only the test's Vite child and replaced that
+harness lifecycle with in-process startup/cleanup. The final rerun above exits
+without intervention. Independent review found the stale detached-monitor text
+assertion, which was corrected before the final lint/build. No product tests
+or assertions were removed or weakened.
+
+Screenshots: `verification/stage-7/screenshots/live-notices-test-only-light.png`
+and `live-notices-test-only-dark.png`. No real credentials or monitored hosts
+were accessed. No retained application, backend, database, schema, installation
+or infrastructure was changed. Full Stage05 SFTP/MariaDB/browser and Stage07
+soak suites were not rerun: this follow-up changes frontend presentation only,
+and those suites require separately generated running services and a prolonged
+workload. No source-verification blocker remains. Deployment is not authorized
+by this request and was not performed; Stage08 remains the next separate gate.
+
+## 18 October 2026 — Match live-event presentation to historical logs (source only)
+
+User request: **“Implement the same style of presenting events in live monitoring
+as we have in logs.”** Live monitoring now shares the historical table's 20px
+rows, 12px/18px monospace font, minimal cell padding, separate UTC time/process/
+host/log-entry columns, sticky headings, hover treatment and horizontal
+scrolling. Merged and separate live panes use shared presentation components;
+historical context eyes, column visibility and row-selection behavior remain
+in their existing viewer. Long log text remains selectable and rendered as text.
+The distinct late-arrival label precedes the displayed message, retaining its
+visibility in compact rows. Unknown timestamps stay in the diagnostic lane.
+
+Changed files for this follow-up:
+
+- Added `frontend/src/components/LogTablePresentation.tsx` with shared row height,
+  column geometry, headings and metadata/message cells. Updated
+  `HistoricalLogTable.tsx` and `LiveViewer.tsx` to use it; removed superseded live
+  table rules from `frontend/src/styles.css`.
+- Updated live seed/resize, visible-row, follow-threshold and scroll-anchor
+  calculations together. Viewports subtract the measured sticky-header height;
+  anchors retain project/event identity. Live pause/resume and source controls
+  continue using the existing monitor and transport.
+- Extended `frontend/e2e/live_notices.spec.ts` and its explicitly test-only
+  harness with a real historical table reference, synthetic event updates,
+  independent page workspaces and six browser regressions. The dedicated config
+  writes new receipts/screenshots under `verification/live-events-presentation/`,
+  preserving the earlier three-case evidence. Updated existing real-fixture
+  `frontend/e2e/live.spec.ts` viewport assertions to measure row/header geometry
+  instead of assuming 30px rows.
+- Updated `frontend/README.md`, `docs/06_UI_UX.md` and `docs/12_TRACEABILITY.md`.
+  Preserved all pre-existing unrelated working-tree changes.
+
+Commands actually run from the repository root:
+
+| Command | Result |
+|---|---|
+| `python scripts/frontend.py test` | PASS: generated API types match; all 20 frontend unit tests pass. Final log: `verification/live-events-presentation/unit.log`. |
+| `python scripts/frontend.py lint` | Final PASS. `verification/live-events-presentation/lint.log`. An earlier run during unfinished test edits reported the then-unused `Locator` import; the finished helper uses it and the full rerun passes. |
+| `python scripts/frontend.py build` | PASS: TypeScript no-emit plus production Vite build. Existing >500kB chunk warning; exit0. `verification/live-events-presentation/build.log`. |
+| `python scripts/frontend.py e2e --config e2e/live_notices.playwright.config.ts` | PASS: 6/6, zero skips/flaky/unexpected, 10.5s reported duration; automatic Vite shutdown. `verification/live-events-presentation/browser-test-only.json` and `browser.log`. |
+| `git diff --check` | PASS, exit0. Existing LF/CRLF normalization notices for other dirty files; no whitespace errors. `verification/live-events-presentation/diff-check.log`. |
+
+The browser suite compares actual historical/live computed row styles, checks
+UTC under America/Los_Angeles, distinct process/host cells, safe long markup-like
+text with horizontal pane scrolling and no document overflow, late-arrival and
+unknown-timestamp presentation, initial viewport seeds, automatic following,
+anchored earlier inserts, display pause with continuing counters, resume/jump,
+distinct per-process seed sizes and filter/stop isolation in two pages of the
+same browser context. The previous no-automatic-start, friendly-label/copy and
+gap/error/terminal regressions also pass. Independent read-only review found no
+presentation regression; its stale real-fixture geometry assertion finding was
+addressed in `live.spec.ts` before final checks.
+
+Visually inspected `dense-live-light.png`, `dense-live-dark.png` and
+`split-live-independent-stopped.png` under
+`verification/live-events-presentation/screenshots/`: compact aligned metadata,
+readable rows in both themes, visible late-arrival cue, selectable literal text
+and independent scroll panes. These captures use synthetic test-only events and
+intercepted HTTP/WebSockets. No real credentials, monitored hosts, SSH, retained
+application data, database/schema or installation were accessed or changed.
+
+Full backend/MariaDB/SFTP integration and installed-application browser suites
+were not rerun: this is a frontend presentation follow-up, verified through real
+components with isolated transport fixtures rather than running those separately
+provisioned services. No source-verification blocker remains. Deployment was not
+requested or performed. Next gate remains separate deployment authorization if
+requested, or the existing Stage 08 offline-release scope.
+
+## 18 October 2026 — Authorized live-event frontend deployment to 8449
+
+User authorization: **“Deploy to 8449.”** The verified matching historical/live
+event presentation is installed at **https://localhost:8449**. Refresh existing
+pages. Only the frontend mount changed; the installed pin/range backend and
+schema `0015_remember_login` remain unchanged. Accounts, configuration, existing
+sessions, saved investigations and retained cache are preserved. 8445/8444 and
+all other containers retain their previous identities, images, start/restart
+state. This does not start or complete Stage 08 release qualification.
+
+Preparation and cutover:
+
+- Added guarded local helper `.cache/deploy_live_events_preview.py`, using the
+  latest pin/range installation as its baseline. Its new frozen overlay contains
+  19 files, including the exact five-file verified build and previous hashed
+  assets. Frozen backend and original web directories remain unchanged.
+- Read-only preflight verified loopback8449, schema0015, 49 tables, strict runtime
+  restrictions, expected read-only mounts, served hashes and no active capture,
+  subscriptions, pending sources or inventory staging. An initial sandboxed
+  preflight could not access local Docker; reviewed escalation passed. No
+  automatic-approval rejection occurred.
+- Stopped only `stage7-browser` and retained a consistent **10,760,878-byte SQL
+  backup**, matching state/cache archives, private baseline and exact previous
+  Compose under `.secrets/stage7-browser/live-events-preview/`. Stopped-service
+  snapshots before/after backup match. Manifests cover four state and 1,814 cache
+  entries, including content hashes, ownership and modes.
+- Replaced exactly one read-only frontend mount and recreated only8449 using
+  `--no-deps --pull never`. Backend/configuration mounts, dependencies, images,
+  schema and persistent volumes were preserved. No migration, pull, target-host
+  connection or restore occurred.
+- Installation and final verification preserve all **43 stable database table
+  counts/checksums**, schema, state/cache manifests, configuration, original
+  authentication identity/CSRF/auth-version/deadline/Remember me fields and other
+  containers. Only nondecreasing normal original-session activity is permitted.
+  Runtime remains nonroot/read-only with unchanged capability and secret-mount
+  restrictions. Verified TLS/readiness and all **17 public HTTPS file hashes**
+  pass; all 19 packaged files, including retained notices, match the frozen tree.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`, `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command | Result |
+|---|---|
+| `PY -m py_compile .cache/deploy_live_events_preview.py` | PASS, including final rollback/cleanup checks. |
+| `NODE --check .cache/verify_live_events_8449.mjs` | PASS; targeted ESLint with `frontend/eslint.config.js` also passes. |
+| `PY .cache/deploy_live_events_preview.py build` | PASS: exact frozen tested assets, six-case browser receipt and unchanged installed backend verified, no Docker mutation. |
+| `PY .cache/deploy_live_events_preview.py inspect` | PASS with reviewed local-Docker access; initial sandboxed attempt stopped with `SetupError` before mutation. |
+| `PY .cache/deploy_live_events_preview.py deploy` | PASS: scoped backups, frontend cutover, HTTPS/assets and preservation verification. |
+| `SI_VERIFY_LIVE_EVENTS_8449=1 NODE .cache/verify_live_events_8449.mjs` | Final PASS: actual-served browser/asset verification, independent same-context workspaces and ten captures. First attempt's license-route assumption and correction are preserved below. |
+| `PY .cache/deploy_live_events_preview.py cleanup` | PASS: removed only the two recorded test login sessions from both attempts; independently checked created workspaces detached/expired or reaped, and preserved original sessions. |
+| `PY .cache/deploy_live_events_preview.py verify` | PASS after cleanup: final backend/schema/database/cache/configuration/original-session/other-service and served-asset checks. |
+
+The installed smoke uses only the generated Inspector account and existing
+retained synthetic evidence in `stage7-fixture-a`. It verifies actual loaded
+HTML/JS/CSS hashes without substitution; retained historical rows measure20px
+with 12px/18px monospace text and UTC under America/Los_Angeles. It opens empty
+live merged/split tables with the four shared metadata/message columns, sticky
+headings and horizontal scrolling. Two pages in one browser context receive
+different server-issued workspaces; changing process selection, layout and
+filter drafts in one leaves the other unchanged. It captures both themes at
+1280x720 and1920x1080, starts no capture or WebSocket, writes no personal/shared
+content or preferences and performs no global logout. Both created workspaces
+were acknowledged detached before targeted test-session removal.
+
+Ten screenshots and `browser.json` are under `verification/live-events-preview/`.
+Visually inspected installed light historical rows and dark1280 merged live
+headers. Actual live-row streaming/follow/anchor/pause remains covered by the
+preceding six isolated exact-artifact browser cases; the installed smoke starts
+no monitored-source connections and inserts no synthetic DOM rows. Existing
+20-unit/type/lint/build evidence applies to the identical artifact; unchanged
+backend/MariaDB/SFTP suites were not rerun for this frontend-only installation.
+
+First smoke attempt: all17 existing public assets and the browser-loaded files
+matched, then the helper incorrectly requested packaged license files as HTTP
+routes. The backend exposes HTML and `/assets`, not `/licenses`. Corrected only
+the helper's public-file selection, keeping all packaged notice files and their
+hash checks. No product contract or endpoint was relaxed. The first failed
+receipt remains `browser-attempt1.json`; final `browser.json` passes with zero
+unexpected requests/browser errors. No deployment or preservation check failed.
+Independent read-only reviews confirmed frontend-only scope and receipts, and
+strengthened rollback to compare preserved DB/auth/cache/configuration and
+cleanup to query actual workspace state.
+
+Recovery: protected `ROLLBACK.txt` documents
+`PY .cache/deploy_live_events_preview.py rollback`, which restores the exact
+previous frontend Compose mount and recreates only8449. It preserves the current
+backend/schema/data and requires no SQL restore or schema downgrade. Backups and
+previous artifacts remain retained; automatic/manual rollback were prepared and
+reviewed, not exercised. No blocker remains. 8449 is left running; the next
+separate gate remains Stage 08 offline-release qualification.

@@ -153,6 +153,7 @@ class AuthSession(Base):
         ForeignKeyConstraint(["user_id"], ["users.id"], name="fk_auth_sessions_user"),
         CheckConstraint("auth_version >= 1", name="auth_version"),
         CheckConstraint("expires_us > created_us", name="expiry"),
+        CheckConstraint("remember_me IN (0, 1)", name="remember_me"),
         Index("ix_auth_sessions_user_expiry", "user_id", "expires_us"),
         Index("ix_auth_sessions_expiry", "expires_us"),
         TABLE_OPTIONS,
@@ -165,6 +166,7 @@ class AuthSession(Base):
     created_us: Mapped[int] = mapped_column(BigInteger)
     last_seen_us: Mapped[int] = mapped_column(BigInteger)
     expires_us: Mapped[int] = mapped_column(BigInteger)
+    remember_me: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
 
 class Project(Base):

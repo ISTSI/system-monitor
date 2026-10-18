@@ -82,6 +82,30 @@
           "minimum": 0,
           "title": "Snapshot Revision",
           "type": "integer"
+        },
+        "collection_from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Collection From"
+        },
+        "collection_to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Collection To"
         }
       },
       "required": [
@@ -511,6 +535,45 @@
       "title": "HistoricalSourceProvenance",
       "type": "object"
     },
+    "PinGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 10000,
+          "title": "Description",
+          "type": "string"
+        },
+        "bookmark_ids": {
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Bookmark Ids",
+          "type": "array"
+        },
+        "created_us": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Created Us",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "bookmark_ids",
+        "created_us"
+      ],
+      "title": "PinGroup",
+      "type": "object"
+    },
     "Redaction": {
       "additionalProperties": false,
       "properties": {
@@ -750,6 +813,14 @@
       },
       "maxItems": 10000,
       "title": "Bookmarks",
+      "type": "array"
+    },
+    "pin_groups": {
+      "items": {
+        "$ref": "#/$defs/PinGroup"
+      },
+      "maxItems": 1000,
+      "title": "Pin Groups",
       "type": "array"
     },
     "coverage_status": {

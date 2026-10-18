@@ -10,6 +10,7 @@ import zipfile
 import pytest
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.exc import IntegrityError
+from test_history import EVENTS, FROM, TO, enable_demo, finished, seed, start
 from test_investigations import QUERY, bookmark_payload, capture, raw_checksums, saved_payload
 
 from inspector.investigation_bundles import encoded, pack_bundle
@@ -50,6 +51,81 @@ async def import_preview(client, project, data):
         content=data,
         headers={"Content-Type": "application/zip"},
     )
+
+
+async def test_collection_bounds_survive_display_edits_export_import_and_reexport(
+    foundation, tmp_path
+):
+    enable_demo(foundation, tmp_path)
+    async with foundation.client(foundation.database.administrator) as admin:
+        await seed(admin, foundation.project_a)
+    async with foundation.client(foundation.alice) as alice:
+        collection_from = "2026-10-16T12:00:00.000000Z"
+        collection_to = "2026-10-16T12:00:02.000000Z"
+        created, _, _ = await start(
+            alice, foundation.project_a, from_=collection_from, to=collection_to
+        )
+        job = await finished(alice, foundation.project_a, created["job_id"])
+        assert job["status"] == "completed", job
+        base = f"/api/v1/projects/{foundation.project_a}/investigations/{created['job_id']}"
+        display_from = "2026-10-16T12:00:01.000000Z"
+        saved = await alice.patch(base + "/workspace", json=saved_payload(**{"from": display_from}))
+        assert saved.status_code == 200, saved.text
+        preview = await preview_export(alice, foundation.project_a, created["job_id"])
+        origin = preview["document"]["origin"]
+        assert origin["collection_from"] == collection_from
+        assert origin["collection_to"] == collection_to
+        assert preview["document"]["selection"]["from"] == display_from
+        blob, _ = await download_export(alice, foundation.project_a, preview)
+        staged = await import_preview(alice, foundation.project_b, blob)
+        assert staged.status_code == 200, staged.text
+        imported = await alice.post(
+            f"/api/v1/projects/{foundation.project_b}/bundles/import",
+            json={"preview_id": staged.json()["preview_id"]},
+        )
+        assert imported.status_code == 201, imported.text
+        offline = imported.json()
+        offline_base = (
+            f"/api/v1/projects/{foundation.project_b}/bundle-investigations/"
+            + offline["investigation_id"]
+        )
+        assert offline["job"]["from"] == collection_from
+        assert offline["job"]["to"] == collection_to
+        listing = await alice.get(f"/api/v1/projects/{foundation.project_b}/bundle-investigations")
+        listed = next(
+            item
+            for item in listing.json()["items"]
+            if item["investigation_id"] == offline["investigation_id"]
+        )
+        assert listed["job"]["from"] == collection_from
+        assert listed["job"]["to"] == collection_to
+        wide = {"process_ids": QUERY["process_ids"], "from": FROM, "to": TO, "limit": 200}
+        response = await alice.post(offline_base + "/query", json=wide)
+        assert response.status_code == 200, response.text
+        expected = {
+            event["event_id"]
+            for event in EVENTS
+            if event["timestamp_utc"] is not None
+            and collection_from <= event["timestamp_utc"] < collection_to
+        }
+        assert {event["event_id"] for event in response.json()["items"]} == expected
+        trace = await alice.post(
+            offline_base + "/correlation",
+            json={**wide, "mode": "exact", "field": "request_id", "value": "REQ-0042"},
+        )
+        assert trace.status_code == 200, trace.text
+        assert trace.json()["items"]
+        assert all(
+            collection_from <= event["timestamp_utc"] < collection_to
+            for event in trace.json()["items"]
+        )
+        changed = await alice.patch(
+            offline_base + "/workspace", json=saved_payload(0, **{"from": FROM, "to": TO})
+        )
+        assert changed.status_code == 200, changed.text
+        reexported = await preview_export(alice, foundation.project_b, offline["investigation_id"])
+        assert reexported["document"]["origin"] == origin
+        assert reexported["document"]["selection"]["from"] == FROM
 
 
 @pytest.mark.parametrize("role", ["administrator", "inspector"])

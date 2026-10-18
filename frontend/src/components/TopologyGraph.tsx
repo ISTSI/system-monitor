@@ -5,28 +5,33 @@ import '@xyflow/react/dist/style.css';
 import { kindOf, parentId, type Config, type EntityKind, type Geometry, type Selection, type View } from '../topology';
 import { Icon } from './Common';
 
-type NodeData = { name: string; kind: EntityKind; description: string; editable: boolean; collapsed: boolean; minWidth: number; minHeight: number; onSelect: (additive?: boolean) => void; onCollapse: () => void; onResize: (geometry: { x: number; y: number; width: number; height: number }) => void };
+type NodeData = { name: string; kind: EntityKind; description: string; editable: boolean; collapsed: boolean; minWidth: number; minHeight: number; addChildDisabled: boolean; addChildNeedsParser: boolean; onAddChild?: () => void; onSelect: (additive?: boolean) => void; onCollapse: () => void; onResize: (geometry: { x: number; y: number; width: number; height: number }) => void };
 type DiagramNode = Node<NodeData>;
 
 function TopologyNode({ data, selected }: NodeProps<DiagramNode>) {
   const { t } = useI18n();
   const process = data.kind === 'process';
+  const addLabel = data.kind === 'server' ? t('Add process to {name}', { name: data.name }) : t('Add server to {name}', { name: data.name });
   return <div className={`diagram-node ${data.kind}-card ${selected ? 'selected' : ''} ${data.collapsed ? 'collapsed' : ''}`}>
     <NodeResizer isVisible={selected && data.editable && !data.collapsed} minWidth={data.minWidth} minHeight={data.minHeight} onResizeEnd={(_event, parameters) => data.onResize(parameters)} />
     {process ? <>
       <Handle type="target" position={Position.Left} isConnectable={data.editable} />
       <button className={`process-card ${selected ? 'selected' : ''}`} aria-label={t("Select process {name}", { name: data.name })} aria-pressed={selected} onClick={event => { event.stopPropagation(); data.onSelect(event.ctrlKey || event.metaKey || event.shiftKey); }}><Icon kind="process" /><span><strong>{data.name}</strong><small>{data.description || t("Configured process")}</small></span><span className="access-state">{t("Not checked")}</span></button>
       <Handle type="source" position={Position.Right} isConnectable={data.editable} />
-    </> : <header className="node-header"><button className="node-label nodrag" onClick={event => { event.stopPropagation(); data.onSelect(event.ctrlKey || event.metaKey || event.shiftKey); }} aria-label={data.kind === 'server' ? t('Select server {name}', { name: data.name }) : t('Select subsystem {name}', { name: data.name })}><Icon kind={data.kind === 'server' ? 'server' : 'system'} /><strong>{data.name}</strong></button><button className="nodrag collapse-button" aria-label={data.collapsed ? t('Expand {name}', { name: data.name }) : t('Collapse {name}', { name: data.name })} aria-expanded={!data.collapsed} onClick={event => { event.stopPropagation(); data.onCollapse(); }}>{data.collapsed ? '+' : '−'}</button></header>}
+    </> : <header className="node-header"><button className="node-label nodrag" onClick={event => { event.stopPropagation(); data.onSelect(event.ctrlKey || event.metaKey || event.shiftKey); }} aria-label={data.kind === 'server' ? t('Select server {name}', { name: data.name }) : t('Select subsystem {name}', { name: data.name })}><Icon kind={data.kind === 'server' ? 'server' : 'system'} /><strong>{data.name}</strong></button><span className="node-frame-actions nodrag nopan" onPointerDown={event => event.stopPropagation()} onMouseDown={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>
+      {data.onAddChild && <button type="button" className="node-add-button" aria-label={addLabel} title={data.addChildNeedsParser ? t('Add a parser profile before adding a process.') : addLabel} disabled={data.addChildDisabled} onClick={event => { event.stopPropagation(); data.onAddChild?.(); }}>+</button>}
+      <button type="button" className="collapse-button" aria-label={data.collapsed ? t('Expand {name}', { name: data.name }) : t('Collapse {name}', { name: data.name })} aria-expanded={!data.collapsed} onClick={event => { event.stopPropagation(); data.onCollapse(); }}><Icon kind={data.collapsed ? 'expand' : 'collapse'} /></button>
+    </span></header>}
   </div>;
 }
 
 const nodeTypes = { topology: TopologyNode };
 
-export default function TopologyGraph({ config, view, editable, selection, selectedIds, highlighted, reveal, saving, onSelect, onMultiSelect, onGeometry, onCollapse, onConnect }: {
+export default function TopologyGraph({ config, view, editable, selection, selectedIds, highlighted, reveal, saving, onSelect, onMultiSelect, onGeometry, onCollapse, onConnect, onAddChild }: {
   config: Config; view: View; editable: boolean; selection: Selection | null; selectedIds: string[]; highlighted: Set<string>; reveal: number; saving: boolean;
   onSelect: (selection: Selection, additive?: boolean) => void; onMultiSelect: (ids: string[]) => void;
   onGeometry: (id: string, geometry: Partial<Geometry>, moved?: { id: string; position: { x: number; y: number } }[]) => void; onCollapse: (id: string) => void; onConnect: (source: string, target: string) => void;
+  onAddChild: (parent: { kind: 'subsystem' | 'server'; id: string }) => void;
 }) {
   const { t } = useI18n();
   const instance = useRef<ReactFlowInstance<DiagramNode> | null>(null);
@@ -67,10 +72,13 @@ export default function TopologyGraph({ config, view, editable, selection, selec
         draggable: editable && !saving, connectable: kind === 'process' && editable && !saving, dragHandle: isGroup ? '.node-header' : undefined,
         data: { name: item.name, kind, description: item.description, editable: editable && !saving, collapsed: geometry.collapsed,
           minWidth: Math.max(isGroup ? 280 : 220, ...children.map(node => node.x + node.width + 15)), minHeight: Math.max(isGroup ? 100 : 65, ...children.map(node => node.y + node.height + 15)),
+          addChildDisabled: saving || kind === 'server' && !config.parsers?.length,
+          addChildNeedsParser: kind === 'server' && !config.parsers?.length,
+          onAddChild: editable && (kind === 'subsystem' || kind === 'server') ? () => onAddChild({ kind, id: item.id }) : undefined,
           onSelect: (additive?: boolean) => onSelect({ kind, id: item.id }, additive), onCollapse: () => onCollapse(item.id), onResize: (updated: { x: number; y: number; width: number; height: number }) => onGeometry(item.id, updated) },
       }];
     }));
-  }, [config, view, editable, saving, selectedIds, highlighted, hidden, onSelect, onCollapse, onGeometry]);
+  }, [config, view, editable, saving, selectedIds, highlighted, hidden, onSelect, onCollapse, onGeometry, onAddChild]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => { void instance.current?.fitView({ padding: .12, duration: 150 }); });

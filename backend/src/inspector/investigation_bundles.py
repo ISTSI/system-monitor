@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer
 from starlette.responses import StreamingResponse
 
-from inspector import services
+from inspector import auth, services
 from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
 from inspector.history import (
@@ -55,9 +55,17 @@ from inspector.investigations import (
     BookmarkUpdate,
     CorrelationInput,
     CorrelationResponse,
+    PinCreate,
+    PinEventInput,
+    PinGroup,
+    PinUpdate,
     RevisionInput,
     SavedWorkspaceInput,
     SavedWorkspaceResponse,
+    pin_deadline,
+    pin_groups,
+    pruned_pin_groups,
+    with_pin_groups,
 )
 from inspector.log_engine import CancellationToken, EngineLimits, ScanProgress
 from inspector.log_engine.reader import _Budget, _zip_preflight
@@ -101,6 +109,24 @@ class BundleOrigin(StrictInput):
     investigation_id: str = Field(max_length=128)
     config_revision: int = Field(ge=1)
     snapshot_revision: int = Field(ge=0)
+    collection_from: str | None = None
+    collection_to: str | None = None
+
+    @model_validator(mode="after")
+    def collection_interval(self) -> "BundleOrigin":
+        if (self.collection_from is None) != (self.collection_to is None):
+            raise ValueError("Collection bounds must be supplied together.")
+        if self.collection_from is not None and self.collection_to is not None:
+            try:
+                start, end = (
+                    canonical_time(self.collection_from),
+                    canonical_time(self.collection_to),
+                )
+            except DomainError:
+                raise ValueError("Invalid collection interval.") from None
+            if start >= end:
+                raise ValueError("Invalid collection interval.")
+        return self
 
 
 class BundleSelection(StrictInput):
@@ -177,6 +203,7 @@ class BundleDocument(StrictInput):
     sources: list[HistoricalCoverage] = Field(max_length=10000)
     events: list[HistoricalEvent] = Field(max_length=MAX_EVENTS)
     bookmarks: list[BundleBookmark] = Field(max_length=10000)
+    pin_groups: list[PinGroup] = Field(default_factory=list, max_length=1000)
     coverage_status: str = Field(max_length=64)
     errors: list[str] = Field(max_length=10000)
     redaction: Redaction
@@ -296,6 +323,9 @@ class BundleDocument(StrictInput):
                 positions.append((event.source.byte_start, event.event_id))
             if positions != sorted(positions) or len(set(positions)) != len(positions):
                 raise ValueError("Context source order mismatch.")
+        groups = pin_groups({"pin_groups": [group.model_dump() for group in self.pin_groups]})
+        if any(not set(group["bookmark_ids"]) <= bookmark_ids for group in groups):
+            raise ValueError("Pin group references a bookmark outside this bundle.")
         return self
 
 
@@ -785,7 +815,14 @@ async def export_document(
             bookmark
             for bookmark in document["bookmarks"]
             if event_processes.get(bookmark["event_id"]) in selected
+            or any(
+                item["is_anchor"] and item["event"]["process_id"] in selected
+                for item in (bookmark["context"] or {}).get("items", [])
+            )
         ]
+        document["pin_groups"] = pruned_pin_groups(
+            document, {bookmark["id"] for bookmark in document["bookmarks"]}
+        )
         if len(encoded(document)) > maximum:
             raise DomainError(
                 "BUNDLE_BYTE_LIMIT", "The bundle exceeds the configured byte budget.", 413
@@ -862,6 +899,8 @@ async def export_document(
             investigation_id=job_id,
             config_revision=job.config_revision,
             snapshot_revision=job.snapshot_revision,
+            collection_from=format_time(job.from_us),
+            collection_to=format_time(job.to_us),
         ),
         selection=selection,
         topology=safe_topology(job.config_snapshot, selection["process_ids"]),
@@ -888,6 +927,9 @@ async def export_document(
         coverage_status="unavailable" if saved and saved.expired else response["coverage_status"],
         errors=response["errors"],
         redaction=dict(applied=False, term_count=0, replacement="[REDACTED]", warning=WARNING),
+    )
+    document["pin_groups"] = pruned_pin_groups(
+        state, {bookmark["id"] for bookmark in document["bookmarks"]}
     )
     return document, await content_revision(session, job)
 
@@ -985,8 +1027,8 @@ def offline_response(row: OfflineInvestigation) -> dict:
         investigation_id=row.id,
         workspace_id="offline",
         process_ids=selection["process_ids"],
-        **{"from": selection["from"]},
-        to=selection["to"],
+        **{"from": document["origin"].get("collection_from") or selection["from"]},
+        to=document["origin"].get("collection_to") or selection["to"],
         status="completed"
         if document["coverage_status"] == "complete_for_scanned_candidates"
         else "partial",
@@ -1046,6 +1088,8 @@ def effective_document(row: OfflineInvestigation, analysis: OfflineAnalysis | No
     document = copy.deepcopy(row.document)
     if analysis is not None:
         document["selection"] = copy.deepcopy(analysis.state)
+        document["selection"].pop("pin_groups", None)
+    document["pin_groups"] = pin_groups(analysis.state if analysis else row.document)
     bookmarks = []
     for bookmark in offline_bookmarks(row, analysis):
         context = copy.deepcopy(bookmark["context"])
@@ -1088,13 +1132,102 @@ async def revise_offline(
             investigation_id=row.id,
             owner_user_id=row.owner_user_id,
             revision=1,
-            state=copy.deepcopy(row.document["selection"]),
+            state=with_pin_groups(
+                copy.deepcopy(row.document["selection"]), pin_groups(row.document)
+            ),
             bookmarks=offline_bookmarks(row, None),
         )
         session.add(analysis)
     else:
         analysis.revision += 1
     return analysis
+
+
+def prepare_pin_bookmarks(
+    project_id: str,
+    document: dict,
+    retained: list[dict],
+    groups: list[dict],
+    group: dict,
+    selections: list[PinEventInput],
+    evidence: list[dict],
+) -> list[dict]:
+    """Prepare an entire group before changing its owned, revisioned analysis."""
+    deadline = time.monotonic() + 30
+    wanted = {event.event_id for event in selections}
+    anchors = {}
+    for index, event in enumerate(document["events"]):
+        if index % 1024 == 0 and time.monotonic() > deadline:
+            raise DomainError(
+                "PIN_TIMEOUT", "Pinning selected events exceeded its time budget.", 408
+            )
+        if event["event_id"] in wanted:
+            anchors[event["event_id"]] = event
+    for bookmark in evidence:
+        if bookmark["event_id"] in wanted and bookmark["event_id"] not in anchors:
+            anchor = next(
+                (
+                    item["event"]
+                    for item in (bookmark["context"] or {}).get("items", [])
+                    if item["is_anchor"]
+                ),
+                None,
+            )
+            if anchor is not None:
+                anchors[bookmark["event_id"]] = anchor
+    byte_count = len(encoded(retained)) + len(encoded(groups))
+    output = []
+    created = services.utc_now_us()
+    for selected, bookmark_id in zip(selections, group["bookmark_ids"], strict=True):
+        if time.monotonic() > deadline:
+            raise DomainError(
+                "PIN_TIMEOUT", "Pinning selected events exceeded its time budget.", 408
+            )
+        anchor = anchors.get(selected.event_id)
+        if anchor is None:
+            raise not_found()
+        event = {**anchor, "project_id": project_id}
+        local_filter = selected.per_process_filters.get(
+            event["process_id"], HistoricalFilter()
+        ).predicate()
+        expanded = dict(
+            project_id=project_id,
+            event_id=selected.event_id,
+            items=[
+                dict(
+                    event=event,
+                    is_anchor=True,
+                    outside_time_bounds=event["timestamp_us"] is None
+                    or not canonical_time(selected.from_)
+                    <= event["timestamp_us"]
+                    < canonical_time(selected.to),
+                    matches_filter=None
+                    if event["parse_status"] == "oversized_line"
+                    else selected.filter.predicate().matches(event["raw_line"])
+                    and local_filter.matches(event["raw_line"]),
+                )
+            ],
+        )
+        bookmark = dict(
+            bookmark_id=bookmark_id,
+            event_id=selected.event_id,
+            annotation="",
+            pin_context=True,
+            context=expanded,
+            process_name_snapshot=event["process_name_snapshot"],
+            server_name_snapshot=event["server_name_snapshot"],
+            created_us=created,
+            availability="retained",
+        )
+        byte_count += len(encoded(bookmark))
+        if byte_count > 33_554_432:
+            raise DomainError(
+                "BOOKMARK_BYTE_LIMIT",
+                "Pinned context exceeds the 32 MiB investigation budget.",
+                413,
+            )
+        output.append(bookmark)
+    return output
 
 
 def event_order(event: dict) -> tuple:
@@ -1110,6 +1243,10 @@ def event_order(event: dict) -> tuple:
 
 def matching_events(document: dict, payload: HistoricalQueryInput) -> list[dict]:
     start, end = canonical_time(payload.from_), canonical_time(payload.to)
+    origin = document["origin"]
+    if origin.get("collection_from") is not None:
+        start = max(start, canonical_time(origin["collection_from"]))
+        end = min(end, canonical_time(origin["collection_to"]))
     global_filter = payload.filter.predicate()
     per_process = {key: value.predicate() for key, value in payload.per_process_filters.items()}
     output = []
@@ -1208,7 +1345,11 @@ def build_bundle_router(
                 AuthSession.user_id == actor.user_id,
                 AuthSession.auth_version == actor.auth_version,
                 AuthSession.expires_us > now,
-                AuthSession.last_seen_us > now - request.app.state.config.idle_timeout_us,
+                AuthSession.created_us <= now,
+                or_(
+                    AuthSession.remember_me.is_(True),
+                    AuthSession.last_seen_us > now - request.app.state.config.idle_timeout_us,
+                ),
             )
             .correlate(BundlePreview)
             .exists()
@@ -1452,8 +1593,9 @@ def build_bundle_router(
                         or user is None
                         or not user.enabled
                         or user.auth_version != actor.auth_version
-                        or login.expires_us <= now
-                        or now - login.last_seen_us > request.app.state.config.idle_timeout_us
+                        or auth.session_expired(
+                            login, now, request.app.state.config.idle_timeout_us
+                        )
                         or not await request.app.state.supervisor.healthy()
                     ):
                         return
@@ -1609,6 +1751,7 @@ def build_bundle_router(
                     func.json_extract(OfflineInvestigation.document, "$.selection").label(
                         "selection"
                     ),
+                    func.json_extract(OfflineInvestigation.document, "$.origin").label("origin"),
                     func.json_unquote(
                         func.json_extract(OfflineInvestigation.document, "$.coverage_status")
                     ).label("coverage"),
@@ -1632,14 +1775,15 @@ def build_bundle_router(
             selection = (
                 json.loads(row.selection) if isinstance(row.selection, str) else row.selection
             )
+            origin = json.loads(row.origin) if isinstance(row.origin, str) else row.origin
             job = dict(
                 project_id=project_id,
                 job_id=row.id,
                 investigation_id=row.id,
                 workspace_id="offline",
                 process_ids=selection["process_ids"],
-                **{"from": selection["from"]},
-                to=selection["to"],
+                **{"from": origin.get("collection_from") or selection["from"]},
+                to=origin.get("collection_to") or selection["to"],
                 status="completed"
                 if row.coverage == "complete_for_scanned_candidates"
                 else "partial",
@@ -1839,7 +1983,11 @@ def build_bundle_router(
 
     async def analysis_response(session: AsyncSession, row: OfflineInvestigation) -> dict:
         analysis = await session.get(OfflineAnalysis, (row.project_id, row.id))
-        selection = analysis.state if analysis else row.document["selection"]
+        selection = (
+            analysis.state
+            if analysis
+            else with_pin_groups(row.document["selection"], pin_groups(row.document))
+        )
         return dict(
             project_id=row.project_id,
             investigation_id=row.id,
@@ -1863,6 +2011,7 @@ def build_bundle_router(
             investigation_id=row.id,
             revision=analysis.revision if analysis else 0,
             items=offline_bookmarks(row, analysis),
+            pin_groups=pin_groups(analysis.state if analysis else row.document),
         )
 
     @router.get(
@@ -1896,8 +2045,9 @@ def build_bundle_router(
                 "INVALID_SELECTION", "Select processes retained in this imported bundle.", 422
             )
         analysis = await revise_offline(session, row, payload.expected_revision)
-        analysis.state = payload.model_dump(
-            mode="json", by_alias=True, exclude={"expected_revision", "pinned"}
+        analysis.state = with_pin_groups(
+            payload.model_dump(mode="json", by_alias=True, exclude={"expected_revision", "pinned"}),
+            pin_groups(analysis.state),
         )
         await session.flush()
         return await analysis_response(session, row)
@@ -1913,6 +2063,170 @@ def build_bundle_router(
         return await bookmarks_response(
             session, await checked_offline(session, actor, project_id, investigation_id)
         )
+
+    @router.post(
+        "/bundle-investigations/{investigation_id}/pins",
+        response_model=BookmarkResponse,
+        status_code=201,
+        openapi_extra={"x-permission": "bookmark.write"},
+    )
+    async def create_pin(
+        project_id: str,
+        investigation_id: str,
+        payload: PinCreate,
+        request: Request,
+        actor: Writer,
+        session: Session,
+    ) -> dict:
+        async with pin_deadline():
+            row = await checked_offline(session, actor, project_id, investigation_id)
+            authorize(actor, "bookmark.write", owner_user_id=row.owner_user_id)
+            existing = await session.get(OfflineAnalysis, (project_id, investigation_id))
+            retained = offline_bookmarks(row, existing)
+            groups = pin_groups(existing.state if existing else row.document)
+            if len(retained) + len(payload.events) > 1000:
+                raise DomainError(
+                    "BOOKMARK_LIMIT", "At most 1000 bookmarks per investigation are allowed.", 429
+                )
+            if any(
+                not set(event.per_process_filters) <= set(row.document["selection"]["process_ids"])
+                for event in payload.events
+            ):
+                raise not_found()
+            created = services.utc_now_us()
+            group: dict = dict(
+                id=str(uuid4()),
+                description=payload.description,
+                bookmark_ids=[str(uuid4()) for _ in payload.events],
+                created_us=created,
+            )
+            await session.commit()
+
+            added = await bundle_work(
+                request,
+                lambda: prepare_pin_bookmarks(
+                    project_id,
+                    row.document,
+                    retained,
+                    [*groups, group],
+                    group,
+                    payload.events,
+                    retained,
+                ),
+            )
+            actor = await authenticated(request, session)
+            row = await checked_offline(session, actor, project_id, investigation_id)
+            analysis = await revise_offline(session, row, payload.expected_revision)
+            analysis.bookmarks = [*retained, *added]
+            analysis.state = with_pin_groups(analysis.state, [*groups, group])
+            await session.flush()
+            return await bookmarks_response(session, row)
+
+    @router.patch(
+        "/bundle-investigations/{investigation_id}/pins/{pin_id}",
+        response_model=BookmarkResponse,
+        openapi_extra={"x-permission": "bookmark.write"},
+    )
+    async def edit_pin(
+        project_id: str,
+        investigation_id: str,
+        pin_id: str,
+        payload: PinUpdate,
+        request: Request,
+        actor: Writer,
+        session: Session,
+    ) -> dict:
+        async with pin_deadline():
+            row = await checked_offline(session, actor, project_id, investigation_id)
+            authorize(actor, "bookmark.write", owner_user_id=row.owner_user_id)
+            existing = await session.get(OfflineAnalysis, (project_id, investigation_id))
+            if payload.expected_revision != (existing.revision if existing else 0):
+                raise DomainError(
+                    "REVISION_CONFLICT", "Saved analysis changed; reload it before saving.", 409
+                )
+            groups = pin_groups(existing.state if existing else row.document)
+            original = next((group for group in groups if group["id"] == pin_id), None)
+            if original is None:
+                raise not_found()
+            evidence = offline_bookmarks(row, existing)
+            retained = evidence
+            replacement = {**original, "description": payload.description}
+            if payload.events is not None:
+                retained = [
+                    item for item in evidence if item["bookmark_id"] not in original["bookmark_ids"]
+                ]
+                replacement["bookmark_ids"] = [str(uuid4()) for _ in payload.events]
+                if len(retained) + len(payload.events) > 1000:
+                    raise DomainError(
+                        "BOOKMARK_LIMIT",
+                        "At most 1000 bookmarks per investigation are allowed.",
+                        429,
+                    )
+                if any(
+                    not set(event.per_process_filters)
+                    <= set(row.document["selection"]["process_ids"])
+                    for event in payload.events
+                ):
+                    raise not_found()
+            groups = [replacement if group["id"] == pin_id else group for group in groups]
+            await session.commit()
+            if payload.events is not None:
+                selections = payload.events
+                added = await bundle_work(
+                    request,
+                    lambda: prepare_pin_bookmarks(
+                        project_id,
+                        row.document,
+                        retained,
+                        groups,
+                        replacement,
+                        selections,
+                        evidence,
+                    ),
+                )
+                retained = [*retained, *added]
+            elif len(encoded(retained)) + len(encoded(groups)) > 33_554_432:
+                raise DomainError(
+                    "BOOKMARK_BYTE_LIMIT",
+                    "Pinned context exceeds the 32 MiB investigation budget.",
+                    413,
+                )
+            actor = await authenticated(request, session)
+            row = await checked_offline(session, actor, project_id, investigation_id)
+            analysis = await revise_offline(session, row, payload.expected_revision)
+            analysis.bookmarks = retained
+            analysis.state = with_pin_groups(analysis.state, groups)
+            await session.flush()
+            return await bookmarks_response(session, row)
+
+    @router.post(
+        "/bundle-investigations/{investigation_id}/pins/{pin_id}/delete",
+        response_model=BookmarkResponse,
+        openapi_extra={"x-permission": "bookmark.write"},
+    )
+    async def delete_pin(
+        project_id: str,
+        investigation_id: str,
+        pin_id: str,
+        payload: RevisionInput,
+        actor: Writer,
+        session: Session,
+    ) -> dict:
+        row = await checked_offline(session, actor, project_id, investigation_id)
+        authorize(actor, "bookmark.write", owner_user_id=row.owner_user_id)
+        analysis = await revise_offline(session, row, payload.expected_revision)
+        groups = pin_groups(analysis.state)
+        group = next((item for item in groups if item["id"] == pin_id), None)
+        if group is None:
+            raise not_found()
+        analysis.bookmarks = [
+            item for item in analysis.bookmarks if item["bookmark_id"] not in group["bookmark_ids"]
+        ]
+        analysis.state = with_pin_groups(
+            analysis.state, [item for item in groups if item["id"] != pin_id]
+        )
+        await session.flush()
+        return await bookmarks_response(session, row)
 
     @router.post(
         "/bundle-investigations/{investigation_id}/bookmarks",
@@ -1959,7 +2273,7 @@ def build_bundle_router(
                 availability="retained" if payload.pin_context else "unavailable",
             ),
         ]
-        if len(encoded(analysis.bookmarks)) > 33_554_432:
+        if len(encoded(analysis.bookmarks)) + len(encoded(pin_groups(analysis.state))) > 33_554_432:
             raise DomainError(
                 "BOOKMARK_BYTE_LIMIT",
                 "Pinned bookmark context exceeds the 32-MiB investigation budget.",
@@ -2012,7 +2326,8 @@ def build_bundle_router(
         if not payload.pin_context:
             bookmark["context"] = None
         bookmark["availability"] = "retained" if bookmark["context"] else "unavailable"
-        if len(encoded(bookmarks)) > 33_554_432:
+        groups = pin_groups(existing.state if existing else row.document)
+        if len(encoded(bookmarks)) + len(encoded(groups)) > 33_554_432:
             raise DomainError(
                 "BOOKMARK_BYTE_LIMIT",
                 "Pinned bookmark context exceeds the 32-MiB investigation budget.",
@@ -2048,6 +2363,10 @@ def build_bundle_router(
         if len(retained) == len(analysis.bookmarks):
             raise not_found()
         analysis.bookmarks = retained
+        analysis.state = with_pin_groups(
+            analysis.state,
+            pruned_pin_groups(analysis.state, {item["bookmark_id"] for item in retained}),
+        )
         await session.flush()
         return await bookmarks_response(session, row)
 

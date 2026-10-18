@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Preferences, Role, Settings } from '../src/api/types';
 import type { LanguagePreference } from '../src/i18n/translate';
-import { serveBuiltAssets } from './ui';
+import { applyHistoricalFilters, fillHistoricalFilters, serveBuiltAssets } from './ui';
 
 // This suite mutates preferences/defaults only in the isolated synthetic fixture.
 test.skip(process.env.INSPECTOR_E2E_URL !== 'https://localhost:8449', 'Requires the isolated synthetic fixture on 8449.');
@@ -227,13 +227,11 @@ test('Polish switch preserves scrolled split historical panes and retained query
     await page.goto(`/systems/${project}/investigations/${retained.investigation_id}`);
     await expect(page.locator('.virtual-logs').first()).toBeVisible();
     const workspace = await page.getByTestId('workspace-id').innerText();
-    for (const process of await page.getByRole('group', { name: 'Configured processes', exact: true }).getByRole('checkbox').all()) await process.check();
-    await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(retained.from);
-    await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(retained.to);
-    const clear = page.getByRole('button', { name: 'Clear filter', exact: true }); if (await clear.isEnabled()) await clear.click();
-    await page.getByLabel('Rows per result page', { exact: true }).selectOption('200');
+    await expect(page.getByRole('group', { name: 'Collected processes', exact: true }).locator('span')).toHaveCount(retained.process_ids.length);
+    await page.getByLabel('Rows', { exact: true }).selectOption('200');
+    await fillHistoricalFilters(page, { from: retained.from, to: retained.to, filter: { include: [], exclude: [], include_mode: 'all', case_sensitive: true }, per_process_filters: {} });
     const queried = page.waitForResponse(response => response.url().endsWith('/query') && response.request().method() === 'POST');
-    await page.getByRole('button', { name: 'Apply filter', exact: true }).click(); expect((await queried).status()).toBe(200);
+    await applyHistoricalFilters(page); expect((await queried).status()).toBe(200);
     await page.getByLabel('Result layout', { exact: true }).selectOption('split');
     const panes = page.locator('.history-split .virtual-logs'); await expect(panes.first()).toBeVisible();
     let paneIndex = -1;

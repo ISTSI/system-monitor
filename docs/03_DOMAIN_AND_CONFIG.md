@@ -20,10 +20,20 @@ The structural contract is `contracts/project.schema.json`; the examples in YAML
 | Event | Identity based on process/source/member/byte range; original line, exact UTC time or parse issue, byte/line provenance, optional parsed metadata |
 | Live session | Server-assigned owner_user_id, selected sources, subscriber/filter revisions, state, cursors, bounded raw retention, recording flag, coverage/gap records |
 | Bookmark | Parent investigation ownership, event/source identity and name snapshot, annotation, saved context/pin reference; never a mutable row number in the UI |
+| Pin group | Owned investigation ID, immutable group ID, shared description, ordered member bookmark IDs and creation microseconds; 1–100 distinct selected events with retained single-anchor text/provenance |
 
 IDs in examples are readable strings for fixture clarity. The implementation may use UUIDs for newly created records; IDs are immutable and cannot be reused to refer to a different object. A renamed process is still the same configured instance. Multiple instances of the same program are distinct records, not inferred by PID or executable name.
 
 A log source includes the active file, rotated plain files and historical archives for that process. These are not separate process objects. A profile can specify an exact archive member or safe glob patterns; never assume the first member is the intended log. Duplicate archive member names require ordinal identity, not name alone.
+
+The 18 October events-view follow-up stores pin groups as a typed extension of
+the existing personal analysis JSON. Group members remain independently scoped
+bookmarks referring to original event identities; identical text at different
+source positions remains distinct. One group can include several processes and
+sources without changing source-local context semantics: each member retains
+only its own anchor. Ordinary workspace updates preserve groups, and group
+creation/edit/deletion shares the parent's optimistic revision. Descriptions
+and retained evidence remain private to the owner and selected project.
 
 ## Canonical state and editing
 
@@ -82,6 +92,16 @@ Deployment config has its own `schema_version: 2.0` and `contracts/deployment.sc
 
 
 ## Version 3 system scoping and workspace entities
+
+A historical collection's process IDs and exact UTC `[from,to)` interval are
+its acquisition scope. Personal saved display bounds and predicates are separate
+analysis state. Editing the next collection form cannot change the current
+collection or its process list. Timestamped display queries intersect their
+requested interval with that acquisition scope. Scanned original bytes and
+out-of-range source-local neighbours remain retained for provenance/context;
+unknown timestamps remain in the diagnostic lane. New investigation bundles
+preserve acquisition bounds in the optional paired origin fields
+`collection_from` and `collection_to`, separately from mutable saved selection.
 
 UI **System configuration** is exactly the Project above. Retain `project_id` as the canonical scope field and keep single-system config schema 2.0. Do not add independent System/Project identities. All project-owned entities and relationships use `(project_id, id)`; local IDs and names can repeat between systems. Every related row must agree on project, including endpoints of a flow and cached event/source associations. A migration must not regenerate old IDs. See document 16 for required composite FK/index relationships and document 17 for migration.
 

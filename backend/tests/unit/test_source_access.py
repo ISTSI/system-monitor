@@ -267,6 +267,7 @@ async def test_fresh_batch_matches_individual_direct_and_jump_snapshots_without_
     login = AuthSession(
         user_id=actor.user_id,
         auth_version=1,
+        created_us=100,
         last_seen_us=500,
         expires_us=1000,
     )
@@ -430,7 +431,9 @@ async def test_common_source_snapshot_keeps_actor_login_policy_and_scope_error_o
         enabled=True,
         must_change_password=False,
     )
-    login = AuthSession(user_id="owner", auth_version=1, last_seen_us=500, expires_us=1000)
+    login = AuthSession(
+        user_id="owner", auth_version=1, created_us=100, last_seen_us=500, expires_us=1000
+    )
     settings = ApplicationSetting(id=1, additional_security_measures=False)
     project = Project(id="project-a", revision=2, archived=False)
     state = TopologyState(project_id=project.id, config={"connections": [{"id": "target"}]})
@@ -489,3 +492,28 @@ async def test_common_source_snapshot_keeps_actor_login_policy_and_scope_error_o
             Session(), actor, "project-a", ["target"], 2, "login-a"
         )
     assert denied.value.code == code and len(statements) == 1
+
+
+def test_ssh_login_guard_respects_remembered_inactivity_and_absolute_expiry(monkeypatch):
+    actor = Principal("owner", "inspector", 1)
+    ssh = object.__new__(SSHAccess)
+    ssh.config = SimpleNamespace(idle_timeout_us=200)
+    login = AuthSession(
+        user_id="owner",
+        auth_version=1,
+        created_us=100,
+        last_seen_us=100,
+        expires_us=1000,
+        remember_me=True,
+    )
+    monkeypatch.setattr("inspector.ssh_access.services.utc_now_us", lambda: 999)
+    assert ssh._validated_login(actor, login) == actor
+    login.remember_me = False
+    with pytest.raises(DomainError) as idle:
+        ssh._validated_login(actor, login)
+    assert idle.value.code == "AUTH_REQUIRED"
+    login.remember_me = True
+    monkeypatch.setattr("inspector.ssh_access.services.utc_now_us", lambda: 1000)
+    with pytest.raises(DomainError) as absolute:
+        ssh._validated_login(actor, login)
+    assert absolute.value.code == "AUTH_REQUIRED"

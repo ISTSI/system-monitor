@@ -92,7 +92,7 @@ test('AT61 navigates sixty configured processes during thirty continuous minutes
   await page.getByRole('button', { name: /^Live monitor/ }).click();
   const choices = page.getByRole('group', { name: 'Processes to monitor', exact: true }).getByRole('checkbox');
   expect(await choices.count()).toBe(60);
-  for (const id of monitored) await page.getByRole('group', { name: 'Processes to monitor', exact: true }).locator('.checkbox-label').filter({ hasText: id }).getByRole('checkbox').check();
+  for (const id of monitored) await page.getByRole('group', { name: 'Processes to monitor', exact: true }).locator(`input[data-process-id="${id}"]`).check();
   let monitor: components['schemas']['LiveSessionResponse'] | null = null;
   for (let attempt = 0; attempt < 12 && !monitor; attempt += 1) {
     const pending = page.waitForResponse(response => response.url().endsWith('/live-sessions') && response.request().method() === 'POST');

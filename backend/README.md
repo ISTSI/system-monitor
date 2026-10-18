@@ -1,5 +1,25 @@
 # System Inspector backend
 
+The topology/login follow-up source expects `0015_remember_login` over
+`0014_languages`. It persists an explicit per-login Remember me flag: opted-in
+sessions and their secure cookies last a fixed 30 days through inactivity;
+unchecked logins keep configured ordinary timeouts. Revocation and all
+HTTP/live/SSH/download checks still apply. Stop serving before migrating with
+the separate migration identity. Downgrade revokes remembered sessions while
+preserving ordinary sessions. This follow-up is now deployed on the retained
+**8449 preview**, including the current grouped-pin backend, with existing
+accounts, settings and cache preserved. The installed 8445 app is unchanged.
+
+Run `python scripts/verify_topology_login.py integration` and
+`python scripts/verify_topology_login.py upgrade` from the repository root for
+fresh disposable local MariaDB API and populated migration checks. They use
+the already available Stage 07 runner, separate runtime/migration identities,
+and preserve existing databases. Browser specs are `topology_add.spec.ts` and
+`remember_login.spec.ts`; recorded verification uses the dedicated synthetic
+fixture on 8450. Actual-served verification of the updated 8449 preview is in
+`verification/topology-login-preview/`. See `progress/STATUS.md` for exact
+evidence and limitations.
+
 Stage 07 source adds the Administrator **Import Ansible inventory files** wizard,
 safe static INI/extensionless-hosts/YAML/canonical-JSON parsing, ZIP companion
 variables, project-scoped source identities and revision-bound atomic
@@ -112,6 +132,26 @@ retains an independent event-text/provenance context snapshot (32 MiB total per
 investigation); it does not preserve the entire original source file. Explicit
 expiry removes unpinned source bytes/index rows while keeping analysis and pinned
 context. Responses distinguish unavailable data from zero matching events.
+
+The events-view follow-up adds grouped pins through owned historical and offline
+`/pins` routes. One atomic request saves 1–100 distinct selected events as
+single-anchor retained bookmarks, grouped under one ID and editable description.
+The group's `{id,description,bookmark_ids,created_us}` metadata is validated JSON
+in existing `saved_investigations.state` or `offline_analysis.state`; no table,
+column or Alembic revision is added. Workspace/bookmark responses include
+`pin_groups`, and ordinary workspace saves preserve it. Group changes use the
+same optimistic analysis revision and project/owner checks as bookmarks.
+Deleting a group removes its member bookmarks; it does not alter captured logs.
+Selected context and group metadata share the existing 32 MiB analysis budget,
+and member bookmarks count toward the 1,000-bookmark limit. A 30-second deadline
+bounds preparation. The matching updated backend is required for these routes;
+this feature does not enable the separate remembered-login schema follow-up.
+
+Bundle 1.0 adds optional `pin_groups`, validates membership against exported
+bookmarks and includes descriptions in the redacted preview. The current
+importer accepts earlier documents without groups. Offline personal edits keep
+group state separate from the immutable imported evidence and preserve it on
+re-export; importing starts no SSH connection.
 
 Bundle import streams a bounded ZIP to a temporary spool, validates the two
 regular members and checksums before staging, and commits separate private

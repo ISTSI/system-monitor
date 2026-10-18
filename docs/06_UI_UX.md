@@ -44,6 +44,25 @@ change another page's system, filters or selection.
 
 ## Workspace
 
+Administrator subsystem frames expose a **+** button that opens Add server with
+that subsystem selected. Server frames expose **+** for Add process with that
+server selected. These actions also work on collapsed frames, use accessible
+names identifying the parent and keep expand/collapse as a separate control.
+Saving a child expands its ancestors in the current view. Inspectors do not see
+these configuration actions.
+
+A new process proposes `app.log` under the first proposed log root of its
+server's connection profile. Changing the server updates this suggestion until
+the path is edited. A typed path or an existing process path is preserved. With
+no configured root, the required path starts empty.
+
+Login includes an unchecked **Remember me** checkbox, labelled with its 30-day
+duration. Selecting it persists the authenticated cookie and session for a
+maximum of 30 days, including inactivity and browser restarts. Ordinary logins
+retain the configured idle and absolute limits. Logout and account revocation
+still apply across windows; no workspace or system selection is remembered by
+this option.
+
 Top bar: configurable product branding, Systems, Accounts (Administrator only), Settings (Administrator only), Admin (Administrator only), the Synthetic demo data label when enabled, and the current user/account menu. Admin follows Settings and opens a dedicated `/admin` view for system creation, metadata editing, archival and restoration. Both roles find Preferences in the user menu for personal appearance; shared application settings and account management remain Administrator-only. Closing Preferences returns keyboard focus to the user menu trigger. Do not show an Administrator workspace status strip.
 
 Below the top bar, use a compact system header: System action menu and system name on the left, system selector on the right. The floating Administrator menu contains Add subsystem, Add server, Add process, Add flow, List connections, List Parsers, Import configuration, Export JSON and Export YAML. Put Undo and Redo in the Documented topology bar alongside the existing view controls; remove the separate topology editing button bar. Read-only views remain explicitly labelled and omit shared editing actions.
@@ -64,15 +83,59 @@ Provide save state, undo/redo and delete impact preview. Multiple views referenc
 
 ## Historical investigation
 
-Select processes → choose explicit UTC from/to → set optional literal filter → collect → inspect automatically loaded Timestamped events. Preview candidate sources/budget is optional; display the collection-plan panel only after an explicit preview request. Direct collection performs the same bounded planning and approval checks on the backend. Persist a named workspace when requested. Explain end-exclusive bounds near the time control, not only in documentation. Invalid times and from ≥ to prevent collection.
+Select processes → open **Filters** from the Timestamped events table → choose
+explicit UTC from/to and optional literal filters → apply → collect → inspect
+automatically loaded events. Preview candidate sources/budget is optional;
+display the collection-plan panel only after an explicit preview request.
+Direct collection performs the same bounded planning and approval checks on the
+backend. Persist a named workspace when requested. Explain end-exclusive bounds
+near the time control, not only in documentation. Invalid times and from ≥ to
+cannot be applied as query or collection bounds.
+
+**Filters** opens a separate modal with a local draft. **Existing filters**
+lists each global/per-process include or exclude term and an individual
+**Remove filter** action, including repeated terms. **Log content**, Include or
+Exclude, and **Filter scope** form a new literal term through **Add filter**.
+Keep terms as arrays; newline characters within a term never become a second
+filter. Each scope supports any/all inclusion, case sensitivity and shared
+Unicode-casefold behavior, with at most 20 include and 20 exclude terms of 512
+Unicode characters each. **Clear content filters** preserves time bounds;
+**Reset time range** uses the retained collection bounds. **Apply filters**
+submits a retained query when a collection is open and closes only on success.
+Cancel discards the draft. Query errors keep the draft open and leave the prior
+applied bounds/predicate intact. Filters remain independent across pages.
 
 From and To fields display `YYYY-MM-DD HH:mm:ss`. Each has a calendar button
 opening date and time selectors, including seconds, with an explicit UTC label.
-Typing and selecting use UTC regardless of the browser timezone. Cancel leaves
-the current bound unchanged; applying a selection invalidates an existing plan.
-Existing retained bounds keep their exact API microseconds until edited.
+Typing and selecting use UTC regardless of the browser timezone. Cancelling the
+nested date/time picker leaves the dialog's bound unchanged; cancelling Filters
+discards the entire draft. Committing Filters invalidates an existing collection
+plan. Existing retained bounds keep exact API microseconds until edited.
 
 Show match count, scanned sources, parse issues and coverage beside the results. A failed host stays visible in the process selection/status panel; successful sources are not discarded. Show each event's original source through a details drawer. Context, bookmark, annotate, copy literal text, trace correlation and add dependency neighbours are row/context actions.
+
+Click a row, or press Space/Enter on its focused row, to mark or unmark it for
+saving. Keep selected state visible and accessible in merged and separate panes,
+including across result pages, process visibility changes and refiltering in the
+same collection. The context eye and copying selected text do not toggle a mark.
+**Clear selection** removes the unsaved marks; changing collections clears them.
+The **Pin** button opens selected original log text and one shared editable
+description. Save 1–100 distinct entries as one pin group in the personal
+investigation workspace. Retain each entry's event identity and name snapshot;
+use the exact query bounds/predicate from when it was marked to label its saved
+context. A failed save retains the marks and description; an acknowledged save
+clears the saved selection.
+Each **Pins** entry is one row with its description and **View** button. View
+opens a popup with one terminal-style text block per process, an editable
+description, **Save**, **Cancel**, **Modify** and **Delete pin**. Modify returns
+to the event table with the saved entries selected. Pressing Pin then asks
+**Update the pin or create a new one?**; an update preserves the pin identity
+and atomically replaces its selection. Keep one investigation tools panel
+mounted while collections load or change; pin operations never create another
+personal workspace panel. Grouped entries retain single-anchor text/provenance after
+source-cache expiry; ordinary source-context bookmarks still offer surrounding
+lines separately. Group descriptions/membership are part of the sanitized,
+previewed offline bundle and remain editable on a private imported copy.
 
 Load Timestamped events automatically after collection finishes and when opening
 a retained collection. The **Log entry** column omits only the successfully parsed
@@ -82,6 +145,14 @@ operate on the retained original text. Both roles can delete their own finished
 collections after confirming the system and collection identity; remove retained
 events, captured files and download grants. Active collections must finish or be
 cancelled first. Other collections and page workspaces remain independent.
+
+The collection setup has visible **Collection time range** UTC inputs before
+collection starts. The event table's **Filters** dialog controls a separate
+display time range over retained data. Applying display filters does not change
+the acquisition inputs, invalidate a prepared next-collection plan or contact
+SSH. Show the current collection's original UTC interval and collected process
+list, even while the next-collection form has different choices. Filter process
+options come from that collection, including processes with zero events.
 
 All displayed timestamp metadata uses `YYYY-MM-DD HH:mm:ss` in UTC, including
 historical/live rows, applied intervals, correlation traces, parser-normalized
@@ -101,11 +172,60 @@ inside the maximized viewer; opening context and closing it returns to the row.
 Column/full-screen choices belong to the page and never update another window
 or trigger collection/refiltering.
 
+**Rows** sits in the right corner below the data table/panes with the result
+paging controls; its measured-size option is **Viewport**. Changing it
+immediately reloads page one of the applied query with the selected limit,
+preserving unapplied filter, time and process
+edits. Viewport uses an individual log scroll viewport and bounded
+prefetch. Pagination retains the applied page size. Separate panes include every
+process in the applied query, with distinct process/host headings and independent
+bounded result pages. A process absent from the merged page still has a pane;
+an empty pane reports no matches or unavailable data explicitly. Immediately to
+the right of **Result layout**, **Show process** is a checkbox dropdown in both
+layouts. It offers all queried processes as `server name: process name`, with
+immutable process IDs available on hover, and permits any subset or none. The
+same labels apply to configured-process and filter-scope lists. Its options
+remain the full applied-query process set so hidden processes can always be
+enabled again. Merged results
+query the enabled subset using the applied predicates, reset pagination and
+show that subset's actual match count. Unsubmitted edits remain unapplied.
+With no enabled processes show a clear empty state and disable result paging;
+do not send an empty process scope to the backend. In split view, checkboxes
+hide/show mounted panes while retaining their pages and scroll. **Pane
+arrangement** is always visible: disabled in Merged, enabled in Separate process
+panes, retaining the Stacked/2/3/4-column choice across layout changes. Changing
+arrangement makes no query. Loading split pages uses bounded concurrent cached
+queries; a failed pane retains its rows and offers its own retry. Merged paging
+remains separate. These controls are local to each browser page, including
+same-system duplicated pages. Log tables scroll horizontally within their panes.
+The **Show process** and **Columns** pickers stay open for checkbox changes and close on outside
+click, keyboard focus leaving, or Escape. Escape first closes the picker and
+restores its trigger focus, keeping a full-screen results dialog open.
+
 The trace view is a time-ordered table with process, timestamp, correlation field, message and observed delta. It is not a fabricated animation claiming an unobserved transfer occurred. Dependency highlighting on the diagram can accompany a trace without presenting it as proof.
 
 ## Live viewer
 
-Use one viewer implementation in split or merged mode. Merged rows display UTC time, process and host in columns; copied visible text includes `[host/process]`. Keep that generated prefix out of raw substring matching. Split panes share global controls but allow a per-process literal filter and show an active filter badge.
+Use one viewer implementation in split or merged mode. Merged rows display UTC time, process and host in columns; process references and copied visible text use `server: process`. Keep that generated prefix out of raw substring matching. Split panes share global controls but allow a per-process literal filter and show an active filter badge. Use the same process label in selection, accessible filter names, source status, detached monitors and pane headings; immutable IDs remain internal identities.
+
+Live events share the historical table's compact 20-pixel rows, monospace text,
+minimal cell padding and separate UTC time, process, host and log-entry columns.
+Both layouts use the same column geometry, sticky headings, hover treatment and
+horizontal scrolling. Preserve the live follow/scroll anchor and display-pause
+behavior; measure seed rows using the actual heading and viewport heights.
+Unknown timestamps remain in their diagnostic lane. A distinct late-arrival
+label precedes the displayed message so the compact timestamp column cannot
+hide it. Copied rows retain system and `server: process` labels and original text.
+
+Opening Live monitor or selecting checkboxes starts no capture. Starting requires
+an explicit Monitor action (including Monitor this process from topology) or
+explicit Resume. Switching workspace sections keeps an existing monitor running;
+Stop this monitor ends it. Once it ends, label its selection as a previous monitor
+rather than claiming it is still monitoring. Preserve backend error codes in
+stream-error notices. A `TRANSPORT_DISCONNECTED` gap identifies the affected
+`server: process` when supplied and explains interrupted source reading and
+potentially missing entries. It is not proof of a network failure or process
+health; missing files and other retryable SFTP failures can produce this reason.
 
 The primary filter is a single Contains string field with a clear button and a case-sensitive toggle. An Advanced drawer exposes multiple include/exclude terms and any/all inclusion. Filter edits debounce briefly, apply on the backend and show applying/applied state. Make literal behaviour discoverable; do not label the field Regex. Clearing the filter restores retained unmatched events.
 
@@ -116,6 +236,8 @@ Controls distinguish Pause display, Resume, Stop collection, Record and Load old
 ## Shared configuration/import/test tools (Administrator only)
 
 Connection editor: label, target/port/user, existing credential reference or secure write-only password update, jump profile, host-key fingerprint/trust and Test access. Never return a stored password to a prefilled field. Clearing a password field without an explicit replacement action must not erase the credential.
+
+**Copy** in the connection list or saved connection editor opens **Add connection** with the saved name, endpoint, username, credential reference, jump profile and log roots prefilled. Generate a new editable stable ID and prompt for a unique name before saving through the normal revision-checked create flow. Opening or cancelling the draft changes no shared configuration. The copied credential reference can reuse its existing stored password; host-key and source approvals are not copied.
 
 Parser test: paste a bounded anonymised sample or upload a small file; show original line, extracted time, normalised UTC, level/correlation extraction and per-line errors. Process configuration shows one active path and its rotations/archive selectors.
 

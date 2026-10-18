@@ -2,7 +2,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { serveBuiltAssets, setAppearance, submitSignIn } from './ui';
+import { expectHistoricalContentFilters, fillHistoricalFilters, serveBuiltAssets, setAppearance, setHistoricalCollectionRange, setHistoricalFilters, submitSignIn } from './ui';
 import type { components } from '../src/api/schema';
 import type { BundlePreview, Trace } from '../src/investigation';
 
@@ -49,8 +49,7 @@ async function collect(page: Page) {
   await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
   const processes = page.getByRole('group', { name: 'Configured processes', exact: true }).getByRole('checkbox'); expect(await processes.count()).toBe(5);
   for (const process of await processes.all()) await process.check();
-  await page.getByLabel('From UTC (inclusive)', { exact: true }).fill(from);
-  await page.getByLabel('To UTC (exclusive)', { exact: true }).fill(to);
+  await setHistoricalCollectionRange(page, { from, to });
   const creation = page.waitForResponse(response => response.url().endsWith('/collections') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Collect sources', exact: true }).click();
   expect((await creation).status()).toBe(202);
@@ -70,6 +69,14 @@ async function correlation(page: Page, mode: 'exact' | 'literal') {
 async function screenshot(page: Page, name: string) {
   const directory = resolve(root, `verification/stage-${stage}/screenshots`); mkdirSync(directory, { recursive: true });
   await page.screenshot({ path: resolve(directory, `${name}.png`), fullPage: false, animations: 'disabled' });
+}
+async function expectSplitMatches(page: Page, count: number) {
+  const panes = page.locator('.history-split > section');
+  await expect(panes).toHaveCount(5);
+  await expect.poll(async () => {
+    const totals = (await panes.locator('.history-pane-status').allTextContents()).map(value => /^\s*(\d+) matches/.exec(value));
+    return totals.some(value => !value) ? -1 : totals.reduce((sum, value) => sum + Number(value![1]), 0);
+  }).toBe(count);
 }
 
 for (const role of ['inspector', 'administrator'] as const) test(`${role} follows exact five-process trace, pins context, restores saved workspace and imports previewed redacted bundle offline`, async ({ page, context, baseURL }) => {
@@ -99,7 +106,7 @@ for (const role of ['inspector', 'administrator'] as const) test(`${role} follow
   await expect(page.getByRole('region', { name: 'Saved bookmarks', exact: true })).toContainText('secret-operator-note');
   await page.getByLabel('Investigation title', { exact: true }).fill('Follow REQ-0042');
   await page.getByLabel('Private investigation notes', { exact: true }).fill('secret-operator-note: observed cross-process handoff');
-  await page.getByLabel('Contains string', { exact: true }).fill('REQ-0042');
+  await setHistoricalFilters(page, { filter: { include: ['REQ-0042'], exclude: [], include_mode: 'all', case_sensitive: true }, per_process_filters: {} });
   await page.getByLabel('Result layout', { exact: true }).selectOption('split');
   await page.getByLabel('Pin captured sources against expiry', { exact: true }).check();
   const save = page.waitForResponse(response => response.url().endsWith('/workspace') && response.request().method() === 'PATCH');
@@ -112,13 +119,14 @@ for (const role of ['inspector', 'administrator'] as const) test(`${role} follow
   const duplicate = await context.newPage();
   try {
     await duplicate.goto(`/systems/${systemA}/investigations/${investigation}`);
-    await expect(duplicate.getByTestId('match-count')).toHaveText(`${literal.items.length} matches`);
-    await expect(duplicate.getByLabel('Contains string', { exact: true })).toHaveValue('REQ-0042');
+    await expectSplitMatches(duplicate, literal.items.length);
+    await expectHistoricalContentFilters(duplicate, ['REQ-0042']);
     await expect(duplicate.getByLabel('Result layout', { exact: true })).toHaveValue('split');
     await expect(duplicate.getByLabel('Private investigation notes', { exact: true })).toHaveValue('secret-operator-note: observed cross-process handoff');
     expect(await duplicate.getByTestId('workspace-id').innerText()).not.toBe(await page.getByTestId('workspace-id').innerText());
-    await duplicate.getByLabel('Contains string', { exact: true }).fill('only this duplicated page');
-    await expect(page.getByLabel('Contains string', { exact: true })).toHaveValue('REQ-0042');
+    const draft = await fillHistoricalFilters(duplicate, { filter: { include: ['only this duplicated page'], exclude: [], include_mode: 'all', case_sensitive: true }, per_process_filters: {} });
+    await expect(draft.locator('.history-filter-list code')).toHaveText('only this duplicated page');
+    await expectHistoricalContentFilters(page, ['REQ-0042']);
   } finally { await duplicate.close(); }
   const firstSource = exact.items[0].source.source_revision_id;
   const { csrf_token } = await (await page.request.get('/api/v1/auth/csrf')).json() as { csrf_token: string };
@@ -163,10 +171,29 @@ for (const role of ['inspector', 'administrator'] as const) test(`${role} follow
     await importing.getByRole('button', { name: 'Validate and preview bundle', exact: true }).click();
     await expect(importing.getByTestId('bundle-preview-document')).toContainText('[REDACTED]');
     await importing.getByLabel('I reviewed this exact preview', { exact: true }).check();
+    const offlineLoaded = page.waitForResponse(response => response.url().includes(`/projects/${systemB}/bundle-investigations/`) && response.url().endsWith('/query') && response.request().method() === 'POST');
     await importing.getByRole('button', { name: 'Import private offline copy', exact: true }).click();
+    const offlineQuery = await offlineLoaded; expect(offlineQuery.status()).toBe(200);
+    const offlineEvents = await offlineQuery.json() as components['schemas']['HistoricalQueryResponse'];
+    expect(offlineEvents.project_id).toBe(systemB);
+    expect(offlineEvents.items.every(event => event.project_id === systemB)).toBe(true);
+    expect(preview.document.origin.project_id).toBe(systemA);
     await expect(page.getByRole('heading', { name: 'Private offline investigation', exact: true })).toBeVisible();
     await expect(page.getByText('Offline bundle | no SSH', { exact: true })).toBeVisible();
-    await expect(page.getByTestId('match-count')).toContainText('matches');
+    await expectSplitMatches(page, literal.items.length);
+    const importedProcesses = page.getByRole('group', { name: 'Imported process snapshots', exact: true });
+    const importedSnapshots = [...new Map(preview.document.events.map(event => [event.process_id, event])).values()];
+    await expect(importedProcesses.getByRole('checkbox')).toHaveCount(importedSnapshots.length);
+    for (const snapshot of importedSnapshots) {
+      const label = `${snapshot.server_name_snapshot}: ${snapshot.process_name_snapshot}`;
+      const checkbox = importedProcesses.getByRole('checkbox', { name: label, exact: true });
+      await expect(checkbox).toBeChecked();
+      const choice = checkbox.locator('..');
+      await expect(choice).toHaveText(label);
+      await expect(choice).toHaveAttribute('title', snapshot.process_id);
+      await choice.hover();
+      expect(await choice.getAttribute('title')).toBe(snapshot.process_id);
+    }
     await expect(page.getByLabel('Private investigation notes', { exact: true })).not.toHaveValue(/secret-operator-note/);
     await expect(page.getByRole('button', { name: 'Collect sources', exact: true })).toBeDisabled();
     await page.getByLabel('Investigation title', { exact: true }).fill('Offline private follow-up');
@@ -181,7 +208,7 @@ for (const role of ['inspector', 'administrator'] as const) test(`${role} follow
     await expect(page.getByTestId('trace-count')).toHaveText(`${exact.items.length} trace matches`);
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Private offline investigation', exact: true })).toBeVisible();
-    await expect(page.getByTestId('match-count')).toContainText('matches');
+    await expectSplitMatches(page, literal.items.length);
     await expect(page.getByLabel('Investigation title', { exact: true })).toHaveValue('Offline private follow-up');
     await expect(page.getByLabel('Private investigation notes', { exact: true })).toHaveValue('Follow-up after disconnected import');
     await expect(page.getByRole('region', { name: 'Saved bookmarks', exact: true }).getByLabel('Bookmark annotation', { exact: true })).toHaveValue('Offline personal annotation');
@@ -206,7 +233,9 @@ for (const role of ['inspector', 'administrator'] as const) test(`${role} follow
   await expect(expiry).toContainText('pinned bookmark context remain');
   await expiry.getByRole('button', { name: 'Remove unpinned source cache', exact: true }).click();
   await expect(page.getByTestId('investigation-availability')).toHaveText('unavailable');
-  await expect(page.getByRole('heading', { name: 'Retained source data unavailable', exact: true })).toBeVisible();
+  const unavailablePanes = page.locator('.history-split > section .history-pane-empty');
+  await expect(unavailablePanes).toHaveCount(5);
+  for (const pane of await unavailablePanes.all()) await expect(pane).toHaveText('Retained source data unavailable');
   await expect(page.getByRole('region', { name: 'Collection progress', exact: true })).toContainText('Coverage: unavailable');
   const retainedBookmarks = page.getByRole('region', { name: 'Saved bookmarks', exact: true });
   await expect(retainedBookmarks.getByLabel('Bookmark annotation', { exact: true })).toHaveValue('secret-operator-note: follow REQ-0042');

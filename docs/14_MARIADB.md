@@ -1,5 +1,18 @@
 # 14 — MariaDB persistence, configuration and lifecycle
 
+The explicit **“Update the 8449 environment”** authorization on 18 October 2026
+upgraded only the retained synthetic preview from `0014_languages` to
+`0015_remember_login`. Serving stopped before the protected SQL/state/cache
+backup. All 49 table counts, 47 unchanged table checksums and exact old session
+columns survived DDL; existing sessions received false remember flags. Current
+frontend/backend preserve grouped pins and cached investigations. Actual-served
+login/cookie, topology and investigation checks pass. State/cache volumes and
+other deployments are unchanged; 8445 stays at `0014_languages`. The original
+source/web and pre-migration backup remain retained. Rolling the preview back
+requires stopping it, explicitly downgrading with the separate migrator, then
+restoring its previous Compose; old code must never serve against schema 0015.
+See `verification/topology-login-preview/` and `progress/STATUS.md`.
+
 The authorized local language deployment on 18 October 2026 applied
 **`0014_languages`** after
 `0013_inventory`. It adds checked ASCII language columns to shared settings
@@ -222,6 +235,36 @@ preserved without aliases or environment expansion. Production remains Linux
 and uses POSIX paths; credentials remain in ignored, access-restricted files.
 
 ## Storage and query contract
+
+The 18 October events-view grouped-pin follow-up adds no DDL, tables or Alembic
+revision. Historical groups are a typed `pin_groups` array within the existing
+`saved_investigations.state` JSON; offline personal groups use
+`offline_analysis.state`. Missing arrays in old analysis mean no groups. Each
+group stores an immutable ID, shared description, ordered bookmark IDs and exact
+creation microseconds. Selected event text/provenance remains in the existing
+scoped bookmark context records, with one retained anchor per member. The
+group's parent supplies project and owner scope; event foreign keys and original
+IDs remain unchanged.
+
+Group creation locks the same personal-analysis parent as workspace/bookmark
+mutations, checks its expected revision and atomically saves all selected
+anchors plus metadata. A failed request commits neither partial membership nor
+a revision increment. Workspace saves preserve groups; description changes,
+member/group removal and offline edits keep the same revision boundary.
+Retention may remove source bytes/index rows while leaving retained pin text
+and group descriptions available. The existing 1,000-bookmark and 32 MiB
+analysis limits also cover grouped pins. Backups of the current analysis tables
+already include this state; no separate live file or browser storage is a writer.
+Use the matching group-aware backend for pin/workspace mutations. This change
+does not change the separately documented `0015_remember_login` requirement.
+
+The login follow-up adds revision `0015_remember_login` over `0014_languages`.
+It adds non-null `auth_sessions.remember_me`, default false, with a 0/1 check.
+Existing sessions and configured ordinary timeouts keep their previous policy;
+new opted-in sessions store a fixed 30-day expiry. No account, preference,
+workspace or project identity changes. Migrate with serving stopped using the
+separate migration account. A downgrade must revoke remembered sessions before
+removing the policy flag, so it cannot leave an extended ordinary session.
 
 Stage 05 revision `0009_live` adds `live_sessions` and `live_subscriptions`.
 Composite foreign keys bind sessions to project revision, workspace/owner, and

@@ -5,7 +5,7 @@ import { ancestors, defaultGeometry, entityList, newId, type Config, type Connec
 import { ErrorNotice, Modal } from './Common';
 import ParserTestPanel from './ParserTestPanel';
 
-type Props = { kind: EntityKind; item?: EditEntity; config: Config; currentView?: View; defaults?: Partial<Flow>; onClose: () => void; onSave: (kind: EntityKind, item: EditEntity, connection?: Connection) => Promise<void> };
+type Props = { kind: EntityKind; item?: EditEntity; copyFrom?: Connection; config: Config; currentView?: View; defaults?: Partial<Flow> & { subsystem_id?: string; server_id?: string }; onClose: () => void; onCopy?: (connection: Connection) => void; onSave: (kind: EntityKind, item: EditEntity, connection?: Connection) => Promise<void> };
 const entityNames: Record<EntityKind, string> = { subsystem: 'Subsystem', server: 'Server', process: 'Process', flow: 'Flow', connection: 'Connection', parser: 'Parser', view: 'View' };
 const editorActions: Record<EntityKind, { add: string; edit: string; save: string }> = Object.fromEntries(Object.keys(entityNames).map(kind => [kind, { add: `Add ${kind}`, edit: `Edit ${kind}`, save: `Save ${kind}` }])) as Record<EntityKind, { add: string; edit: string; save: string }>;
 const rootChangeHelp = 'Keep the current roots and add the new root on another line, save, then update the affected processes before removing an old root.';
@@ -25,7 +25,7 @@ function belowLogRoots(path: string, roots: string[]) {
   return roots.some(root => path.startsWith(root.replace(/\/+$/, '') + '/'));
 }
 
-export default function TopologyEditor({ kind, item, config, currentView, defaults, onClose, onSave }: Props) {
+export default function TopologyEditor({ kind, item, copyFrom, config, currentView, defaults, onClose, onCopy, onSave }: Props) {
   const { t } = useI18n();
   const [id] = useState(() => item?.id ?? newId(kind));
   const [busy, setBusy] = useState(false);
@@ -35,6 +35,11 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
   const [parserDraftVersion, setParserDraftVersion] = useState(0);
   const process = kind === 'process' ? item as Process | undefined : undefined;
   const server = kind === 'server' ? item as Server | undefined : undefined;
+  const [processServerId, setProcessServerId] = useState(process?.server_id ?? defaults?.server_id ?? config.servers[0]?.id ?? '');
+  const [activePathDraft, setActivePathDraft] = useState<string | null>(process?.log_source?.active_path ?? null);
+  const processConnectionId = config.servers.find(item => item.id === processServerId)?.connection_id;
+  const firstLogRoot = config.connections?.find(item => item.id === processConnectionId)?.allowed_log_roots[0];
+  const suggestedLogPath = firstLogRoot ? `${firstLogRoot.replace(/\/+$/, '')}/app.log` : '';
   const connection = kind === 'connection' ? item as Connection | undefined : undefined;
   const [connectionId, setConnectionId] = useState(server?.connection_id ?? config.connections?.[0]?.id ?? '');
   const [newConnectionId] = useState(() => newId('connection'));
@@ -87,20 +92,21 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
   }
 
   return <Modal title={t(editorActions[kind][item ? 'edit' : 'add'])} onClose={onClose}><p className="target-system">{t("Target system:")} <strong>{config.project.name}</strong><code>{config.project.id}</code></p>{error && <ErrorNotice>{excludedRootCount ? t("These log roots exclude {count} configured log paths. {help}", { count: excludedRootCount, help: t(rootChangeHelp) }) : t(error)}</ErrorNotice>}<form ref={formRef} onChange={event => { if (kind === 'parser' && !event.target.closest('.parser-test')) setParserDraftVersion(value => value + 1); }} onSubmit={event => { void submit(event); }}>
-    <div className="form-grid"><label>{t("Name")}<input name="name" defaultValue={item?.name ?? ''} maxLength={256} required autoFocus /></label><label>{t("Stable ID")}<input name="id" defaultValue={id} readOnly={!!item} pattern="[A-Za-z0-9][A-Za-z0-9_.:\-]{0,127}" required maxLength={128} /></label></div>
+    <div className="form-grid"><label>{t("Name")}<input name="name" defaultValue={item?.name ?? copyFrom?.name ?? ''} maxLength={256} required autoFocus /></label><label>{t("Stable ID")}<input name="id" defaultValue={id} readOnly={!!item} pattern="[A-Za-z0-9][A-Za-z0-9_.:\-]{0,127}" required maxLength={128} /></label></div>
     {!item && <p className="field-help">{t("The ID is permanent. Renaming an element preserves its relationships.")}</p>}
+    {copyFrom && <p className="field-help">{t("Choose a unique name for the new connection before saving.")}</p>}
     {['subsystem', 'server', 'process'].includes(kind) && <><label>{t("Documentation (Markdown)")}<textarea name="description" rows={5} defaultValue={item && 'description' in item ? item.description : ''} /></label><label>{t("Tags (comma separated)")}<input name="tags" defaultValue={item && 'tags' in item ? item.tags.join(', ') : ''} /></label></>}
-    {kind === 'server' && <><label>{t("Subsystem")}<select name="subsystem_id" defaultValue={server?.subsystem_id} disabled={!!server} required>{config.subsystems.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>{server && <p className="field-help">{t("Use Move to subsystem to explicitly change ownership.")}</p>}<fieldset className="ssh-connection"><legend>{t("SSH connection")}</legend><label>{t("Connection profile")}<select name="connection_id" value={connectionId} onChange={event => setConnectionId(event.target.value)}><option value="">{t("Create a new SSH profile")}</option>{config.connections?.map(item => <option key={item.id} value={item.id}>{item.name} · {item.host} {t("· port")} {item.port}</option>)}</select></label>{selectedConnection ? <><div className="form-grid"><label>{t("SSH host")}<input readOnly value={selectedConnection.host} /></label><label>{t("SSH port")}<input readOnly value={selectedConnection.port} /></label></div><p className="field-help">{t("This server uses the selected profile. Change its settings through Connections, or choose Create a new SSH profile for a different endpoint.")}</p></> : <><p className="field-help">{t("Enter an IP address or hostname for the Linux host. Leave the profile name empty to use the server name.")}</p><label>{t("SSH profile name (optional)")}<input name="ssh_profile_name" maxLength={256} placeholder={t("Server name + SSH")} /></label><ConnectionFields config={config} /></>}</fieldset></>}
+    {kind === 'server' && <><label>{t("Subsystem")}<select name="subsystem_id" defaultValue={server?.subsystem_id ?? defaults?.subsystem_id} disabled={!!server} required>{config.subsystems.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>{server && <p className="field-help">{t("Use Move to subsystem to explicitly change ownership.")}</p>}<fieldset className="ssh-connection"><legend>{t("SSH connection")}</legend><label>{t("Connection profile")}<select name="connection_id" value={connectionId} onChange={event => setConnectionId(event.target.value)}><option value="">{t("Create a new SSH profile")}</option>{config.connections?.map(item => <option key={item.id} value={item.id}>{item.name} · {item.host} {t("· port")} {item.port}</option>)}</select></label>{selectedConnection ? <><div className="form-grid"><label>{t("SSH host")}<input readOnly value={selectedConnection.host} /></label><label>{t("SSH port")}<input readOnly value={selectedConnection.port} /></label></div><p className="field-help">{t("This server uses the selected profile. Change its settings through Connections, or choose Create a new SSH profile for a different endpoint.")}</p></> : <><p className="field-help">{t("Enter an IP address or hostname for the Linux host. Leave the profile name empty to use the server name.")}</p><label>{t("SSH profile name (optional)")}<input name="ssh_profile_name" maxLength={256} placeholder={t("Server name + SSH")} /></label><ConnectionFields config={config} /></>}</fieldset></>}
     {kind === 'process' && <>
-      <label>{t("Server")}<select name="server_id" defaultValue={process?.server_id} disabled={!!process} required>{config.servers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>{process && <p className="field-help">{t("Use Move to server to explicitly change ownership.")}</p>}
+      <label>{t("Server")}<select name="server_id" value={processServerId} onChange={event => setProcessServerId(event.target.value)} disabled={!!process} required>{config.servers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>{process && <p className="field-help">{t("Use Move to server to explicitly change ownership.")}</p>}
       <label>{t("PCS resource name (optional)")}<input name="pcs_resource_name" defaultValue={process?.pcs_resource_name ?? ''} /></label>
-      <label>{t("Active log path")}<input name="active_path" defaultValue={process?.log_source?.active_path ?? '/var/log/application/app.log'} required /></label>
+      <label>{t("Active log path")}<input name="active_path" value={activePathDraft ?? suggestedLogPath} onChange={event => setActivePathDraft(event.target.value)} required /></label>
       <label>{t("Rotated file patterns (one per line)")}<textarea name="rotated_patterns" defaultValue={process?.log_source?.rotated_patterns.join('\n') ?? ''} rows={2} /></label>
       <label>{t("Archive definitions (JSON)")}<textarea className="config-text" name="archives" defaultValue={JSON.stringify(process?.log_source?.archives ?? [], null, 2)} rows={4} /></label><p className="field-help">{t("Example: [")}{'{'}"path_pattern":"/var/log/application/*.zip","member_patterns":["logs/*.log"]{'}'}]</p>
       <div className="form-grid"><label>{t("Parser profile")}<select name="parser_id" defaultValue={process?.log_source?.parser_id} required>{config.parsers?.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>{t("Encoding")}<input name="encoding" defaultValue={process?.log_source?.encoding ?? 'utf-8'} required /></label></div>
       <label className="checkbox-label"><input type="checkbox" name="allow_symlink" defaultChecked={process?.log_source?.allow_symlink ?? false} />{t("Allow resolved regular-file symlinks within approved roots")}</label>
     </>}
-    {kind === 'connection' && <ConnectionFields config={config} connection={connection} />}
+    {kind === 'connection' && <ConnectionFields config={config} connection={connection} defaults={copyFrom} />}
     {['server', 'connection'].includes(kind) && <p className="notice">{t("After saving, use Password & connection test to store the SSH password and verify the host key. Confirm the target and log roots when Additional security measures is enabled in Settings.")}</p>}
     {kind === 'parser' && <>
       <label>{t("Timestamp strategy")}<select name="timestamp_kind" value={timestampKind} onChange={event => setTimestampKind(event.target.value as Parser['timestamp']['kind'])}><option value="iso8601_prefix">{t("ISO 8601 prefix (UTC)")}</option><option value="fixed_width">{t("Fixed width (UTC)")}</option></select></label>
@@ -113,23 +119,24 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
       <label>{t("Protocol")}<input name="protocol" defaultValue={flow?.protocol ?? ''} /></label><label>{t("Documentation (Markdown)")}<textarea name="description" rows={4} defaultValue={flow?.description ?? ''} /></label><p className="field-help">{t("This describes a possible transfer; it does not establish observed causality.")}</p>
     </>}
     {kind === 'view' && <><p className="muted">{t("Choose existing elements. Ancestors are included automatically; shared documentation and IDs stay unchanged.")}</p><fieldset className="view-elements"><legend>{t("Visible elements")}</legend>{entities.map(item => <label className="checkbox-label" key={item.id}><input type="checkbox" checked={visibleIds.includes(item.id)} onChange={event => setVisibleIds(current => event.target.checked ? [...current, item.id] : current.filter(id => id !== item.id))} />{item.name}<code>{item.id}</code></label>)}</fieldset><fieldset className="view-elements"><legend>{t("Visible flows")}</legend>{config.flows.map(flow => <label className="checkbox-label" key={flow.id}><input type="checkbox" checked={visibleFlows.includes(flow.id)} onChange={event => setVisibleFlows(current => event.target.checked ? [...current, flow.id] : current.filter(id => id !== flow.id))} />{flow.name}<code>{flow.id}</code></label>)}</fieldset><p className="field-help">{t("A flow appears only when both endpoint processes are included.")}</p></>}
-    <div className="form-actions"><button type="button" onClick={onClose}>{t("Cancel")}</button><button className="primary" disabled={busy}>{busy ? t("Saving…") : t(editorActions[kind].save)}</button></div>
+    <div className="form-actions">{connection && onCopy && <button type="button" disabled={busy} onClick={() => onCopy(connection)}>{t("Copy")}</button>}<button type="button" onClick={onClose}>{t("Cancel")}</button><button className="primary" disabled={busy}>{busy ? t("Saving…") : t(editorActions[kind].save)}</button></div>
   </form></Modal>;
 }
 
-function ConnectionFields({ config, connection }: { config: Config; connection?: Connection }) {
+function ConnectionFields({ config, connection, defaults }: { config: Config; connection?: Connection; defaults?: Connection }) {
   const { t } = useI18n();
+  const values = connection ?? defaults;
   const [credentialReference] = useState(() => `credential-${crypto.randomUUID()}`);
-  const [logRoots, setLogRoots] = useState(connection?.allowed_log_roots.join('\n') ?? '/var/log/application');
+  const [logRoots, setLogRoots] = useState(values?.allowed_log_roots.join('\n') ?? '/var/log/application');
   const roots = logRoots.split('\n').map(root => root.trim()).filter(Boolean);
   const paths = connection ? configuredLogPaths(config, connection.id) : [];
   const excludedCount = paths.filter(source => !belowLogRoots(source.path, roots)).length;
   return <>
-    <div className="form-grid"><label>{t("SSH host")}<input name="host" defaultValue={connection?.host ?? ''} placeholder={t("IP address or hostname")} required maxLength={253} /></label><label>{t("SSH port")}<input type="number" name="port" defaultValue={connection?.port ?? 22} min={1} max={65535} step={1} required /></label></div>
-    <div className="form-grid"><label>{t("Username")}<input name="username" defaultValue={connection?.username ?? 'logreader'} required /></label><label>{t("Credential reference")}<input name="credential_ref" defaultValue={connection?.credential_ref ?? credentialReference} required /></label></div>
+    <div className="form-grid"><label>{t("SSH host")}<input name="host" defaultValue={values?.host ?? ''} placeholder={t("IP address or hostname")} required maxLength={253} /></label><label>{t("SSH port")}<input type="number" name="port" defaultValue={values?.port ?? 22} min={1} max={65535} step={1} required /></label></div>
+    <div className="form-grid"><label>{t("Username")}<input name="username" defaultValue={values?.username ?? 'logreader'} required /></label><label>{t("Credential reference")}<input name="credential_ref" defaultValue={values?.credential_ref ?? credentialReference} required /></label></div>
     <p className="field-help">{t("This reference is a label for a separately stored SSH password. Save the profile, then use Password & connection test to set the password and approve the host key.")}</p>
     {connection && <p className="field-help">{t("Changes apply to every server using this profile ({count} in this system).", { count: config.servers.filter(server => server.connection_id === connection.id).length })}</p>}
-    <label>{t("Jump connection")}<select name="jump_connection_id" defaultValue={connection?.jump_connection_id ?? ''}><option value="">{t("Direct connection")}</option>{config.connections?.filter(item => item.id !== connection?.id && !item.jump_connection_id).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+    <label>{t("Jump connection")}<select name="jump_connection_id" defaultValue={values?.jump_connection_id ?? ''}><option value="">{t("Direct connection")}</option>{config.connections?.filter(item => item.id !== connection?.id && !item.jump_connection_id).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
     <label>{t("Proposed log roots (one absolute Linux path per line)")}<textarea name="allowed_log_roots" value={logRoots} onChange={event => setLogRoots(event.target.value)} aria-invalid={excludedCount > 0} aria-describedby="log-roots-help" rows={3} /></label>
     <p id="log-roots-help" className="field-help">{t("Every active log, rotated file pattern and archive path on servers using this profile must be below a proposed root.")} {t(rootChangeHelp)}</p>
     {paths.length > 0 && <section className="connection-log-paths" aria-label={t("Configured log paths using this profile")}><h3>{t("Configured log paths using this profile")}</h3><p className={excludedCount ? 'log-root-warning' : 'muted'} aria-live="polite">{excludedCount ? t("{count} configured log paths are outside the proposed roots. Review the marked paths below.", { count: excludedCount }) : t("All configured log paths are within the proposed roots.")}</p><ul>{paths.map((source, index) => {

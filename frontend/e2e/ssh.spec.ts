@@ -1,7 +1,7 @@
 import { test, expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { openPreferences, serveBuiltAssets, setAppearance, submitSignIn, systemAction } from './ui';
+import { applyHistoricalFilters, expectHistoricalContentFilters, fillHistoricalFilters, openPreferences, serveBuiltAssets, setAppearance, setHistoricalCollectionRange, setHistoricalFilters, submitSignIn, systemAction } from './ui';
 import type { Config, Connection, Topology } from '../src/topology';
 import type { components } from '../src/api/schema';
 
@@ -395,8 +395,7 @@ test('Additional security measures persists and controls path and parser confirm
     const transport = page.getByLabel('Collection transport', { exact: true });
     if (await transport.count()) await transport.selectOption('ssh');
     for (const process of await page.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox').all()) await process.check();
-    await page.getByLabel('From UTC (inclusive)', { exact: true }).fill('2026-10-16T12:00:00.000000Z');
-    await page.getByLabel('To UTC (exclusive)', { exact: true }).fill('2026-10-16T12:00:02.000000Z');
+    await setHistoricalCollectionRange(page, { from: '2026-10-16T12:00:00.000000Z', to: '2026-10-16T12:00:02.000000Z' });
     await page.getByRole('button', { name: 'Preview collection plan', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Collection plan', exact: true })).toContainText('Approved SSH/SFTP');
     await page.getByRole('button', { name: 'Collect sources', exact: true }).click();
@@ -508,8 +507,7 @@ test('approved jump-host sources collect real history for Inspector with indepen
     const transport = current.getByLabel('Collection transport', { exact: true });
     if (await transport.count()) await transport.selectOption('ssh');
     for (const process of await current.getByRole('group', { name: 'Configured processes' }).getByRole('checkbox').all()) await process.check();
-    await current.getByLabel('From UTC (inclusive)', { exact: true }).fill('2026-10-16T12:00:00.000000Z');
-    await current.getByLabel('To UTC (exclusive)', { exact: true }).fill('2026-10-16T12:00:02.000000Z');
+    await setHistoricalCollectionRange(current, { from: '2026-10-16T12:00:00.000000Z', to: '2026-10-16T12:00:02.000000Z' });
   }
   await openLogs(other, otherId);
   await other.getByRole('button', { name: 'Preview collection plan', exact: true }).click();
@@ -542,9 +540,9 @@ test('approved jump-host sources collect real history for Inspector with indepen
   expect(await page.getByTestId('workspace-id').innerText()).not.toBe(await other.getByTestId('workspace-id').innerText());
   const second = await collect(other, false);
   expect(first).not.toBe(second);
-  await page.getByLabel('Contains string', { exact: true }).fill('request_id=REQ-0042');
+  await fillHistoricalFilters(page, { filter: { include: ['request_id=REQ-0042'], exclude: [], include_mode: 'all', case_sensitive: true }, per_process_filters: {} });
   const queryResponse = page.waitForResponse(response => response.url().endsWith('/query') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Apply filter', exact: true }).click();
+  await applyHistoricalFilters(page);
   const queried = await queryResponse;
   expect(queried.status()).toBe(200);
   const results = await queried.json() as components['schemas']['HistoricalQueryResponse'];
@@ -553,11 +551,10 @@ test('approved jump-host sources collect real history for Inspector with indepen
   const events = JSON.parse(readFileSync(resolve('../fixtures/expected/events.json'), 'utf8')) as { event_id: string; raw_line: string; timestamp_utc: string; process_id: string }[];
   const expected = expectedIds.map(id => events.find(event => event.event_id === id)!);
   expect(results.items.map(event => [event.process_id, event.timestamp_utc, event.raw_line])).toEqual(expected.map(event => [event.process_id, event.timestamp_utc, event.raw_line]));
-  await other.getByLabel('Contains string', { exact: true }).fill('NO-SYNTHETIC-MATCH');
-  await other.getByRole('button', { name: 'Apply filter', exact: true }).click();
+  await setHistoricalFilters(other, { filter: { include: ['NO-SYNTHETIC-MATCH'], exclude: [], include_mode: 'all', case_sensitive: true }, per_process_filters: {} });
   await expect(other.getByTestId('match-count')).toHaveText('0 matches');
   await expect(page.getByTestId('match-count')).toHaveText(`${expectedIds.length} matches`);
-  await expect(page.getByLabel('Contains string', { exact: true })).toHaveValue('request_id=REQ-0042');
+  await expectHistoricalContentFilters(page, ['request_id=REQ-0042']);
   await other.close();
   await expect(page.getByTestId('collection-state')).toHaveText('completed');
   await expect(page.getByTestId('match-count')).toHaveText(`${expectedIds.length} matches`);
@@ -570,7 +567,7 @@ test('approved jump-host sources collect real history for Inspector with indepen
       await expect(page.getByTestId('investigation-id')).toHaveText(first);
       await expect(page.getByTestId('workspace-id')).toHaveText(workspace);
       await expect(page.getByTestId('match-count')).toHaveText(`${expectedIds.length} matches`);
-      await expect(page.getByLabel('Contains string', { exact: true })).toHaveValue('request_id=REQ-0042');
+      await expectHistoricalContentFilters(page, ['request_id=REQ-0042']);
       await page.getByTestId('match-count').scrollIntoViewIfNeeded();
       await page.screenshot({ path: resolve(screenshots, `inspector-ssh-history-${theme}-${viewport.width}x${viewport.height}.png`), animations: 'disabled' });
       expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);

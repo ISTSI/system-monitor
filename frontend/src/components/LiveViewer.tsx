@@ -6,12 +6,16 @@ import type { components } from '../api/schema';
 import type { Config } from '../topology';
 import { compareEvents, emptyFilter, filterDraft, literalFilter, mergeEvents, terminal, validEvents, validFrame, type FilterDraft, type LiveEvent, type LiveSession, type LiveSnapshot } from '../live';
 import { EmptyState, ErrorNotice } from './Common';
-import { formatUtcTimestamp } from '../utcDateTime';
-import LogText from './LogText';
-import { filtersForLog, type HighlightContext } from '../logHighlight';
+import type { HighlightContext } from '../logHighlight';
+import { LOG_ROW_HEIGHT, LogColumnHeadings, LogEventCells, logTableStyle } from './LogTablePresentation';
 
 const MAX_BROWSER_EVENTS = 20000;
 const MAX_BROWSER_BYTES = 32 * 1024 * 1024;
+const LIVE_COLUMNS = { timestamp: true, process: true, host: true };
+function viewportRows(pane: HTMLElement | null | undefined): number {
+  const headerHeight = pane?.querySelector<HTMLElement>('.log-column-headings')?.offsetHeight ?? 0;
+  return Math.min(500, Math.max(1, Math.ceil(((pane?.clientHeight ?? 0) - headerHeight) / LOG_ROW_HEIGHT)));
+}
 function bounded(events: LiveEvent[]): LiveEvent[] {
   let size = 0; let first = events.length;
   while (first > 0 && events.length - first < MAX_BROWSER_EVENTS) {
@@ -38,6 +42,7 @@ export default function LiveViewer({ projectId, config, workspaceId, selection, 
   const retainedHighlights = useRef<HighlightContext | null>(null);
   const [paused, setPaused] = useState(false); const [detached, setDetached] = useState<LiveSession[]>([]);
   const [busy, setBusy] = useState(''); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
+  const [errorCode, setErrorCode] = useState(''); const [noticeProcessId, setNoticeProcessId] = useState('');
   const [noticeDetail, setNoticeDetail] = useState<string | null>(null);
   const [transport, setTransport] = useState('Not connected'); const [filterState, setFilterState] = useState('Ready');
   const [usage, setUsage] = useState<components['schemas']['LiveUsageResponse'] | null>(null);
@@ -50,6 +55,11 @@ export default function LiveViewer({ projectId, config, workspaceId, selection, 
   const applying = useRef(false); const desiredFilter = useRef(''); const [filterEpoch, setFilterEpoch] = useState(0);
   const active = !!session && !terminal(session.status);
   const systemLabel = `${config.project.name} (${projectId})`;
+  const processLabel = (id: string) => {
+    const process = config.processes.find(item => item.id === id);
+    if (!process) return t('Unavailable process');
+    return `${config.servers.find(server => server.id === process.server_id)?.name ?? t('Unavailable server')}: ${process.name}`;
+  };
 
   const refresh = useCallback(() => {
     if (!workspaceId) return;
@@ -68,9 +78,7 @@ export default function LiveViewer({ projectId, config, workspaceId, selection, 
     if (!visible || !body.current) return;
     const measure = () => {
       const pane = body.current?.querySelector<HTMLElement>('.live-log-scroll');
-      const rowHeight = pane ? Number.parseFloat(getComputedStyle(pane).getPropertyValue('--live-row-height')) || 30 : 30;
-      const height = pane?.clientHeight ?? body.current?.clientHeight ?? 30;
-      setRequestedRows(Math.min(500, Math.max(1, Math.ceil(Math.max(rowHeight, height - rowHeight) / rowHeight))));
+      if (pane?.clientHeight) setRequestedRows(viewportRows(pane));
     };
     const observer = new ResizeObserver(measure); observer.observe(body.current); measure();
     return () => observer.disconnect();
@@ -91,7 +99,7 @@ export default function LiveViewer({ projectId, config, workspaceId, selection, 
     setProcessIds(value.process_ids); setLayout(value.layout); setDraft(filterDraft(value.global_filter));
     setRowsByProcess(value.seed_rows_by_process ?? {});
     setOverrides(Object.fromEntries(Object.entries(value.per_process_filters).map(([id, filter]) => [id, filterDraft(filter)])));
-    setPaused(false); pauseRef.current = false; setError(''); setNotice(''); setNoticeDetail(null); setFilterState('Applied version {version}');
+    setPaused(false); pauseRef.current = false; setError(''); setErrorCode(''); setNotice(''); setNoticeDetail(null); setNoticeProcessId(''); setFilterState('Applied version {version}');
     applySnapshot(value.snapshot); refresh();
   }, [projectId, workspaceId, applySnapshot, refresh]);
 
@@ -138,11 +146,13 @@ export default function LiveViewer({ projectId, config, workspaceId, selection, 
             if (frame.type === 'resync_required') awaitingSnapshot.current = true;
             setNotice(frame.type === 'gap' ? 'Continuity gap' : 'Replay unavailable; replacing retained view');
             setNoticeDetail(typeof payload.reason === 'string' ? payload.reason : '');
+            setNoticeProcessId(typeof payload.process_id === 'string' && controller.process_ids.includes(payload.process_id) ? payload.process_id : '');
             if (payload.snapshot && typeof payload.snapshot === 'object') applySnapshot(payload.snapshot as LiveSnapshot);
           } else if (frame.type === 'stopped') {
             const stopped = { ...controller, status: 'stopped' }; current.current = stopped; setSession(stopped); setTransport('Stopped'); refresh();
           } else if (frame.type === 'error') {
             setError(typeof payload.message === 'string' ? payload.message : 'The live stream reported an error.');
+            setErrorCode(typeof payload.code === 'string' ? payload.code : '');
           } else if (frame.type === 'status' && Array.isArray(payload.sources) && retained.current) {
             const updated = { ...retained.current, sources: payload.sources as LiveSnapshot['sources'] }; retained.current = updated; setSnapshot(updated);
           }
@@ -192,8 +202,7 @@ export default function LiveViewer({ projectId, config, workspaceId, selection, 
     if ('error' in filters) { setError(filters.error ?? 'Invalid literal filter.'); return; }
     busyRef.current = true; setBusy('Starting monitor'); setError('');
     try {
-      const height = body.current?.querySelector<HTMLElement>('.live-log-scroll')?.clientHeight ?? 60;
-      const rows = Math.min(500, Math.max(1, Math.ceil((height - 30) / 30)));
+      const rows = viewportRows(body.current?.querySelector<HTMLElement>('.live-log-scroll'));
       setRequestedRows(rows);
       const input: components['schemas']['LiveCreateInput'] = { project_id: projectId, project_revision: config.project.revision, workspace_id: workspaceId, process_ids: ids, mode: layout, seed_rows: rows, seed_rows_by_process: layout === 'split' ? Object.fromEntries(ids.map(id => [id, rowsByProcess[id] ?? rows])) : {}, filter: filters.global_filter, per_process_filters: Object.fromEntries(Object.entries(filters.per_process_filters).filter(([id]) => ids.includes(id))), record: false };
       const value = await write<LiveSession>(`${base}/live-sessions`, input); if (alive.current) adopt(value);
@@ -229,47 +238,64 @@ export default function LiveViewer({ projectId, config, workspaceId, selection, 
 
   return <section className="live-workspace" aria-label={t("Live monitor")}>
     <div className="history-heading"><div><h2>{t("Live monitor")}</h2><p className="muted">{systemLabel} {t("· Read-only SFTP capture · Process health unknown")}</p></div><span className="pill">{t(transport)}</span></div>
-    {error && <ErrorNotice>{systemLabel}: {t(error)}</ErrorNotice>}
-    {notice && <p className="live-notice" role="status">{systemLabel}: {t(notice)}{noticeDetail !== null && <>: {noticeDetail || t('Coverage is uncertain.')}</>}</p>}
-    <details className="live-selection" open={!active}><summary>{session ? t('Process selection (monitoring {count})', { count: session.process_ids.length }) : t('Process selection')}</summary><div className="live-setup"><fieldset className="history-processes"><legend>{t("Processes to monitor")}</legend>{config.processes.map(process => <label className="checkbox-label" key={`${projectId}:${process.id}`}><input type="checkbox" disabled={active || !!busy} checked={processIds.includes(process.id)} onChange={event => setProcessIds(current => event.target.checked ? [...current, process.id] : current.filter(id => id !== process.id))} /><span>{process.name}<small>{config.servers.find(server => server.id === process.server_id)?.name} · {process.id}</small></span></label>)}</fieldset><div className="live-start"><p>{t("Monitor this page's selection. Reloading or duplicating a page starts no SSH connection. Detached capture has a bounded reconnect lease.")}</p><button className="primary" disabled={active || !!busy || archived || !workspaceId} onClick={() => { void start(); }}>{processIds.length > 1 ? t("Monitor selected") : t("Monitor")}</button><span role="status">{t(busy)}</span>{usage && <details className="live-usage"><summary>{t("Own live usage and limits")}</summary><pre>{JSON.stringify(usage, null, 2)}</pre></details>}</div></div></details>
-    {detached.length > 0 && <section className="live-detached" aria-label={t("Your detached monitors")}><h3>{t("Your detached monitors in")} {config.project.name}</h3><p>{t("Resume explicitly to transfer a detached controller to this page.")}</p>{detached.map(item => <div key={`${projectId}:${item.session_id}`}><code>{item.session_id}</code><span>{item.process_ids.length} {t("sources ·")} {t(item.status)}</span><button disabled={active || !!busy} onClick={() => { void attach(item); }}>{t("Resume in this window")}</button></div>)}</section>}
-    <div className="history-filter"><FilterControls value={draft} onChange={setDraft} /><div className="live-filter-state" role="status">{'error' in filters ? t(filters.error ?? '') : t(filterState, { version: session?.filter_version ?? '' })} {t("· Literal substrings of original text; global and per-process predicates are ANDed.")}</div><details className="advanced-filter"><summary>{t("Per-process literal filters")}</summary>{(session?.process_ids ?? processIds).map(id => <fieldset className="live-override" key={`${projectId}:${id}`}><legend>{config.processes.find(process => process.id === id)?.name ?? id}</legend><FilterControls value={overrides[id] ?? emptyFilter()} onChange={value => setOverrides(current => ({ ...current, [id]: value }))} processId={id} /></fieldset>)}</details></div>
-    <div className="live-toolbar"><button disabled={!active} aria-pressed={paused} onClick={pause}>{paused ? t("Resume display") : t("Pause display")}</button><button disabled={!active || !!busy} onClick={() => { void control('stop'); }}>{t("Stop this monitor")}</button><button disabled={!active || !!busy || session?.recording} onClick={() => { void control('save'); }}>{session?.recording ? t("Recording") : t("Record")}</button><button disabled={!session || !!busy || !active} onClick={() => { void control('history'); }}>{t("Load older")}</button><label>{t("Pane layout")}<select aria-label={t("Live pane layout")} value={layout} onChange={event => setLayout(event.target.value as 'merged' | 'split')}><option value="merged">{t("Merged")}</option><option value="split">{t("Separate process panes")}</option></select></label><button onClick={() => { document.querySelectorAll<HTMLElement>('.live-log-scroll').forEach(pane => { pane.scrollTop = pane.scrollHeight; }); }}>{t("Jump to latest")}</button><button disabled={!selectedEvents.length} onClick={() => { void navigator.clipboard.writeText(selectedEvents.map(event => `[System: ${systemLabel}] [${event.server_name_snapshot}/${event.process_name_snapshot}] ${event.raw_line}`).join('\n')).then(() => setCopied(true)).catch(() => setError('Clipboard access failed. Select and copy the log text.')); }}>{copied ? t("Copied retained view") : t("Copy retained view")}</button></div>
+    {error && <ErrorNotice>{systemLabel}: {t(error)}{errorCode && error === 'The live stream reported an error.' && <> ({errorCode})</>}</ErrorNotice>}
+    {notice && <p className="live-notice" role="status">{systemLabel}: {noticeProcessId && <>{processLabel(noticeProcessId)} · </>}{t(notice)}{noticeDetail !== null && <>: {noticeDetail || t('Coverage is uncertain.')}{noticeDetail === 'TRANSPORT_DISCONNECTED' && <> — {t('Reading the log source was interrupted; some log entries may be missing. This does not indicate process health.')}</>}</>}</p>}
+    <details className="live-selection" open={!active}><summary>{session ? active ? t('Process selection (monitoring {count})', { count: session.process_ids.length }) : t('Process selection (previous monitor: {count} sources)', { count: session.process_ids.length }) : t('Process selection')}</summary><div className="live-setup"><fieldset className="history-processes"><legend>{t("Processes to monitor")}</legend>{config.processes.map(process => <label className="checkbox-label" key={`${projectId}:${process.id}`} title={process.id}><input type="checkbox" data-process-id={process.id} disabled={active || !!busy} checked={processIds.includes(process.id)} onChange={event => setProcessIds(current => event.target.checked ? [...current, process.id] : current.filter(id => id !== process.id))} /><span>{processLabel(process.id)}</span></label>)}</fieldset><div className="live-start"><p>{t("Opening this tab or selecting processes starts no capture. Choose Monitor to start. Capture continues when switching tabs; Stop this monitor ends it. Detached capture has a bounded reconnect lease.")}</p><button className="primary" disabled={active || !!busy || archived || !workspaceId} onClick={() => { void start(); }}>{processIds.length > 1 ? t("Monitor selected") : t("Monitor")}</button><span role="status">{t(busy)}</span>{usage && <details className="live-usage"><summary>{t("Own live usage and limits")}</summary><pre>{JSON.stringify(usage, null, 2)}</pre></details>}</div></div></details>
+    {detached.length > 0 && <section className="live-detached" aria-label={t("Your detached monitors")}><h3>{t("Your detached monitors in")} {config.project.name}</h3><p>{t("Resume explicitly to transfer a detached controller to this page.")}</p>{detached.map(item => <div key={`${projectId}:${item.session_id}`}><span title={item.session_id}>{item.process_ids.map(processLabel).join(', ')}</span><span>{item.process_ids.length} {t("sources ·")} {t(item.status)}</span><button disabled={active || !!busy} onClick={() => { void attach(item); }}>{t("Resume in this window")}</button></div>)}</section>}
+    <div className="history-filter"><FilterControls value={draft} onChange={setDraft} /><div className="live-filter-state" role="status">{'error' in filters ? t(filters.error ?? '') : t(filterState, { version: session?.filter_version ?? '' })} {t("· Literal substrings of original text; global and per-process predicates are ANDed.")}</div><details className="advanced-filter"><summary>{t("Per-process literal filters")}</summary>{(session?.process_ids ?? processIds).map(id => <fieldset className="live-override" key={`${projectId}:${id}`}><legend>{processLabel(id)}</legend><FilterControls value={overrides[id] ?? emptyFilter()} onChange={value => setOverrides(current => ({ ...current, [id]: value }))} processLabel={processLabel(id)} /></fieldset>)}</details></div>
+    <div className="live-toolbar"><button disabled={!active} aria-pressed={paused} onClick={pause}>{paused ? t("Resume display") : t("Pause display")}</button><button disabled={!active || !!busy} onClick={() => { void control('stop'); }}>{t("Stop this monitor")}</button><button disabled={!active || !!busy || session?.recording} onClick={() => { void control('save'); }}>{session?.recording ? t("Recording") : t("Record")}</button><button disabled={!session || !!busy || !active} onClick={() => { void control('history'); }}>{t("Load older")}</button><label>{t("Pane layout")}<select aria-label={t("Live pane layout")} value={layout} onChange={event => setLayout(event.target.value as 'merged' | 'split')}><option value="merged">{t("Merged")}</option><option value="split">{t("Separate process panes")}</option></select></label><button onClick={() => { document.querySelectorAll<HTMLElement>('.live-log-scroll').forEach(pane => { pane.scrollTop = pane.scrollHeight; }); }}>{t("Jump to latest")}</button><button disabled={!selectedEvents.length} onClick={() => { void navigator.clipboard.writeText(selectedEvents.map(event => `[System: ${systemLabel}] [${event.server_name_snapshot}: ${event.process_name_snapshot}] ${event.raw_line}`).join('\n')).then(() => setCopied(true)).catch(() => setError('Clipboard access failed. Select and copy the log text.')); }}>{copied ? t("Copied retained view") : t("Copy retained view")}</button></div>
     {session && <div className="live-identity"><span>{t("Monitor")} <code data-testid="live-session-id">{session.session_id}</code></span><span data-testid="live-session-state">{t(session.status)}</span><span>{t("Filter")} <strong data-testid="live-filter-version">{session.filter_version}</strong></span>{session.recording && <span>{t("Recording to")} <button disabled={!session.investigation_id} onClick={() => { if (session.investigation_id) onOpenRecording(session.investigation_id); }}>{session.investigation_id ?? t("Preparing investigation")}</button></span>}</div>}
     <div className="live-counters" aria-label={t("Live event counters")}><span>{t("Received")} <strong data-testid="live-received">{count(snapshot, 'received')}</strong></span><span>{t("Matching")} <strong data-testid="live-matched">{count(snapshot, 'matched')}</strong></span><span>{t("Filtered")} <strong data-testid="live-filtered">{count(snapshot, 'filtered')}</strong></span><span>{t("Retained")} <strong data-testid="live-retained">{count(snapshot, 'retained')}</strong></span><span>{t("Evicted")} <strong data-testid="live-evicted">{count(snapshot, 'evicted')}</strong></span><span>{t("Rendered / visible")} <strong data-testid="live-visible">{visibleRows}</strong></span><span>{paused ? t("Display paused; receipt and recording continue") : t("Display follows retained capture")}</span></div>
     <p className="live-counter-help">{t("Received includes seed and new records. Matching and filtered counts describe retained raw data; rendered / visible counts the current pane viewports.")}</p>
-    {snapshot && <ul className="live-source-summary" aria-label={t("Live source states")}>{(snapshot.sources ?? []).map((source, index) => <li key={`${projectId}:${index}`}><strong>{typeof source.process_id === 'string' ? config.processes.find(process => process.id === source.process_id)?.name ?? source.process_id : t("Configured source")}</strong><span>{t(safeValue(source.state))} · {t(safeValue(source.seed_status))}</span>{!!source.error && <strong className="history-warning">{safeValue(source.error)}</strong>}</li>)}</ul>}
+    {snapshot && <ul className="live-source-summary" aria-label={t("Live source states")}>{(snapshot.sources ?? []).map((source, index) => <li key={`${projectId}:${index}`}><strong>{typeof source.process_id === 'string' ? processLabel(source.process_id) : t("Configured source")}</strong><span>{t(safeValue(source.state))} · {t(safeValue(source.seed_status))}</span>{!!source.error && <strong className="history-warning">{safeValue(source.error)}</strong>}</li>)}</ul>}
     {!!snapshot?.coverage?.view_limit_reached && <p className="live-notice" role="status">{t("The view reached its byte or row limit. Retained raw data may include more matches; narrow the literal filter or request older history.")}</p>}
     {count(snapshot, 'evicted') > 0 && <p className="live-notice" role="status">{t("Retention evicted")} {count(snapshot, 'evicted')} {t("raw events. Refiltering and resume cover retained data only.")}</p>}
     <nav className="workspace-tabs live-lanes" aria-label={t("Live event lane")}><button className={lane === 'events' ? 'active' : ''} onClick={() => setLane('events')}>{t("Timestamped events")}</button><button className={lane === 'diagnostics' ? 'active' : ''} onClick={() => setLane('diagnostics')}>{t("Unknown timestamps (")}{display.diagnostics.length})</button></nav>
-    <div className={`live-panes ${layout}`} ref={body}>{paneIds.length ? paneIds.map(id => <LivePane highlights={display.highlights} key={`${projectId}:${id}`} paneId={id} events={selectedEvents.filter(event => id === 'merged' || event.process_id === id)} systemLabel={systemLabel} label={id === 'merged' ? t('Merged live logs') : t('{name} live logs', { name: config.processes.find(process => process.id === id)?.name ?? id })} onVisible={reportVisible} onHeight={reportHeight} />) : <LivePane highlights={display.highlights} paneId="merged" events={[]} systemLabel={systemLabel} label={t('Merged live logs')} onVisible={reportVisible} onHeight={reportHeight} />}</div>
+    <div className={`live-panes ${layout}`} ref={body}>{paneIds.length ? paneIds.map(id => <LivePane highlights={display.highlights} key={`${projectId}:${id}`} paneId={id} events={selectedEvents.filter(event => id === 'merged' || event.process_id === id)} systemLabel={systemLabel} label={id === 'merged' ? t('Merged live logs') : t('{name} live logs', { name: processLabel(id) })} onVisible={reportVisible} onHeight={reportHeight} />) : <LivePane highlights={display.highlights} paneId="merged" events={[]} systemLabel={systemLabel} label={t('Merged live logs')} onVisible={reportVisible} onHeight={reportHeight} />}</div>
     {!session && <EmptyState title={t("Ready to monitor")}>{t("Select configured processes and choose Monitor. Filters, display pause and controls belong to this page.")}</EmptyState>}
-    {snapshot && <details className="live-source-status"><summary>{t("Source access, seed coverage and continuity")}</summary><p>{t("Connection state is separate from process health. Silence is not a failure. SFTP rotation/truncation recovery may leave uncertain continuity.")}</p>{(snapshot.sources ?? []).map((source, index) => <div className="live-source" key={`${projectId}:${index}`}>{Object.entries(source).map(([key, value]) => <span key={key}><strong>{key.replaceAll('_', ' ')}:</strong> {safeValue(value)}</span>)}</div>)}{'coverage' in snapshot && <pre>{JSON.stringify(snapshot.coverage, null, 2)}</pre>}</details>}
+    {snapshot && <details className="live-source-status"><summary>{t("Source access, seed coverage and continuity")}</summary><p>{t("Connection state is separate from process health. Silence is not a failure. SFTP rotation/truncation recovery may leave uncertain continuity.")}</p>{(snapshot.sources ?? []).map((source, index) => <div className="live-source" key={`${projectId}:${index}`}>{Object.entries(source).map(([key, value]) => <span key={key}><strong>{key === 'process_id' ? t('Process') : key.replaceAll('_', ' ')}:</strong> {key === 'process_id' && typeof value === 'string' ? processLabel(value) : safeValue(value)}</span>)}</div>)}{'coverage' in snapshot && <pre>{JSON.stringify(snapshot.coverage, null, 2)}</pre>}</details>}
   </section>;
 }
 
-function FilterControls({ value, onChange, processId }: { value: FilterDraft; onChange: (value: FilterDraft) => void; processId?: string }) {
+function FilterControls({ value, onChange, processLabel }: { value: FilterDraft; onChange: (value: FilterDraft) => void; processLabel?: string }) {
   const { t } = useI18n();
-  const prefix = processId ? `${processId} ` : '';
+  const prefix = processLabel ? `${processLabel} ` : '';
   return <><div className="literal-filter"><label>{prefix}{t("Contains string")}<input aria-label={`${prefix}${t('Live contains string')}`} value={value.contains} onChange={event => onChange({ ...value, contains: event.target.value })} placeholder={t("Literal text, including punctuation")} /></label><button aria-label={`${prefix}${t('Clear live filter')}`} onClick={() => onChange({ ...emptyFilter(), sensitive: value.sensitive })}>{t("Clear filter")}</button><label className="checkbox-label"><input aria-label={`${prefix}${t('Live case sensitive')}`} type="checkbox" checked={value.sensitive} onChange={event => onChange({ ...value, sensitive: event.target.checked })} />{t("Case sensitive")}</label></div><details className="advanced-filter"><summary>{prefix}{t("Advanced literal filters")}</summary><div className="form-grid"><label>{t("Additional include terms (one per line)")}<textarea aria-label={`${prefix}${t('Live additional includes')}`} value={value.includes} rows={2} onChange={event => onChange({ ...value, includes: event.target.value })} /></label><label>{t("Exclude terms (one per line)")}<textarea aria-label={`${prefix}${t('Live excludes')}`} value={value.excludes} rows={2} onChange={event => onChange({ ...value, excludes: event.target.value })} /></label></div><label>{t("Include mode")}<select aria-label={`${prefix}${t('Live include mode')}`} value={value.mode} onChange={event => onChange({ ...value, mode: event.target.value as 'any' | 'all' })}><option value="any">{t("Any included term")}</option><option value="all">{t("All included terms")}</option></select></label><p>{t("Empty terms are ignored; whitespace is preserved. Case-insensitive matching uses the server's Unicode casefold contract.")}</p></details></>;
 }
 
 function LivePane({ paneId, events, systemLabel, label, onVisible, onHeight, highlights }: { paneId: string; events: LiveEvent[]; systemLabel: string; label: string; onVisible: (id: string, count: number) => void; onHeight: (id: string, rows: number) => void; highlights: HighlightContext | null }) {
   const { t } = useI18n();
   const scroll = useRef<HTMLDivElement>(null); const follow = useRef(true); const anchor = useRef<{ id: string; offset: number } | null>(null);
-  const virtual = useVirtualizer({ count: events.length, getScrollElement: () => scroll.current, estimateSize: () => 30, overscan: 5, getItemKey: index => `${events[index].project_id}:${events[index].event_id}` });
+  const virtual = useVirtualizer({ count: events.length, getScrollElement: () => scroll.current, estimateSize: () => LOG_ROW_HEIGHT, overscan: 5, getItemKey: index => `${events[index].project_id}:${events[index].event_id}` });
   const rows = virtual.getVirtualItems();
   useEffect(() => {
     if (!scroll.current) return;
-    const measure = () => { if (scroll.current?.clientHeight) onHeight(paneId, Math.min(500, Math.max(1, Math.ceil((scroll.current.clientHeight - 30) / 30)))); };
+    const measure = () => { if (scroll.current?.clientHeight) onHeight(paneId, viewportRows(scroll.current)); };
     const observer = new ResizeObserver(measure); observer.observe(scroll.current); measure();
     return () => observer.disconnect();
   }, [paneId, onHeight]);
   useLayoutEffect(() => {
     if (follow.current) { if (scroll.current) scroll.current.scrollTop = scroll.current.scrollHeight; }
-    else if (anchor.current) { const index = events.findIndex(event => event.event_id === anchor.current?.id); if (index >= 0 && scroll.current) scroll.current.scrollTop = index * 30 + anchor.current.offset; }
+    else if (anchor.current) { const index = events.findIndex(event => `${event.project_id}:${event.event_id}` === anchor.current?.id); if (index >= 0 && scroll.current) scroll.current.scrollTop = index * LOG_ROW_HEIGHT + anchor.current.offset; }
   }, [events, virtual]);
-  const visibleCount = rows.filter(row => row.end > (scroll.current?.scrollTop ?? 0) && row.start < (scroll.current?.scrollTop ?? 0) + Math.max(0, (scroll.current?.clientHeight ?? 0) - 30)).length;
+  const headerHeight = scroll.current?.querySelector<HTMLElement>('.log-column-headings')?.offsetHeight ?? 0;
+  const visibleCount = rows.filter(row => row.end > (scroll.current?.scrollTop ?? 0) && row.start < (scroll.current?.scrollTop ?? 0) + Math.max(0, (scroll.current?.clientHeight ?? 0) - headerHeight)).length;
   useEffect(() => { onVisible(paneId, visibleCount); }, [paneId, visibleCount, onVisible]);
-  return <section className="live-pane" aria-label={label}><div className="live-pane-heading"><strong>{label}</strong><span>{systemLabel}</span><span>{events.length} {t("retained matching rows")}</span></div><div ref={scroll} className="live-log-scroll" tabIndex={0} role="table" aria-label={label} aria-rowcount={events.length + 1} onScroll={() => { const element = scroll.current; if (!element) return; follow.current = element.scrollHeight - element.scrollTop - element.clientHeight <= 60; const index = Math.max(0, Math.floor(element.scrollTop / 30)); anchor.current = events[index] ? { id: events[index].event_id, offset: element.scrollTop - index * 30 } : null; }}><div role="row" className="live-log-columns live-column-headings"><span role="columnheader">{t("Event time UTC")}</span><span role="columnheader">{t("Host / process")}</span><span role="columnheader">{t("Log entry")}</span></div><div className="live-log-content" style={{ height: virtual.getTotalSize() }}>{rows.map(row => { const event = events[row.index]; return <div role="row" aria-rowindex={row.index + 2} key={row.key} className="live-log-columns live-event" data-event-id={event.event_id} data-received-at={event.received_at} data-event-time={event.timestamp_utc ?? undefined} style={{ height: row.size, transform: `translateY(${row.start}px)` }}><code role="cell">{event.timestamp_utc ? formatUtcTimestamp(event.timestamp_utc) : t("Unknown timestamp")}{event.late_arrival && <span className="live-late"> {t("Late arrival")}</span>}</code><span role="cell" title={`${event.server_id}/${event.process_id}`}>{event.server_name_snapshot} / {event.process_name_snapshot}</span><code role="cell" className="live-message"><LogText highlightLimitTitle={t('Highlight limit reached; original text and filter results are unchanged.')} rawLine={event.raw_line} timestampOriginal={event.timestamp_original} timestampUtc={event.timestamp_utc} filters={filtersForLog(highlights, event.process_id)} /></code></div>; })}</div></div></section>;
+  return <section className="live-pane" aria-label={label}>
+    <div className="live-pane-heading"><strong>{label}</strong><span>{systemLabel}</span><span>{events.length} {t('retained matching rows')}</span></div>
+    <div ref={scroll} className="live-log-scroll" style={logTableStyle(LIVE_COLUMNS)} tabIndex={0} role="table" aria-label={label} aria-rowcount={events.length + 1} aria-colcount={4} onScroll={() => {
+      const element = scroll.current; if (!element) return;
+      follow.current = element.scrollHeight - element.scrollTop - element.clientHeight <= LOG_ROW_HEIGHT * 2;
+      const index = Math.max(0, Math.floor(element.scrollTop / LOG_ROW_HEIGHT));
+      anchor.current = events[index] ? { id: `${events[index].project_id}:${events[index].event_id}`, offset: element.scrollTop - index * LOG_ROW_HEIGHT } : null;
+    }}>
+      <LogColumnHeadings columns={LIVE_COLUMNS} className="live-log-columns live-column-headings" />
+      <div className="virtual-log-content live-log-content" style={{ height: virtual.getTotalSize() }}>{rows.map(row => {
+        const event = events[row.index];
+        return <div role="row" aria-rowindex={row.index + 2} key={row.key} className="log-columns log-event live-log-columns live-event" data-event-id={event.event_id} data-received-at={event.received_at} data-event-time={event.timestamp_utc ?? undefined} style={{ height: row.size, transform: `translateY(${row.start}px)` }}>
+          <LogEventCells event={event} columns={LIVE_COLUMNS} highlights={highlights} messageClassName="live-message" notice={event.late_arrival && <span className="live-late">{t('Late arrival')} · </span>} />
+        </div>;
+      })}</div>
+    </div>
+  </section>;
 }

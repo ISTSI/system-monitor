@@ -1,21 +1,25 @@
 import { useI18n } from '../i18n';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, message, request, write } from '../api/client';
 import type { components } from '../api/schema';
 import type { Config } from '../topology';
 import { EmptyState, ErrorNotice, Icon, Modal } from './Common';
+import HistoricalFiltersDialog, { type HistoricalFilterDraft } from './HistoricalFiltersDialog';
 import UtcDateTimeInput from './UtcDateTimeInput';
+import InvestigationPinDialog from './InvestigationPinDialog';
+import { pinSelectionFromBookmarks, type BookmarksWithPins, type PinGroupItem, type PinSelectionEntry } from '../investigationPins';
 import { defaultTimes, formatUtcTimestamp, utc } from '../utcDateTime';
 import type { InvestigationWorkspace, OfflineInvestigation } from '../investigation';
 import InvestigationTools from './InvestigationTools';
 import EventBookmark from './EventBookmark';
-import LogText from './LogText';
-import { filtersForLog, type HighlightContext } from '../logHighlight';
+import { VirtualLog } from './HistoricalLogTable';
+import HistoricalProcessPanes from './HistoricalProcessPanes';
+import ProcessVisibilityMenu from './ProcessVisibilityMenu';
 
 type Plan = components['schemas']['HistoricalPlanResponse'];
 type Job = components['schemas']['HistoricalJobResponse'];
 type Query = components['schemas']['HistoricalQueryInput'];
+type Filter = NonNullable<Query['filter']>;
 type Results = components['schemas']['HistoricalQueryResponse'];
 type Context = components['schemas']['HistoricalContextResponse'];
 type LogEvent = Results['items'][number];
@@ -25,6 +29,12 @@ type OfflineList = components['schemas']['OfflineListResponse'];
 const runningStates = new Set(['queued', 'planning', 'collecting', 'indexing', 'cancel_requested']);
 const logRowHeight = 20;
 type LogColumns = { timestamp: boolean; process: boolean; host: boolean };
+type QueryView = { scope: Query; visibleIds: string[] | null; previousVisibleIds?: string[] | null };
+
+function visibleQuery(scope: Query, ids: string[]): Query {
+  return { ...scope, process_ids: ids, cursor: null,
+    per_process_filters: Object.fromEntries(Object.entries(scope.per_process_filters ?? {}).filter(([id]) => ids.includes(id))) };
+}
 
 function bytes(value: number) { return value < 1024 ? `${value} B` : value < 1048576 ? `${(value / 1024).toFixed(1)} KiB` : `${(value / 1048576).toFixed(1)} MiB`; }
 
@@ -38,17 +48,27 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
   const [defaults] = useState(defaultTimes);
   const [transport, setTransport] = useState<'local_demo' | 'ssh'>(historicalDemoEnabled ? 'local_demo' : 'ssh');
   const [processIds, setProcessIds] = useState<string[]>(selection.ids);
+  const [collectionFrom, setCollectionFrom] = useState(defaults[0]); const [collectionTo, setCollectionTo] = useState(defaults[1]);
   const [from, setFrom] = useState(defaults[0]); const [to, setTo] = useState(defaults[1]);
-  const [contains, setContains] = useState(''); const [includes, setIncludes] = useState(''); const [excludes, setExcludes] = useState('');
-  const [includeMode, setIncludeMode] = useState<'any' | 'all'>('all'); const [caseSensitive, setCaseSensitive] = useState(true);
-  const [processFilters, setProcessFilters] = useState<Record<string, { contains: string; excludes: string; mode?: 'any' | 'all'; sensitive?: boolean }>>({});
+  const [filter, setFilter] = useState<Filter>({ include: [], exclude: [], include_mode: 'all', case_sensitive: true });
+  const [processFilters, setProcessFilters] = useState<NonNullable<Query['per_process_filters']>>({});
+  const [filtersOpen, setFiltersOpen] = useState(false); const [pinOpen, setPinOpen] = useState(false);
+  const [viewedPin, setViewedPin] = useState<PinGroupItem | undefined>();
+  const [pinEntries, setPinEntries] = useState<PinSelectionEntry[] | null>(null);
+  const [modifyingPin, setModifyingPin] = useState<PinGroupItem | undefined>();
+  const [pinChoiceOpen, setPinChoiceOpen] = useState(false);
+  const [markedEvents, setMarkedEvents] = useState<Record<string, PinSelectionEntry>>({});
   const [plan, setPlan] = useState<Plan | null>(null);
   const [job, setJob] = useState<Job | null>(null); const [recent, setRecent] = useState<Job[]>([]);
   const [results, setResults] = useState<Results | null>(null); const [applied, setApplied] = useState<Query | null>(null);
+  const [queryScope, setQueryScope] = useState<Query | null>(null);
   const [lane, setLane] = useState<'events' | 'diagnostic'>('events'); const [layout, setLayout] = useState<'merged' | 'split'>('merged');
+  const [paneColumns, setPaneColumns] = useState<1 | 2 | 3 | 4>(1);
+  const [shownProcessIds, setShownProcessIds] = useState<string[] | null>(null);
   const [columns, setColumns] = useState<LogColumns>({ timestamp: true, process: true, host: true });
   const [fullScreen, setFullScreen] = useState(false);
   const resultsPanel = useRef<HTMLDialogElement>(null); const fullScreenButton = useRef<HTMLButtonElement>(null);
+  const columnMenu = useRef<HTMLDetailsElement>(null);
   const [savedWorkspace, setSavedWorkspace] = useState<InvestigationWorkspace | null>(null);
   const [offline, setOffline] = useState<OfflineInvestigation | null>(null);
   const [pageSize, setPageSize] = useState(0);
@@ -63,9 +83,18 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
   const alive = useRef(true); const queryVersion = useRef(0); const contextVersion = useRef(0); const visibleBody = useRef<HTMLDivElement>(null);
   const recentVersion = useRef(0); const planVersion = useRef(0); const automaticallyLoaded = useRef<string | null>(null);
   const selectedInvestigation = useRef<string | null>(null);
+  useEffect(() => { setViewedPin(undefined); setPinEntries(null); setModifyingPin(undefined); setPinChoiceOpen(false); }, [projectId, job?.investigation_id]);
   const restoredQuery = useRef<Query | null>(null);
   const createdDraft = useRef<{ id: string; query: Query; layout: 'merged' | 'split' } | null>(null);
   const active = !!job && runningStates.has(job.status);
+  useEffect(() => {
+    const dismissColumns = (event: PointerEvent) => {
+      const menu = columnMenu.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    };
+    document.addEventListener('pointerdown', dismissColumns, true);
+    return () => document.removeEventListener('pointerdown', dismissColumns, true);
+  }, []);
   // Keep the same table/virtualizer mounted when entering the dialog top layer.
   // Native modal focus handling also keeps the controls behind it inaccessible.
   useLayoutEffect(() => {
@@ -83,17 +112,16 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
       fullScreenButton.current?.focus({ preventScroll: true });
     }
   }, [fullScreen]);
-  // Locale and other control changes must not replace pane event arrays: the
-  // log virtualizer resets its scroll position when query results change.
-  const splitEvents = useMemo(() => {
-    const grouped = new Map<string, LogEvent[]>();
-    for (const event of results?.items ?? []) {
-      const pane = grouped.get(event.process_id);
-      if (pane) pane.push(event);
-      else grouped.set(event.process_id, [event]);
-    }
-    return [...grouped.entries()];
-  }, [results?.items]);
+  const paneProcesses = useMemo(() => (queryScope?.process_ids ?? []).map(id => {
+    const snapshot = (offline?.document.events ?? results?.items)?.find(event => event.process_id === id);
+    const process = config.processes.find(item => item.id === id);
+    return { id, name: snapshot?.process_name_snapshot ?? process?.name ?? id,
+      host: snapshot?.server_name_snapshot ?? config.servers.find(server => server.id === process?.server_id)?.name ?? '' };
+  }), [queryScope?.process_ids, config, offline, results?.items]);
+  const visiblePaneIds = useMemo(() => (queryScope?.process_ids ?? []).filter(id => shownProcessIds === null || shownProcessIds.includes(id)), [queryScope?.process_ids, shownProcessIds]);
+  const mergedEvents = useMemo(() => (results?.items ?? []).filter(event => visiblePaneIds.includes(event.process_id)), [results?.items, visiblePaneIds]);
+  const mergedScopeMatches = !!applied && !!queryScope && JSON.stringify({ ...applied, cursor: null }) === JSON.stringify(visibleQuery(queryScope, visiblePaneIds));
+  const selectedEventIds = useMemo(() => new Set(Object.keys(markedEvents)), [markedEvents]);
   const updateWorkspace = useCallback((value: InvestigationWorkspace) => {
     if (alive.current && value.project_id === projectId && value.investigation_id === selectedInvestigation.current) setSavedWorkspace(value);
   }, [projectId]);
@@ -116,6 +144,7 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
     planVersion.current += 1; setPlan(null);
     selectedInvestigation.current = investigationId; automaticallyLoaded.current = null;
     setJob(null); setSavedWorkspace(null); setOffline(null); restoredQuery.current = null;
+    setShownProcessIds(null); setQueryScope(null); setMarkedEvents({}); setPinOpen(false); setFiltersOpen(false);
     setLoadingResults(false); setDetails(null); setContext(null); setResults(null); setApplied(null); setDeleteTarget(null); setLane('events');
     setBusy('Opening collection'); setError('');
     const open = async () => {
@@ -137,11 +166,11 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
         const state = draft && workspace && !workspace.saved ? { ...workspace, ...draft.query, filter: draft.query.filter ?? workspace.filter, per_process_filters: draft.query.per_process_filters ?? {}, layout: draft.layout } : workspace ?? imported?.document.selection;
         createdDraft.current = null;
         setOffline(imported); setSavedWorkspace(workspace); setJob(value);
-        setProcessIds(state?.process_ids ?? value.process_ids); setFrom(state?.from ?? value.from); setTo(state?.to ?? value.to);
+        setProcessIds(value.process_ids); setCollectionFrom(value.from); setCollectionTo(value.to);
+        setFrom(state?.from ?? value.from); setTo(state?.to ?? value.to);
         if (state) {
-          setContains(state.filter?.include?.[0] ?? ''); setIncludes(state.filter?.include?.slice(1).join('\n') ?? ''); setExcludes(state.filter?.exclude?.join('\n') ?? '');
-          setIncludeMode(state.filter?.include_mode ?? 'all'); setCaseSensitive(state.filter?.case_sensitive ?? true); setLayout(state.layout);
-          setProcessFilters(Object.fromEntries(Object.entries(state.per_process_filters ?? {}).map(([id, filter]) => [id, { contains: filter.include?.join('\n') ?? '', excludes: filter.exclude?.join('\n') ?? '', mode: filter.include_mode, sensitive: filter.case_sensitive }])));
+          setFilter(state.filter ?? { include: [], exclude: [], include_mode: 'all', case_sensitive: true }); setLayout(state.layout);
+          setProcessFilters(state.per_process_filters ?? {});
           restoredQuery.current = { process_ids: state.process_ids, from: state.from, to: state.to, filter: state.filter, per_process_filters: state.per_process_filters, limit: 200, cursor: null, lane: 'events' };
         }
         setResults(null); setApplied(null); setPrevious([]);
@@ -160,14 +189,18 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
       try {
         const value = await request<Job>(`${base}/jobs/${encodeURIComponent(job.job_id)}`);
         if (!current || value.project_id !== projectId || value.investigation_id !== selectedInvestigation.current) return;
-        setJob(value);
-        if (runningStates.has(value.status)) timer = window.setTimeout(() => { void poll(); }, 400);
-        else refreshRecent();
+        if (runningStates.has(value.status)) {
+          setJob(value); timer = window.setTimeout(() => { void poll(); }, 400);
+        } else {
+          const workspace = await request<InvestigationWorkspace>(`${base}/investigations/${encodeURIComponent(value.investigation_id)}/workspace`);
+          if (!current || value.investigation_id !== selectedInvestigation.current || workspace.project_id !== projectId || workspace.investigation_id !== value.investigation_id) return;
+          setJob(value); updateWorkspace(workspace); refreshRecent();
+        }
       } catch (cause) { if (current) { setError(message(cause)); timer = window.setTimeout(() => { void poll(); }, 2000); } }
     };
     timer = window.setTimeout(() => { void poll(); }, 250);
     return () => { current = false; window.clearTimeout(timer); };
-  }, [active, base, job?.job_id, projectId, refreshRecent]);
+  }, [active, base, job?.job_id, projectId, refreshRecent, updateWorkspace]);
   useEffect(() => {
     if (!job || runningStates.has(job.status) || (investigationId && job.investigation_id !== investigationId)) return;
     const identity = `${projectId}:${job.investigation_id}`;
@@ -178,7 +211,7 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
     void Promise.resolve().then(() => {
       if (!current || selectedInvestigation.current !== job.investigation_id) return;
       automaticallyLoaded.current = identity;
-      void query(restoredQuery.current ?? undefined, 'events', 1, [], job);
+      void query(restoredQuery.current ? { ...restoredQuery.current, limit: resultPageLimit() } : undefined, 'events', 1, [], job);
     });
     return () => { current = false; };
   }, [projectId, investigationId, job?.investigation_id, job?.status]);
@@ -186,29 +219,104 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
   function scope(): Scope {
     if (!workspaceId) throw new Error('An active page workspace is required to collect. Reopen this system and retry.');
     if (!processIds.length) throw new Error('Select at least one configured process.');
-    const start = utc(from); const end = utc(to);
+    const start = utc(collectionFrom); const end = utc(collectionTo);
     if (start >= end) throw new Error('From must be earlier than the exclusive To bound.');
     return { workspace_id: workspaceId, process_ids: processIds, from: start, to: end, transport };
   }
   function queryFilter(): Query['filter'] {
-    const include = [...(contains === '' ? [] : [contains]), ...includes.split('\n').filter(term => term !== '')];
-    const exclude = excludes.split('\n').filter(term => term !== '');
+    const include = filter.include ?? []; const exclude = filter.exclude ?? [];
     if (include.length > 20 || exclude.length > 20 || [...include, ...exclude].some(term => Array.from(term).length > 512)) throw new Error('Use at most 20 include and 20 exclude terms, each at most 512 Unicode characters.');
-    return { include, include_mode: includeMode, exclude, case_sensitive: caseSensitive };
+    return filter;
   }
-  function perProcessFilters(ids = processIds): Query['per_process_filters'] {
-    const selected = ids.filter(id => processFilters[id]?.contains || processFilters[id]?.excludes);
-    if (selected.some(id => [processFilters[id].contains, processFilters[id].excludes].some(terms => terms.split('\n').length > 20 || terms.split('\n').some(term => Array.from(term).length > 512)))) throw new Error('Use at most 20 per-process terms, each at most 512 Unicode characters.');
-    return Object.fromEntries(selected.map(id => [id, {
-      include: processFilters[id].contains.split('\n').filter(term => term !== ''),
-      exclude: processFilters[id].excludes.split('\n').filter(term => term !== ''), include_mode: processFilters[id].mode ?? 'all', case_sensitive: processFilters[id].sensitive ?? caseSensitive,
-    }]));
+  function perProcessFilters(ids = job?.process_ids ?? []): Query['per_process_filters'] {
+    const selected = Object.entries(processFilters).filter(([id]) => ids.includes(id));
+    if (selected.some(([, value]) => (value.include?.length ?? 0) > 20 || (value.exclude?.length ?? 0) > 20 || [...(value.include ?? []), ...(value.exclude ?? [])].some(term => Array.from(term).length > 512))) throw new Error('Use at most 20 per-process terms, each at most 512 Unicode characters.');
+    return Object.fromEntries(selected);
   }
   function queryDraft(): Query {
     const start = utc(from); const end = utc(to);
     if (start >= end) throw new Error('From must be earlier than the exclusive To bound.');
-    if (!processIds.length) throw new Error('Select at least one process.');
-    return { process_ids: processIds, from: start, to: end, filter: queryFilter(), per_process_filters: perProcessFilters(), limit: pageSize || 200, cursor: null, lane };
+    const ids = job?.process_ids ?? [];
+    if (!ids.length) throw new Error('Open a retained collection before filtering events.');
+    return { process_ids: ids, from: start, to: end, filter: queryFilter(), per_process_filters: perProcessFilters(ids), limit: resultPageLimit(), cursor: null, lane };
+  }
+  async function applyFilters(draft: HistoricalFilterDraft): Promise<boolean> {
+    if (!job) return false;
+    const scopedFilters = Object.fromEntries(Object.entries(draft.per_process_filters).filter(([id]) => job.process_ids.includes(id)));
+    const succeeded = await query({ process_ids: job.process_ids, from: draft.from, to: draft.to, filter: draft.filter, per_process_filters: scopedFilters, limit: resultPageLimit(), cursor: null, lane });
+    if (!succeeded) return false;
+    setFrom(draft.from); setTo(draft.to); setFilter(draft.filter ?? { include: [], exclude: [], include_mode: 'all', case_sensitive: true });
+    setProcessFilters(scopedFilters);
+    return true;
+  }
+  function toggleMarkedEvent(event: LogEvent, eventQuery: Query | null) {
+    if (!eventQuery || event.project_id !== projectId || !eventQuery.process_ids.includes(event.process_id)) return;
+    const key = `${projectId}:${event.event_id}`;
+    if (!markedEvents[key] && selectedEventIds.size >= 100) { setError('Select at most 100 log entries for one pin.'); return; }
+    setMarkedEvents(current => {
+      if (current[key]) return Object.fromEntries(Object.entries(current).filter(([id]) => id !== key));
+      return { ...current, [key]: { event, query: eventQuery } };
+    });
+  }
+  function afterPinSaved(response: BookmarksWithPins) {
+    if (!job || response.project_id !== projectId || response.investigation_id !== job.investigation_id) return;
+    if (savedWorkspace) updateWorkspace({ ...savedWorkspace, revision: response.revision, pin_groups: response.pin_groups ?? [] });
+    if (pinEntries === null) { setMarkedEvents({}); setModifyingPin(undefined); }
+    else if (modifyingPin && !(response.pin_groups ?? []).some(pin => pin.id === modifyingPin.id)) setModifyingPin(undefined);
+    setPinOpen(false); setViewedPin(undefined); setPinEntries(null); setPinChoiceOpen(false);
+  }
+  function viewPin(pin: PinGroupItem, bookmarks: BookmarksWithPins['items']) {
+    if (!job || !savedWorkspace) return;
+    const query: Query = { process_ids: job.process_ids, from: job.from, to: job.to,
+      filter: { include: [], exclude: [], include_mode: 'all', case_sensitive: true },
+      per_process_filters: {}, cursor: null, limit: resultPageLimit(), lane: 'events' };
+    setViewedPin(pin); setPinEntries(pinSelectionFromBookmarks(pin, bookmarks, query, projectId)); setPinOpen(true);
+  }
+  function modifyPin(pin: PinGroupItem, entries: PinSelectionEntry[]) {
+    if (!job) return;
+    setModifyingPin(pin); setPinOpen(false); setViewedPin(undefined); setPinEntries(null);
+    setMarkedEvents(Object.fromEntries(entries.map(entry => [`${projectId}:${entry.event.event_id}`, entry])));
+    const filter = { include: [], exclude: [], include_mode: 'all' as const, case_sensitive: true };
+    setFrom(job.from); setTo(job.to); setFilter(filter); setProcessFilters({});
+    void query({ process_ids: job.process_ids, from: job.from, to: job.to, filter,
+      per_process_filters: {}, limit: resultPageLimit(), cursor: null, lane: 'events' }, 'events');
+    resultsPanel.current?.scrollIntoView({ block: 'start' });
+  }
+  function openSelectedPin(update = false) {
+    setViewedPin(update ? modifyingPin : undefined); setPinEntries(null); setPinChoiceOpen(false); setPinOpen(true);
+  }
+  function resultPageLimit(size = pageSize) {
+    const viewport = visibleBody.current?.querySelector<HTMLElement>('.virtual-logs');
+    const height = viewport?.clientHeight ?? visibleBody.current?.clientHeight ?? 340;
+    return size || Math.min(1000, Math.max(40, Math.ceil(height / logRowHeight) * 4));
+  }
+  function changePageSize(size: number) {
+    setPageSize(size);
+    // Pagination changes the displayed query, without applying unrelated edits
+    // still waiting in the filter/time/process controls.
+    if (queryScope) {
+      const nextScope = { ...queryScope, limit: resultPageLimit(size), cursor: null };
+      if (!visiblePaneIds.length) { setQueryScope(nextScope); return; }
+      void query(layout === 'merged' ? visibleQuery(nextScope, visiblePaneIds) : nextScope, lane, 1, [], undefined, { scope: nextScope, visibleIds: shownProcessIds });
+    }
+  }
+  function changeVisibleProcesses(ids: string[]) {
+    if (!queryScope || loadingResults) return;
+    const ordered = queryScope.process_ids.filter(id => ids.includes(id));
+    if (layout === 'split' || !ordered.length) {
+      queryVersion.current += 1; setLoadingResults(false); setError('');
+      setShownProcessIds(ordered);
+      if (!ordered.length) { setPrevious([]); setPageNumber(1); }
+      return;
+    }
+    setShownProcessIds(ordered);
+    void query(visibleQuery(queryScope, ordered), lane, 1, [], undefined, { scope: queryScope, visibleIds: ordered, previousVisibleIds: shownProcessIds });
+  }
+  function changeLayout(next: 'merged' | 'split') {
+    setLayout(next);
+    if (next === 'merged' && queryScope && visiblePaneIds.length && applied && !mergedScopeMatches) {
+      void query(visibleQuery(queryScope, visiblePaneIds), lane, 1, [], undefined, { scope: queryScope, visibleIds: shownProcessIds });
+    }
   }
   async function preview() {
     const version = ++planVersion.current;
@@ -221,13 +329,16 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
     setBusy('Starting collection'); setError('');
     try {
       const input = scope();
-      const draft = queryDraft();
+      const draft: Query = { process_ids: input.process_ids, from: input.from, to: input.to,
+        filter: { include: [], exclude: [], include_mode: 'all', case_sensitive: true }, per_process_filters: {},
+        limit: resultPageLimit(), cursor: null, lane: 'events' };
       const value = await write<Job>(`${base}/collections`, input);
       if (alive.current && value.project_id === projectId) {
         queryVersion.current += 1; contextVersion.current += 1;
         selectedInvestigation.current = value.investigation_id; automaticallyLoaded.current = null;
         createdDraft.current = { id: value.investigation_id, query: draft, layout };
-        setJob(value); setResults(null); setApplied(null); setPrevious([]); setDetails(null); setContext(null); setDeleteTarget(null); setLoadingResults(false); setLane('events');
+        setFrom(input.from); setTo(input.to); setFilter(draft.filter!); setProcessFilters({});
+        setJob(value); setSavedWorkspace(null); setOffline(null); setResults(null); setApplied(null); setQueryScope(null); setShownProcessIds(null); setMarkedEvents({}); setPinOpen(false); setPrevious([]); setDetails(null); setContext(null); setDeleteTarget(null); setLoadingResults(false); setLane('events');
         onOpen(value.investigation_id); refreshRecent();
       }
     } catch (cause) { if (alive.current) setError(message(cause)); } finally { if (alive.current) setBusy(''); }
@@ -252,25 +363,39 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
       if (selectedInvestigation.current === id) {
         selectedInvestigation.current = null; automaticallyLoaded.current = null;
         queryVersion.current += 1; contextVersion.current += 1;
-        setJob(null); setResults(null); setApplied(null); setPrevious([]); setPageNumber(1); setDetails(null); setContext(null); setLoadingResults(false); setLane('events');
+        setJob(null); setSavedWorkspace(null); setOffline(null); restoredQuery.current = null;
+        setResults(null); setApplied(null); setQueryScope(null); setShownProcessIds(null); setMarkedEvents({}); setPinOpen(false); setPrevious([]); setPageNumber(1); setDetails(null); setContext(null); setLoadingResults(false); setLane('events');
         onOpen();
       }
       refreshRecent();
     } catch (cause) { if (alive.current) setError(message(cause)); } finally { if (alive.current) setBusy(''); }
   }
-  async function query(input?: Query, nextLane = lane, nextPage = 1, history: (string | null)[] = [], initialJob?: Job) {
-    if (!job || job.investigation_id !== selectedInvestigation.current) return;
+  async function query(input?: Query, nextLane = lane, nextPage = 1, history: (string | null)[] = [], initialJob?: Job, view?: QueryView) {
+    if (!job || job.investigation_id !== selectedInvestigation.current) return false;
     const investigation = job.investigation_id;
     const version = ++queryVersion.current; setLoadingResults(true); setError('');
     try {
       const start = input?.from ?? initialJob?.from ?? utc(from); const end = input?.to ?? initialJob?.to ?? utc(to);
-      const ids = input?.process_ids ?? initialJob?.process_ids ?? processIds;
+      const ids = input?.process_ids ?? initialJob?.process_ids ?? job.process_ids;
       if (start >= end) throw new Error('From must be earlier than the exclusive To bound.');
       if (!ids.length) throw new Error('Select at least one configured process.');
-      const body: Query = input ?? { process_ids: ids, from: start, to: end, filter: queryFilter(), per_process_filters: perProcessFilters(ids), limit: pageSize || Math.min(1000, Math.max(40, Math.ceil((visibleBody.current?.clientHeight ?? 340) / logRowHeight) * 4)), cursor: null, lane: nextLane };
+      const body: Query = input ?? { process_ids: ids, from: start, to: end, filter: queryFilter(), per_process_filters: perProcessFilters(ids), limit: resultPageLimit(), cursor: null, lane: nextLane };
       const value = await write<Results>(`${base}/${offline ? 'bundle-investigations' : 'investigations'}/${encodeURIComponent(investigation)}/query`, body);
-      if (alive.current && version === queryVersion.current && investigation === selectedInvestigation.current && value.project_id === projectId && value.items.every(item => item.project_id === projectId)) { setResults(current => ({ ...value, matched_count: value.matched_count ?? (input?.cursor ? current?.matched_count ?? null : null) })); setApplied(body); setLane(nextLane); setPrevious(history); setPageNumber(nextPage); }
-    } catch (cause) { if (alive.current && version === queryVersion.current) setError(message(cause)); } finally { if (alive.current && version === queryVersion.current) setLoadingResults(false); }
+      if (alive.current && version === queryVersion.current && investigation === selectedInvestigation.current && value.project_id === projectId && value.items.every(item => item.project_id === projectId)) {
+        setResults(current => ({ ...value, matched_count: value.matched_count ?? (input?.cursor ? current?.matched_count ?? null : null) }));
+        setApplied(body); setLane(nextLane); setPrevious(history); setPageNumber(nextPage);
+        setQueryScope(view?.scope ?? { ...body, cursor: null });
+        setShownProcessIds(view?.visibleIds ?? null);
+        return true;
+      }
+      return false;
+    } catch (cause) {
+      if (alive.current && version === queryVersion.current) {
+        setError(message(cause));
+        if (view && 'previousVisibleIds' in view) setShownProcessIds(view.previousVisibleIds ?? null);
+      }
+      return false;
+    } finally { if (alive.current && version === queryVersion.current) setLoadingResults(false); }
   }
   async function inspect(event: LogEvent, inspectQuery = applied) {
     if (!job || !inspectQuery || event.project_id !== projectId) return;
@@ -302,28 +427,48 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
   }
   const invalidatePlan = () => { planVersion.current += 1; setPlan(null); };
   const systemLabel = `${config.project.name} (${projectId})`;
-  const displayedProcesses = offline ? [...new Map(offline.document.events.map(event => [event.process_id, { id: event.process_id, name: event.process_name_snapshot, server_id: event.server_id }])).values()] : config.processes;
+  const displayedProcesses = offline ? [...new Map(offline.document.events.map(event => [event.process_id, { id: event.process_id, name: event.process_name_snapshot, server_id: event.server_id, host: event.server_name_snapshot }])).values()] : config.processes.map(process => ({ ...process, host: config.servers.find(server => server.id === process.server_id)?.name ?? '' }));
+  const collectedProcesses = (job?.process_ids ?? []).map(id => {
+    const process = displayedProcesses.find(item => item.id === id);
+    const snapshot = (offline?.document.events ?? results?.items)?.find(event => event.process_id === id);
+    return { id, name: snapshot?.process_name_snapshot ?? process?.name ?? id,
+      host: snapshot?.server_name_snapshot ?? process?.host ?? '' };
+  });
   return <section className="history-workspace" aria-label={t("Historical investigation")}>
     <div className="history-heading"><div><h2>{t("Historical investigation")}</h2><p className="muted">{systemLabel} {t("· Retained raw events, exact UTC bounds and literal filters")}</p></div><span className="pill">{offline ? t("Offline bundle | no SSH") : (plan?.demo_mode ?? job?.demo_mode ?? transport === 'local_demo') ? t("Synthetic local fixtures · no SSH") : plan || job ? t("Approved SSH/SFTP") : t("SSH/SFTP · configured sources")}</span></div>
     {error && !fullScreen && !details && <ErrorNotice>{systemLabel}: {t(error)}</ErrorNotice>}
     {pendingCleanup.map(id => <div className="notice history-warning" role="status" key={`${projectId}:${id}`}><span>{systemLabel}{t(": Collection")} <code>{id}</code> {t("was deleted. Cleanup of its captured files is still pending.")}</span><button aria-label={t('Dismiss cleanup notice for collection {id}', { id })} onClick={() => setPendingCleanup(current => current.filter(value => value !== id))}>{t("Dismiss")}</button></div>)}
     <div className="history-setup">
-      <fieldset className="history-processes"><legend>{offline ? t("Imported process snapshots") : t("Configured processes")}</legend>{displayedProcesses.length ? displayedProcesses.map(process => <label className="checkbox-label" key={`${projectId}:${process.id}`}><input type="checkbox" checked={processIds.includes(process.id)} onChange={event => { setProcessIds(current => event.target.checked ? [...current, process.id] : current.filter(id => id !== process.id)); invalidatePlan(); }} /> <span>{process.name}<small>{config.servers.find(server => server.id === process.server_id)?.name} · {process.id}</small></span></label>) : <p className="muted">{t("This system has no configured processes.")}</p>}</fieldset>
-      <div className="history-controls">{historicalDemoEnabled && <label className="history-transport">{t("Collection transport")}<select aria-label={t("Collection transport")} value={transport} disabled={active || !!busy} onChange={event => { setTransport(event.target.value as 'local_demo' | 'ssh'); invalidatePlan(); }}><option value="local_demo">{t("Synthetic local fixtures")}</option><option value="ssh">{t("Approved SSH/SFTP")}</option></select></label>}<div className="form-grid"><UtcDateTimeInput bound="From" value={from} onChange={value => { setFrom(value); invalidatePlan(); }} /><UtcDateTimeInput bound="To" value={to} onChange={value => { setTo(value); invalidatePlan(); }} /></div><p className="history-time-help">{t("Interval [from, to): From is included; To is excluded. Unknown timestamps stay in a separate diagnostic lane.")}</p><div className="history-plan-actions"><button onClick={() => { void preview(); }} disabled={!!busy || active || archived || !workspaceId || !!offline}>{t("Preview collection plan")}</button><button className="primary" onClick={() => { void start(); }} disabled={!!busy || active || archived || !workspaceId || !!offline}>{t("Collect sources")}</button><span role="status">{t(busy)}</span></div>{archived && <p className="muted">{t("Archived system: retained collections remain readable.")}</p>}
+      <fieldset className="history-processes" disabled={active || !!busy || !!offline}><legend>{offline ? t("Imported process snapshots") : t("Configured processes")}</legend>{!offline && <p className="muted">{t('Choose processes for the next collection. The current collection keeps its original process list.')}</p>}{displayedProcesses.length ? displayedProcesses.map(process => <label className="checkbox-label" title={process.id} key={`${projectId}:${process.id}`}><input type="checkbox" data-process-id={process.id} checked={processIds.includes(process.id)} onChange={event => { setProcessIds(current => event.target.checked ? [...current, process.id] : current.filter(id => id !== process.id)); invalidatePlan(); }} /> <span>{process.host}: {process.name}</span></label>) : <p className="muted">{t("This system has no configured processes.")}</p>}</fieldset>
+      <div className="history-controls">
+        <fieldset className="history-filter-fields" disabled={active || !!busy || !!offline}><legend>{t('Collection time range')}</legend><div className="form-grid">
+          <UtcDateTimeInput bound="From" value={collectionFrom} onChange={value => { setCollectionFrom(value); invalidatePlan(); }} />
+          <UtcDateTimeInput bound="To" value={collectionTo} onChange={value => { setCollectionTo(value); invalidatePlan(); }} />
+        </div><p className="muted">{t('Choose the UTC range to collect. The start is inclusive and the end is exclusive. Event table filters apply only to retained data.')}</p></fieldset>
+        {historicalDemoEnabled && <label className="history-transport">{t("Collection transport")}<select aria-label={t("Collection transport")} value={transport} disabled={active || !!busy} onChange={event => { setTransport(event.target.value as 'local_demo' | 'ssh'); invalidatePlan(); }}><option value="local_demo">{t("Synthetic local fixtures")}</option><option value="ssh">{t("Approved SSH/SFTP")}</option></select></label>}<div className="history-plan-actions"><button onClick={() => { void preview(); }} disabled={!!busy || active || archived || !workspaceId || !!offline}>{t("Preview collection plan")}</button><button className="primary" onClick={() => { void start(); }} disabled={!!busy || active || archived || !workspaceId || !!offline}>{t("Collect sources")}</button><span role="status">{t(busy)}</span></div>{archived && <p className="muted">{t("Archived system: retained collections remain readable.")}</p>}
       </div>
     </div>
     {plan && <section className="history-plan" aria-label={t("Collection plan")}><div className="panel-heading"><h3>{t("Collection plan ·")} {config.project.name}</h3><strong>{plan.source_count} {t("sources · approximately")} {bytes(plan.estimated_bytes)}</strong></div>{plan.demo_mode ? <p className="demo-label">{t("SYNTHETIC LOCAL FIXTURES")}</p> : <p className="muted">{t("Approved SSH/SFTP · read-only remote collection")}</p>}<p>{t("Scans retain raw events for later refiltering and source context. Candidate date coverage is unproven until scanned.")}</p>{plan.warnings.map((warning, index) => <p className="history-warning" key={index}>{warning}</p>)}<ul>{plan.sources.map(source => <li key={`${projectId}:${source.source_revision_id}`}><code>{source.remote_path}</code><span>{source.process_id} · {source.kind} · {bytes(source.estimated_bytes)}</span></li>)}</ul></section>}
     {recent.length > 0 && <label className="history-recent">{t("Open your retained collection")}<select aria-label={t("Open your retained collection")} value={job?.investigation_id ?? ''} disabled={!!busy || active} onChange={event => { if (event.target.value) onOpen(event.target.value); }}><option value="">{t("Choose a collection…")}</option>{recent.map(item => <option key={`${projectId}:${item.investigation_id}`} value={item.investigation_id}>{item.investigation_id.slice(0, 12)} · {t(item.status)} · {item.event_count} {t("events")}</option>)}</select></label>}
     {job && <section className="history-status" aria-label={t("Collection progress")}><div className="panel-heading"><h3>{config.project.name} {t("· Collection")} <span data-testid="collection-state">{t(job.status)}</span></h3>{active ? <button onClick={() => { void cancel(); }} disabled={!!busy || job.status === 'cancel_requested'}>{t("Cancel collection")}</button> : <button className="danger-button" onClick={() => setDeleteTarget(job)} disabled={!!busy || !!offline}>{t("Delete collection")}</button>}<code data-testid="investigation-id">{job.investigation_id}</code></div><progress aria-label={t("Scanned sources")} value={job.scanned_sources} max={Math.max(job.source_count, 1)} /><p aria-live="polite">{job.scanned_sources} / {job.source_count} {t("sources scanned ·")} {job.event_count} {t("indexed events ·")} {job.parse_issue_count} {t("parse issues ·")} {bytes(job.downloaded_bytes)} {t("read ·")} {bytes(job.expanded_bytes)} {t("expanded")}</p><p className="coverage-label">{t("Coverage:")} <strong>{t(job.coverage_status)}</strong>{t(". Observed first/last timestamps do not establish continuous coverage.")}</p>{job.errors.map((issue, index) => <p className="history-warning" key={index}>{typeof issue === 'string' ? issue : JSON.stringify(issue)}</p>)}<details><summary>{t("Per-source coverage and failures")}</summary><div className="coverage-table">{job.coverage.map(source => <div key={`${projectId}:${source.source_revision_id}`}><code>{source.remote_path}</code><span>{source.process_id} · {t(source.status)} · {source.events} {t("events ·")} {bytes(source.bytes)} {t("| byte [")}{source.byte_start}, {source.byte_end})</span>{source.checksum && <code>{t("SHA-256")} {source.checksum}</code>}{source.error_code && <strong>{source.error_code}</strong>}</div>)}</div></details></section>}
-    <InvestigationTools key={`${projectId}:${job?.investigation_id ?? 'new'}`} projectId={projectId} systemName={config.project.name} investigationId={job?.investigation_id} workspace={savedWorkspace} offline={offline} queryDraft={queryDraft} layout={layout} onWorkspace={updateWorkspace} onExpired={afterCacheExpired} onInspect={(event, input) => { void inspect(event, input); }} onOpen={id => { refreshRecent(); onOpen(id); }} />
-    <div className="history-filter"><div className="literal-filter"><label>{t("Contains string")}<input value={contains} onChange={event => setContains(event.target.value)} placeholder={t("Literal text, including punctuation")} /></label><button onClick={() => { setContains(''); setIncludes(''); setExcludes(''); setProcessFilters({}); }} disabled={contains === '' && includes === '' && excludes === '' && !Object.values(processFilters).some(value => value.contains || value.excludes)}>{t("Clear filter")}</button><label className="checkbox-label"><input type="checkbox" checked={caseSensitive} onChange={event => setCaseSensitive(event.target.checked)} />{t("Case sensitive")}</label><button className="primary" onClick={() => { void query(); }} disabled={!job || loadingResults}>{t("Apply filter")}</button></div><details className="advanced-filter"><summary>{t("Advanced literal filters")}</summary><div className="form-grid"><label>{t("Additional include terms (one per line)")}<textarea aria-label={t("Additional include terms (one per line)")} value={includes} onChange={event => setIncludes(event.target.value)} rows={3} /></label><label>{t("Exclude terms (one per line)")}<textarea aria-label={t("Exclude terms (one per line)")} value={excludes} onChange={event => setExcludes(event.target.value)} rows={3} /></label></div><label>{t("Include mode")}<select aria-label={t("Include mode")} value={includeMode} onChange={event => setIncludeMode(event.target.value as 'any' | 'all')}><option value="all">{t("All include terms")}</option><option value="any">{t("Any include term")}</option></select></label><p className="muted">{t("Up to 20 include and 20 exclude terms, 512 characters each. Spaces and punctuation are literal; exclusions always reject. Case-insensitive matching uses backend Unicode casefold.")}</p></details><details className="advanced-filter"><summary>{t("Per-process literal filters")}</summary><p className="muted">{t("Each process filter is combined with the global filter. Blank terms add no restriction; case sensitivity follows the control above.")}</p>{displayedProcesses.filter(process => processIds.includes(process.id)).map(process => <div className="form-grid process-filter-row" key={`${projectId}:${process.id}`}><label>{t("Contains string for")} {process.name}<textarea aria-label={t('Contains string for {name}', { name: process.name })} rows={2} value={processFilters[process.id]?.contains ?? ''} onChange={event => setProcessFilters(current => ({ ...current, [process.id]: { ...current[process.id], contains: event.target.value, excludes: current[process.id]?.excludes ?? '' } }))} /></label><label>{t("Exclude string for")} {process.name}<textarea aria-label={t('Exclude string for {name}', { name: process.name })} rows={2} value={processFilters[process.id]?.excludes ?? ''} onChange={event => setProcessFilters(current => ({ ...current, [process.id]: { ...current[process.id], contains: current[process.id]?.contains ?? '', excludes: event.target.value } }))} /></label></div>)}</details></div>
+    <InvestigationTools projectId={projectId} systemName={config.project.name} investigationId={job?.investigation_id} workspace={savedWorkspace} offline={offline} queryDraft={queryDraft} layout={layout} onWorkspace={updateWorkspace} onExpired={afterCacheExpired} onInspect={(event, input) => { void inspect(event, input); }} onOpen={id => { refreshRecent(); onOpen(id); }} onViewPin={viewPin} />
+
     <dialog open ref={resultsPanel} className={`history-results ${fullScreen ? 'history-results-fullscreen' : ''}`} role={fullScreen ? 'dialog' : 'region'} aria-label={t("Event results")} onCancel={event => { event.preventDefault(); setFullScreen(false); }}>
     <div className="history-results-heading">
       <div className="workspace-tabs" aria-label={t("Result lane")}><button className={lane === 'events' ? 'active' : ''} aria-pressed={lane === 'events'} onClick={() => { void query(undefined, 'events'); }} disabled={!job || loadingResults}>{t("Timestamped events")}</button><button className={lane === 'diagnostic' ? 'active' : ''} aria-pressed={lane === 'diagnostic'} onClick={() => { void query(undefined, 'diagnostic'); }} disabled={!job || loadingResults}>{t("Diagnostic lane")}{job ? ` (${job.parse_issue_count})` : ''}</button></div>
       <div className="history-table-actions">
-        <label>{t("Result layout")}<select aria-label={t("Result layout")} value={layout} onChange={event => setLayout(event.target.value as 'merged' | 'split')}><option value="merged">{t("Merged")}</option><option value="split">{t("Separate process panes")}</option></select></label>
-        <label>{t("Rows per result page")}<select aria-label={t("Rows per result page")} value={pageSize} onChange={event => setPageSize(Number(event.target.value))}><option value={0}>{t("Measured viewport")}</option><option value={10}>10</option><option value={50}>50</option><option value={200}>200</option></select></label>
-        <details className="log-column-menu"><summary>{t("Columns")}</summary><fieldset><legend>{t("Visible columns")}</legend>
+        <button type="button" onClick={() => { setError(''); setFiltersOpen(true); }} disabled={!job || loadingResults}>{t('Filters')}</button>
+        <button type="button" aria-label={t('Pin')} disabled={!job || !savedWorkspace || !selectedEventIds.size || loadingResults} onClick={() => { if (modifyingPin) setPinChoiceOpen(true); else openSelectedPin(); }}>{t('Pin')}{selectedEventIds.size > 0 && <> ({selectedEventIds.size})</>}</button>
+        {selectedEventIds.size > 0 && <button type="button" onClick={() => setMarkedEvents({})}>{t('Clear selection')}</button>}
+        <label>{t("Result layout")}<select aria-label={t("Result layout")} value={layout} disabled={loadingResults} onChange={event => changeLayout(event.target.value as 'merged' | 'split')}><option value="merged">{t("Merged")}</option><option value="split">{t("Separate process panes")}</option></select></label>
+        <ProcessVisibilityMenu processOptions={paneProcesses} visibleProcessIds={visiblePaneIds} disabled={loadingResults} onChange={changeVisibleProcesses} />
+        <label>{t('Pane arrangement')}<select aria-label={t('Pane arrangement')} value={paneColumns} disabled={layout === 'merged' || loadingResults} onChange={event => setPaneColumns(Number(event.target.value) as 1 | 2 | 3 | 4)}><option value={1}>{t('Stacked')}</option><option value={2}>{t('2 columns')}</option><option value={3}>{t('3 columns')}</option><option value={4}>{t('4 columns')}</option></select></label>
+        <details className="log-column-menu" ref={columnMenu} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false; }} onKeyDown={event => {
+          if (event.key === 'Escape' && event.currentTarget.open) {
+            event.preventDefault(); event.stopPropagation(); event.currentTarget.open = false;
+            event.currentTarget.querySelector('summary')?.focus();
+          }
+        }}><summary>{t("Columns")}</summary><fieldset><legend>{t("Visible columns")}</legend>
           <label className="checkbox-label"><input type="checkbox" checked={columns.timestamp} onChange={event => setColumns(current => ({ ...current, timestamp: event.target.checked }))} />{t("Event time UTC")}</label>
           <label className="checkbox-label"><input type="checkbox" checked={columns.process} onChange={event => setColumns(current => ({ ...current, process: event.target.checked }))} />{t("Process")}</label>
           <label className="checkbox-label"><input type="checkbox" checked={columns.host} onChange={event => setColumns(current => ({ ...current, host: event.target.checked }))} />{t("Host")}</label>
@@ -333,13 +478,23 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
         <button type="button" ref={fullScreenButton} onClick={() => setFullScreen(current => !current)} aria-pressed={fullScreen}><Icon kind={fullScreen ? 'collapse' : 'expand'} />{fullScreen ? t("Exit full screen") : t("Full screen")}</button>
       </div>
     </div>
+    {modifyingPin && <p className="history-time-help" role="status">{t('Modifying pin selection')}: {modifyingPin.description || t('Pin · {count} logs', { count: modifyingPin.bookmark_ids.length })} <button type="button" onClick={() => { setModifyingPin(undefined); setMarkedEvents({}); }}>{t('Cancel modification')}</button></p>}
     {error && fullScreen && !details && <ErrorNotice>{systemLabel}: {t(error)}</ErrorNotice>}
-    {results && <div className="history-result-summary" role="status"><span>{config.project.name} · {projectId}</span><strong data-testid="match-count">{results.matched_count ?? t("Count unknown")} {lane === 'diagnostic' ? t("diagnostic records") : t("matches")}</strong><span>{results.items.length} {t("rows on page")} {pageNumber} {t("· snapshot")} {results.source_snapshot_revision}{results.partial ? t(" · Partial coverage") : ''}</span>{loadingResults && <span>{t("Applying query…")}</span>}</div>}
-    {applied && <p className="history-time-help">{t("Applied UTC [")}{formatUtcTimestamp(applied.from)}, {formatUtcTimestamp(applied.to)}) · {applied.filter?.include?.length ?? 0} {t("include /")} {applied.filter?.exclude?.length ?? 0} {t("exclude terms ·")} {applied.filter?.case_sensitive ? t("Case sensitive") : t("Unicode casefold")}{t(". Edit controls and apply to replace this query.")}</p>}
+    {results && <div className="history-result-summary" role="status"><span>{config.project.name} · {projectId}</span>{layout === 'merged' && <strong data-testid="match-count">{!visiblePaneIds.length ? 0 : mergedScopeMatches ? results.matched_count ?? t("Count unknown") : t("Count unknown")} {lane === 'diagnostic' ? t("diagnostic records") : t("matches")}</strong>}<span>{layout === 'merged' && <>{mergedEvents.length} {t("rows on page")} {pageNumber} </>}{t("· snapshot")} {results.source_snapshot_revision}{results.partial ? t(" · Partial coverage") : ''}</span>{loadingResults && <span>{t("Applying query…")}</span>}</div>}
+    {job && <p className="history-time-help">{t('Collected UTC [')}{formatUtcTimestamp(job.from)}, {formatUtcTimestamp(job.to)})</p>}
+    {job && <div className="history-time-help" role="group" aria-label={t('Collected processes')}><strong>{t('Collected processes')}:</strong> {collectedProcesses.map((process, index) => <span key={`${projectId}:${process.id}`} title={process.id}>{index > 0 ? ', ' : ''}{process.host ? `${process.host}: ` : ''}{process.name}</span>)}</div>}
+    {applied && <p className="history-time-help">{t("Displayed UTC [")}{formatUtcTimestamp(applied.from)}, {formatUtcTimestamp(applied.to)}) · {applied.filter?.include?.length ?? 0} {t("include /")} {applied.filter?.exclude?.length ?? 0} {t("exclude terms ·")} {applied.filter?.case_sensitive ? t("Case sensitive") : t("Unicode casefold")}{t(". Edit controls and apply to replace this query.")}</p>}
     {lane === 'diagnostic' && <p className="history-time-help">{t("These records have no usable event timestamp. The process predicate applies; oversized previews remain visible when their literal match is unknown. No time is invented and these records are excluded from timestamped match totals.")}</p>}
-    <div ref={visibleBody} className="history-result-body" aria-busy={loadingResults}>{results ? results.items.length ? layout === 'merged' ? <VirtualLog columns={columns} highlights={applied} events={results.items} label={`${systemLabel} · ${t(lane === 'events' ? 'Timestamped events' : 'Diagnostic lane')}`} onInspect={event => { void inspect(event); }} /> : <div className="history-split">{splitEvents.map(([id, events]) => <section key={`${projectId}:${id}`}><h3>{config.project.name} · {events[0]?.process_name_snapshot}</h3><VirtualLog columns={columns} highlights={applied} events={events} label={`${systemLabel} · ${id}`} compact onInspect={event => { void inspect(event); }} /></section>)}</div> : <EmptyState title={results.availability === 'unavailable' ? t("Retained source data unavailable") : t("No matching records")}>{results.availability === 'unavailable' ? t("The source cache expired or was explicitly removed. Notes and pinned bookmark context remain available. Recollection requires an explicit action.") : job?.event_count ? t("Captured data is available. Change the literal filter, time interval or result lane.") : t("No indexed data is available. Review source coverage and collection errors.")}</EmptyState> : <EmptyState title={loadingResults ? t("Loading timestamped events") : active ? t("Collection in progress") : job ? t("Indexed data is ready to query") : t("Inspect configured log history")}>{loadingResults ? t("Loading retained events for the selected collection.") : active ? t("Timestamped events load automatically when collection finishes. You can also query the data collected so far.") : job ? t("Apply a literal filter or open the diagnostic lane to query this retained collection.") : t("Select configured processes, set UTC bounds, then collect. Preview the bounded source plan if needed.")}</EmptyState>}</div>
-    {results && applied && <div className="history-pagination"><button disabled={!previous.length || loadingResults} onClick={() => { const history = previous.slice(0, -1); void query({ ...applied, cursor: previous.at(-1) ?? null }, lane, pageNumber - 1, history); }}>{t("Previous result page")}</button><span>{t("Pagination is bound to this collection, filter and source snapshot. Each page keeps the browser cache bounded.")}</span><button disabled={!results.next_cursor || loadingResults} onClick={() => { void query({ ...applied, cursor: results.next_cursor }, lane, pageNumber + 1, [...previous, applied.cursor ?? null]); }}>{t("Next result page")}</button></div>}
+
+    <div ref={visibleBody} className="history-result-body" aria-busy={loadingResults}>{layout === 'split' && results && applied && queryScope ? <><HistoricalProcessPanes projectId={projectId} systemName={config.project.name} queryPath={`${base}/${offline ? 'bundle-investigations' : 'investigations'}/${encodeURIComponent(job?.investigation_id ?? '')}/query`} query={queryScope} seedQuery={applied} seed={results} columns={columns} selectedEventIds={selectedEventIds} onToggleSelection={toggleMarkedEvent} processOptions={paneProcesses} visibleProcessIds={visiblePaneIds} paneColumns={paneColumns} onInspect={(event, input) => { void inspect(event, input); }} />{!visiblePaneIds.length && <EmptyState title={t('No processes selected')}>{t('Use Show process to turn on one or more processes.')}</EmptyState>}</> : queryScope && !visiblePaneIds.length ? <EmptyState title={t('No processes selected')}>{t('Use Show process to turn on one or more processes.')}</EmptyState> : results ? mergedEvents.length ? <VirtualLog columns={columns} highlights={applied} selectedEventIds={selectedEventIds} onToggleSelection={event => toggleMarkedEvent(event, applied)} events={mergedEvents} label={`${systemLabel} · ${t(lane === 'events' ? 'Timestamped events' : 'Diagnostic lane')}`} onInspect={event => { void inspect(event); }} /> : <EmptyState title={results.availability === 'unavailable' ? t("Retained source data unavailable") : t("No matching records")}>{results.availability === 'unavailable' ? t("The source cache expired or was explicitly removed. Notes and pinned bookmark context remain available. Recollection requires an explicit action.") : job?.event_count ? t("Captured data is available. Change the literal filter, time interval or result lane.") : t("No indexed data is available. Review source coverage and collection errors.")}</EmptyState> : <EmptyState title={loadingResults ? t("Loading timestamped events") : active ? t("Collection in progress") : job ? t("Indexed data is ready to query") : t("Inspect configured log history")}>{loadingResults ? t("Loading retained events for the selected collection.") : active ? t("Timestamped events load automatically when collection finishes. You can also query the data collected so far.") : job ? t("Apply a literal filter or open the diagnostic lane to query this retained collection.") : t("Select configured processes, set UTC bounds, then collect. Preview the bounded source plan if needed.")}</EmptyState>}</div>
+    <div className="history-results-footer">
+        <label>{t("Rows")}<select aria-label={t("Rows")} value={pageSize} disabled={loadingResults} onChange={event => changePageSize(Number(event.target.value))}><option value={0}>{t("Viewport")}</option><option value={10}>10</option><option value={50}>50</option><option value={200}>200</option></select></label>
+      {layout === 'merged' && results && applied && <div className="history-pagination"><button disabled={!previous.length || loadingResults || !visiblePaneIds.length || !mergedScopeMatches} onClick={() => { const history = previous.slice(0, -1); void query({ ...applied, cursor: previous.at(-1) ?? null }, lane, pageNumber - 1, history, undefined, { scope: queryScope ?? applied, visibleIds: shownProcessIds }); }}>{t("Previous result page")}</button><span>{t("Pagination is bound to this collection, filter and source snapshot. Each page keeps the browser cache bounded.")}</span><button disabled={!results.next_cursor || loadingResults || !visiblePaneIds.length || !mergedScopeMatches} onClick={() => { void query({ ...applied, cursor: results.next_cursor }, lane, pageNumber + 1, [...previous, applied.cursor ?? null], undefined, { scope: queryScope ?? applied, visibleIds: shownProcessIds }); }}>{t("Next result page")}</button></div>}
+    </div>
     </dialog>
+    {filtersOpen && job && <HistoricalFiltersDialog initial={{ from, to, filter, per_process_filters: processFilters }} processOptions={collectedProcesses} bounds={{ from: job.from, to: job.to }} busy={loadingResults} error={error} onApply={applyFilters} onClose={() => { setFiltersOpen(false); setError(''); }} />}
+    {pinChoiceOpen && <Modal title={t('Update the pin or create a new one?')} onClose={() => setPinChoiceOpen(false)}><div className="form-actions"><button type="button" onClick={() => setPinChoiceOpen(false)}>{t('Cancel')}</button><button type="button" onClick={() => openSelectedPin(false)}>{t('Create a new pin')}</button><button type="button" className="primary" onClick={() => openSelectedPin(true)}>{t('Update the pin')}</button></div></Modal>}
+    {pinOpen && job && savedWorkspace && <InvestigationPinDialog key={`${projectId}:${job.investigation_id}:${viewedPin?.id ?? 'new'}`} projectId={projectId} systemName={config.project.name} investigationId={job.investigation_id} workspace={savedWorkspace} offline={!!offline} entries={pinEntries ?? Object.values(markedEvents)} pin={viewedPin} allowDelete={!!viewedPin && pinEntries !== null} replaceSelection={!!viewedPin && pinEntries === null} onModify={savedWorkspace.availability !== 'unavailable' ? modifyPin : undefined} onSaved={afterPinSaved} onClose={() => setPinOpen(false)} />}
     {deleteTarget && <Modal title={t("Delete retained collection")} onClose={() => { if (!busy) setDeleteTarget(null); }}><p className="target-system">{t("System:")} <strong>{config.project.name}</strong><code>{projectId}</code></p><p>{t("Collection:")} <code>{deleteTarget.investigation_id}</code></p><p>{t("Permanently delete this retained collection and its indexed events, source context and captured-source downloads. Other collections and remote log files remain available.")}</p><p>{t("This cannot be undone.")}</p>{error && <ErrorNotice>{t(error)}</ErrorNotice>}<div className="form-actions"><button disabled={!!busy} onClick={() => setDeleteTarget(null)}>{t("Keep collection")}</button><button className="danger-button" disabled={!!busy} onClick={() => { void removeCollection(); }}>{busy === 'Deleting collection' ? t("Deleting…") : t("Delete collection")}</button></div></Modal>}
     {details && <Modal title={t("Event provenance and source context")} onClose={() => { setDetails(null); contextVersion.current += 1; }}><p className="target-system">{t("System:")} <strong>{config.project.name}</strong><code>{projectId}</code></p><p>{details.server_name_snapshot} / {details.process_name_snapshot}</p>{error && <ErrorNotice>{t(error)}</ErrorNotice>}<pre className="event-raw">{details.raw_line}</pre>{details.parse_status === 'oversized_line' && <p className="history-warning">{t("This line exceeded the configured limit. The displayed text is a bounded preview; its full literal match is unknown. The captured source download preserves the original bytes when complete.")}</p>}<dl className="provenance"><div><dt>{t("Event ID")}</dt><dd><code>{details.event_id}</code></dd></div><div><dt>{t("UTC / parse status")}</dt><dd>{details.timestamp_utc ? formatUtcTimestamp(details.timestamp_utc) : t("Unknown timestamp")} · {t(details.parse_status)}</dd></div><div><dt>{t("Original timestamp")}</dt><dd><code>{details.timestamp_original ?? t("Not parsed")}</code></dd></div><div><dt>{t("Source revision")}</dt><dd><code>{details.source.source_revision_id}</code></dd></div><div><dt>{t("Original path / member")}</dt><dd><code>{details.source.remote_path}{details.source.archive_member ? ` :: ${t('Archive member {name} (ordinal {ordinal})', { name: details.source.archive_member, ordinal: details.source.member_ordinal ?? '?' })}` : ''}</code></dd></div><div><dt>{t("Physical position")}</dt><dd>{t("Line")} {details.source.line_number ?? t("unknown")} {t("· byte [")}{details.source.byte_start}, {details.source.byte_end})</dd></div><div><dt>{t("Content SHA-256")}</dt><dd><code>{details.source.content_sha256}</code></dd></div></dl><SourceCoverageDetails value={sourceDetails} /><div className="history-context-heading"><h3>{t("Source-order context")}</h3><button disabled={!!offline} onClick={() => { void download(details); }}>{t("Download captured source")}</button><button onClick={() => { void navigator.clipboard.writeText(`[System: ${systemLabel}] [${details.server_name_snapshot}/${details.process_name_snapshot}] ${details.raw_line}`).then(() => setCopied(true)).catch(() => setError('Clipboard access failed. Select and copy the original text above.')); }}>{copied ? t("Copied") : t("Copy event text")}</button></div><p className="muted">{t("Five physical lines before/after in the same source member, independent of the merged ordering. Context does not increase match totals.")}</p>{contextBusy && <p role="status">{t("Loading source context…")}</p>}{savedWorkspace && detailsQuery && job && <EventBookmark key={`${projectId}:${job.investigation_id}:${details.event_id}`} projectId={projectId} investigationId={job.investigation_id} offline={!!offline} workspace={savedWorkspace} event={details} query={detailsQuery} onWorkspace={updateWorkspace} />}<ol className="source-context">{context?.items.map(item => <li className={item.is_anchor ? 'context-anchor' : ''} key={`${projectId}:${item.event.event_id}`}><div><strong>{item.is_anchor ? t("Selected event") : t("Context")}</strong><span>{t("line")} {item.event.source.line_number ?? '?'}{item.outside_time_bounds ? t(" · Outside time bounds") : ''}{item.matches_filter === null ? t(" | Literal match unknown (truncated record)") : !item.matches_filter ? t(" · Outside literal filter") : ''}{item.event.timestamp_utc === null ? t(" · Unknown timestamp") : ''}</span></div><pre>{item.event.raw_line}</pre></li>)}</ol></Modal>}
   </section>;
@@ -348,27 +503,4 @@ export default function HistoricalViewer({ projectId, config, workspaceId, selec
 function SourceCoverageDetails({ value }: { value: SourceDetails | null }) {
   const { t } = useI18n();
   return value && <section className="source-coverage-details" aria-label={t("Captured source coverage")}><h3>{t("Captured source coverage")}</h3><dl><div><dt>{t("Source status")}</dt><dd>{t(value.status)}{value.error_code ? ` · ${value.error_code}` : ''}</dd></div><div><dt>{t("Observed event range UTC")}</dt><dd>{value.observed_from ? formatUtcTimestamp(value.observed_from) : t("Unknown")} → {value.observed_to ? formatUtcTimestamp(value.observed_to) : t("Unknown")}</dd></div><div><dt>{t("Retained index")}</dt><dd>{value.retained_event_count} {t("events ·")} {value.parse_issue_count} {t("parse issues")}</dd></div><div><dt>{t("Original bytes")}</dt><dd>{value.raw_bytes_available ? t("Available") : t("Unavailable")} · {bytes(value.downloaded_bytes)} {t("read ·")} {bytes(value.expanded_bytes)} {t("expanded")}</dd></div><div><dt>{t("Captured byte ranges")}</dt><dd><code>{JSON.stringify(value.captured_ranges)}</code></dd></div></dl>{value.limitations.map((limitation, index) => <p className="history-warning" key={index}>{limitation}</p>)}<p className="muted">{t("Observed timestamps and scanned boundaries do not prove continuous coverage.")}</p></section>;
-}
-
-function VirtualLog({ events, label, columns, compact = false, onInspect, highlights }: { events: LogEvent[]; label: string; columns: LogColumns; compact?: boolean; onInspect: (event: LogEvent) => void; highlights: HighlightContext | null }) {
-  const { t } = useI18n();
-  const scroll = useRef<HTMLDivElement>(null);
-  const virtual = useVirtualizer({ count: events.length, getScrollElement: () => scroll.current, estimateSize: () => logRowHeight, overscan: 6, getItemKey: index => `${events[index].project_id}:${events[index].event_id}` });
-  useEffect(() => { virtual.scrollToOffset(0); if (scroll.current) scroll.current.scrollLeft = 0; }, [events, virtual]);
-  const metadataWidth = 22 + (columns.timestamp ? 156 : 0) + (columns.process ? 155 : 0) + (columns.host ? 145 : 0);
-  const tableStyle = { '--log-columns': `22px ${columns.timestamp ? '156px ' : ''}${columns.process ? '155px ' : ''}${columns.host ? '145px ' : ''}minmax(400px, 1fr)`, '--log-min-width': `${metadataWidth + 400}px` } as CSSProperties;
-  return <div ref={scroll} className={`virtual-logs ${compact ? 'compact' : ''}`} style={tableStyle} tabIndex={0} role="table" aria-label={label} aria-rowcount={events.length + 1} aria-colcount={2 + Number(columns.timestamp) + Number(columns.process) + Number(columns.host)}>
-    <div role="row" className="log-columns log-column-headings"><span role="columnheader" aria-label={t("Inspect")} />{columns.timestamp && <span role="columnheader">{t("Event time UTC")}</span>}{columns.process && <span role="columnheader">{t("Process")}</span>}{columns.host && <span role="columnheader">{t("Host")}</span>}<span role="columnheader">{t("Log entry")}</span></div>
-    <div className="virtual-log-content" style={{ height: virtual.getTotalSize() }}>{virtual.getVirtualItems().map(row => {
-      const event = events[row.index];
-      const inspectLabel = t('Inspect source line {line} from {name}', { line: event.source.line_number ?? '?', name: event.process_name_snapshot });
-      return <div key={row.key} role="row" aria-rowindex={row.index + 2} className="log-columns log-event" style={{ height: row.size, transform: `translateY(${row.start}px)` }}>
-        <span role="cell" className="log-context-cell"><button type="button" className="log-context-button" aria-label={inspectLabel} title={inspectLabel} onClick={() => onInspect(event)}><Icon kind="eye" /></button></span>
-        {columns.timestamp && <code role="cell" className="log-timestamp">{event.timestamp_utc ? formatUtcTimestamp(event.timestamp_utc) : t("Unknown timestamp")}</code>}
-        {columns.process && <span role="cell" title={event.process_id}>{event.process_name_snapshot}</span>}
-        {columns.host && <span role="cell" title={event.server_id}>{event.server_name_snapshot}</span>}
-        <code role="cell" className="log-message"><LogText highlightLimitTitle={t('Highlight limit reached; original text and filter results are unchanged.')} rawLine={event.raw_line} timestampOriginal={event.timestamp_original} timestampUtc={event.timestamp_utc} filters={filtersForLog(highlights, event.process_id)} /></code>
-      </div>;
-    })}</div>
-  </div>;
 }

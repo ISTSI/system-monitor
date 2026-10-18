@@ -2780,6 +2780,210 @@
         "x-permission": "bookmark.write"
       }
     },
+    "/api/v1/projects/{project_id}/investigations/{job_id}/pins": {
+      "post": {
+        "tags": [
+          "investigation tools"
+        ],
+        "summary": "Create Pin",
+        "operationId": "create_pin_api_v1_projects__project_id__investigations__job_id__pins_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "bookmark.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/investigations/{job_id}/pins/{pin_id}": {
+      "patch": {
+        "tags": [
+          "investigation tools"
+        ],
+        "summary": "Edit Pin",
+        "operationId": "edit_pin_api_v1_projects__project_id__investigations__job_id__pins__pin_id__patch",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "pin_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pin Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "bookmark.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/investigations/{job_id}/pins/{pin_id}/delete": {
+      "post": {
+        "tags": [
+          "investigation tools"
+        ],
+        "summary": "Delete Pin",
+        "operationId": "delete_pin_api_v1_projects__project_id__investigations__job_id__pins__pin_id__delete_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "pin_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pin Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/inspector__investigations__RevisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "bookmark.write"
+      }
+    },
     "/api/v1/projects/{project_id}/investigations/{job_id}/bookmarks/{bookmark_id}": {
       "patch": {
         "tags": [
@@ -3819,6 +4023,201 @@
         },
         "responses": {
           "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "bookmark.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/pins": {
+      "post": {
+        "summary": "Create Pin",
+        "operationId": "create_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "bookmark.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/pins/{pin_id}": {
+      "patch": {
+        "summary": "Edit Pin",
+        "operationId": "edit_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins__pin_id__patch",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          },
+          {
+            "name": "pin_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pin Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "bookmark.write"
+      }
+    },
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/pins/{pin_id}/delete": {
+      "post": {
+        "summary": "Delete Pin",
+        "operationId": "delete_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins__pin_id__delete_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "investigation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Investigation Id"
+            }
+          },
+          {
+            "name": "pin_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pin Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/inspector__investigations__RevisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -5517,6 +5916,14 @@
             },
             "type": "array",
             "title": "Items"
+          },
+          "pin_groups": {
+            "items": {
+              "$ref": "#/components/schemas/PinGroup"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Pin Groups"
           }
         },
         "additionalProperties": false,
@@ -5723,6 +6130,14 @@
             "maxItems": 10000,
             "title": "Bookmarks"
           },
+          "pin_groups": {
+            "items": {
+              "$ref": "#/components/schemas/PinGroup"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Pin Groups"
+          },
           "coverage_status": {
             "type": "string",
             "maxLength": 64,
@@ -5801,6 +6216,28 @@
             "type": "integer",
             "minimum": 0.0,
             "title": "Snapshot Revision"
+          },
+          "collection_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection From"
+          },
+          "collection_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection To"
           }
         },
         "additionalProperties": false,
@@ -8153,6 +8590,11 @@
             "format": "password",
             "title": "Password",
             "writeOnly": true
+          },
+          "remember_me": {
+            "type": "boolean",
+            "title": "Remember Me",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -8759,6 +9201,163 @@
         ],
         "title": "PasswordInput"
       },
+      "PinCreate": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Description",
+            "default": ""
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/PinEventInput"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Events"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "events"
+        ],
+        "title": "PinCreate"
+      },
+      "PinEventInput": {
+        "properties": {
+          "before": {
+            "type": "integer",
+            "const": 0,
+            "title": "Before",
+            "default": 0
+          },
+          "after": {
+            "type": "integer",
+            "const": 0,
+            "title": "After",
+            "default": 0
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "From"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$",
+            "title": "To"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/HistoricalFilter"
+          },
+          "per_process_filters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HistoricalFilter"
+            },
+            "type": "object",
+            "maxProperties": 200,
+            "title": "Per Process Filters"
+          },
+          "event_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Event Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "event_id"
+        ],
+        "title": "PinEventInput"
+      },
+      "PinGroup": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Id"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Description"
+          },
+          "bookmark_ids": {
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Bookmark Ids"
+          },
+          "created_us": {
+            "type": "integer",
+            "maximum": 9007199254740991.0,
+            "minimum": 0.0,
+            "title": "Created Us"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "bookmark_ids",
+          "created_us"
+        ],
+        "title": "PinGroup"
+      },
+      "PinUpdate": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Description"
+          },
+          "events": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PinEventInput"
+                },
+                "type": "array",
+                "maxItems": 100,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Events"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "description"
+        ],
+        "title": "PinUpdate"
+      },
       "PreferenceInput": {
         "properties": {
           "expected_revision": {
@@ -9140,6 +9739,14 @@
           "source_snapshot_revision": {
             "type": "integer",
             "title": "Source Snapshot Revision"
+          },
+          "pin_groups": {
+            "items": {
+              "$ref": "#/components/schemas/PinGroup"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Pin Groups"
           }
         },
         "additionalProperties": false,

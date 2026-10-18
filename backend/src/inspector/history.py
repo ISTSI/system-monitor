@@ -24,7 +24,7 @@ from sqlalchemy import delete, func, insert, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from starlette.responses import StreamingResponse
 
-from inspector import services
+from inspector import auth, services
 from inspector.config import Config
 from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
@@ -833,8 +833,7 @@ async def historical_query(
                 login is None
                 or login.user_id != actor.user_id
                 or login.auth_version != actor.auth_version
-                or login.expires_us <= now
-                or now - login.last_seen_us > idle_timeout_us
+                or auth.session_expired(login, now, idle_timeout_us)
             ):
                 raise DomainError("AUTH_REQUIRED", "Authentication is required.", 401)
         if (
@@ -863,8 +862,8 @@ async def historical_query(
     else:
         conditions.extend(
             [
-                HistoryEvent.timestamp_us >= canonical_time(payload.from_),
-                HistoryEvent.timestamp_us < canonical_time(payload.to),
+                HistoryEvent.timestamp_us >= max(canonical_time(payload.from_), job.from_us),
+                HistoryEvent.timestamp_us < min(canonical_time(payload.to), job.to_us),
             ]
         )
     if payload.correlation is not None and payload.correlation.mode == "exact":
@@ -1375,7 +1374,9 @@ class HistoryManager:
                     User.auth_version,
                     AuthSession.auth_version.label("session_auth_version"),
                     AuthSession.expires_us,
+                    AuthSession.created_us,
                     AuthSession.last_seen_us,
+                    AuthSession.remember_me,
                     Project.archived,
                 )
                 .select_from(HistoryJob)
@@ -1396,7 +1397,8 @@ class HistoryManager:
             or state.auth_version != job.auth_version
             or state.session_auth_version != job.auth_version
             or state.expires_us <= now
-            or now - state.last_seen_us > self.config.idle_timeout_us
+            or now < state.created_us
+            or (not state.remember_me and now - state.last_seen_us >= self.config.idle_timeout_us)
             or state.archived
         ):
             raise DomainError(
@@ -2256,8 +2258,9 @@ def build_history_router(
                             or retained_grant is None
                             or not user.enabled
                             or user.auth_version != actor.auth_version
-                            or login.expires_us <= now
-                            or now - login.last_seen_us > request.app.state.config.idle_timeout_us
+                            or auth.session_expired(
+                                login, now, request.app.state.config.idle_timeout_us
+                            )
                             or not await request.app.state.supervisor.healthy()
                         ):
                             return

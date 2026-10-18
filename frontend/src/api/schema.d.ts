@@ -930,6 +930,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/pins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Pin */
+        post: operations["create_pin_api_v1_projects__project_id__investigations__job_id__pins_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/pins/{pin_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit Pin */
+        patch: operations["edit_pin_api_v1_projects__project_id__investigations__job_id__pins__pin_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/pins/{pin_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Pin */
+        post: operations["delete_pin_api_v1_projects__project_id__investigations__job_id__pins__pin_id__delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/investigations/{job_id}/bookmarks/{bookmark_id}": {
         parameters: {
             query?: never;
@@ -1215,6 +1266,57 @@ export interface paths {
         put?: never;
         /** Create Bookmark */
         post: operations["create_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/pins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Pin */
+        post: operations["create_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/pins/{pin_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit Pin */
+        patch: operations["edit_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins__pin_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/pins/{pin_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Pin */
+        post: operations["delete_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins__pin_id__delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1712,6 +1814,8 @@ export interface components {
             revision: number;
             /** Items */
             items: components["schemas"]["BookmarkItem"][];
+            /** Pin Groups */
+            pin_groups?: components["schemas"]["PinGroup"][];
         };
         /** BookmarkUpdate */
         BookmarkUpdate: {
@@ -1790,6 +1894,8 @@ export interface components {
             events: components["schemas"]["HistoricalEvent"][];
             /** Bookmarks */
             bookmarks: components["schemas"]["BundleBookmark"][];
+            /** Pin Groups */
+            pin_groups?: components["schemas"]["PinGroup"][];
             /** Coverage Status */
             coverage_status: string;
             /** Errors */
@@ -1815,6 +1921,10 @@ export interface components {
             config_revision: number;
             /** Snapshot Revision */
             snapshot_revision: number;
+            /** Collection From */
+            collection_from?: string | null;
+            /** Collection To */
+            collection_to?: string | null;
         };
         /** BundlePreviewResponse */
         BundlePreviewResponse: {
@@ -2674,6 +2784,11 @@ export interface components {
              * Format: password
              */
             password: string;
+            /**
+             * Remember Me
+             * @default false
+             */
+            remember_me: boolean;
         };
         /** LoginResponse */
         LoginResponse: {
@@ -2912,6 +3027,64 @@ export interface components {
              */
             password: string;
         };
+        /** PinCreate */
+        PinCreate: {
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Events */
+            events: components["schemas"]["PinEventInput"][];
+        };
+        /** PinEventInput */
+        PinEventInput: {
+            /**
+             * Before
+             * @default 0
+             * @constant
+             */
+            before: 0;
+            /**
+             * After
+             * @default 0
+             * @constant
+             */
+            after: 0;
+            /** From */
+            from: string;
+            /** To */
+            to: string;
+            filter?: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters?: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /** Event Id */
+            event_id: string;
+        };
+        /** PinGroup */
+        PinGroup: {
+            /** Id */
+            id: string;
+            /** Description */
+            description: string;
+            /** Bookmark Ids */
+            bookmark_ids: string[];
+            /** Created Us */
+            created_us: number;
+        };
+        /** PinUpdate */
+        PinUpdate: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Description */
+            description: string;
+            /** Events */
+            events?: components["schemas"]["PinEventInput"][] | null;
+        };
         /** PreferenceInput */
         PreferenceInput: {
             /** Expected Revision */
@@ -3077,6 +3250,8 @@ export interface components {
             availability: "retained" | "partial" | "unavailable";
             /** Source Snapshot Revision */
             source_snapshot_revision: number;
+            /** Pin Groups */
+            pin_groups?: components["schemas"]["PinGroup"][];
         };
         /** SearchInput */
         SearchInput: {
@@ -5666,6 +5841,116 @@ export interface operations {
             };
         };
     };
+    create_pin_api_v1_projects__project_id__investigations__job_id__pins_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_pin_api_v1_projects__project_id__investigations__job_id__pins__pin_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+                pin_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_pin_api_v1_projects__project_id__investigations__job_id__pins__pin_id__delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+                pin_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__investigations__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     edit_bookmark_api_v1_projects__project_id__investigations__job_id__bookmarks__bookmark_id__patch: {
         parameters: {
             query?: never;
@@ -6307,6 +6592,116 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins__pin_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+                pin_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_pin_api_v1_projects__project_id__bundle_investigations__investigation_id__pins__pin_id__delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+                pin_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__investigations__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

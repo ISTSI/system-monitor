@@ -26,7 +26,7 @@ from sqlalchemy import delete
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from inspector import services, ssh_transport
+from inspector import auth, services, ssh_transport
 from inspector.config import Config
 from inspector.domain import Principal, ProjectContext
 from inspector.errors import DomainError
@@ -225,8 +225,7 @@ class SSHAccess:
             login is None
             or login.user_id != actor.user_id
             or login.auth_version != actor.auth_version
-            or login.expires_us <= now
-            or now - login.last_seen_us >= self.config.idle_timeout_us
+            or auth.session_expired(login, now, self.config.idle_timeout_us)
         ):
             raise DomainError("AUTH_REQUIRED", "Authentication is required.", 401)
         return actor
