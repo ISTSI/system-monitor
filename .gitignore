@@ -38,4 +38,5 @@ verification/
 *.log
 *.gz
 *.zip
+!fixtures/inventory/browser-source-order.zip
 backend/src/inspector/web/

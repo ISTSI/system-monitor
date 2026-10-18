@@ -1,5 +1,78 @@
 # 10 — Import Ansible inventory files into system setup
 
+## Stage 07 implementation and operator workflow
+
+The application now provides **Import Ansible inventory files** on the selected
+System's topology page for Administrators. Choose a persistent inventory source,
+upload a direct file or companion ZIP, select its format/source entries, parse,
+map and review before committing. The wizard displays the target system ID and
+expected revision throughout. Inspectors cannot invoke any importer endpoint.
+The actual routes and request/response fields are documented in
+`docs/05_API_AND_WEBSOCKET.md`; OpenAPI is generated from the implemented models.
+This describes Stage 07 source and synthetic verification, not an installed
+upgrade or an offline production release.
+
+Direct INI (including extensionless `hosts`), static YAML/YML, canonical JSON and
+ZIP companions are implemented without Ansible. ZIP sources are processed in
+the explicitly selected order; inventory-relative variable files use
+lexicographic order. Only supported uploaded files can contribute values.
+Duplicate keys, group cycles, unsafe archive members, executable/plugin input,
+Vault, YAML tags/anchors/aliases, unsupported ranges/complex INI literals and
+required templating produce sanitized diagnostics. Unsupported ZIP extras are
+listed as ignored; explicitly selecting an unsupported source fails.
+
+Effective defaults/hard bounds are 10 MiB uploaded bytes, 20 MiB expanded data,
+200 archive entries, path depth 8, tree depth 32, 100,000 parse nodes and
+64 KiB per line/field. `limits.inventory_upload_bytes`,
+`limits.inventory_expanded_bytes` and `limits.inventory_file_limit` preserve
+explicit lower deployment ceilings. The upload ceiling also respects
+`limits.config_upload_bytes`; higher configured values do not raise parser hard
+bounds. API host/group/process counts are bounded by 5,000 and the complete
+topology remains subject to its 5,000-total-entity limit. Streaming has a
+30-second limit, parsing a 10-second budget, and CPU work uses two bounded
+workers. There are two upload slots, ten pending uploads per account and at
+most 100 named inventory sources per system.
+
+An explicit host mapping overrides group mapping. Mapping a new subsystem ID
+creates an empty subsystem named with that ID; rename/document it through normal
+topology editing. An unambiguous `inspector_subsystem` is a proposal when no
+explicit mapping is present. Accepted tag-only groups become tags while manual
+tags survive. Missing `ansible_user` produces an unresolved-account warning and
+placeholder, not a usable imported account. Credential mappings require existing
+project bindings; jump profiles and parsers must already exist in this system.
+No process is invented for host-only inventories, and missing parsers remain
+unassigned until mapped. Log-source schema/path validation applies to optional
+processes; proposed roots derive from their literal path prefixes, including
+directory patterns. No credential, root, target or host key is approved here.
+
+Reimport uses the selected source and stable host alias/local process ID.
+Changing a filename does not change identity, and a distinct source never adopts
+an unrelated object at the proposed ID. Address changes can update the imported
+profile while retaining documentation, layouts, flows and unrelated processes.
+Tag changes appear in the exact preview. Missing hosts/processes are reported as
+absent and retained. Manual edits to imported managed fields block commit with
+`MANUAL_EDIT`; there is no force-overwrite switch. Resolve the affected
+configuration/input or supported subsystem mapping and obtain a fresh preview.
+Only subsystem-value ambiguity can be resolved by an explicit subsystem mapping;
+other static-variable conflicts require corrected input or trusted canonical
+JSON. Structural moves must still satisfy the normal view-ancestor constraints;
+the importer does not invent or rearrange diagram geometry. A content-identical
+reimport leaves the topology revision unchanged.
+
+Raw uploads use generated filenames under restricted
+`deployment.state_dir/inventory-staging` (Linux directory mode 0700, file mode
+0600). MariaDB holds sanitized summaries, normalized previews, digests and field
+baselines. Staging expires 15 minutes after upload; commit or upload/wizard cancel
+removes its raw file, and a 30-second reaper removes expired files/rows. Cancelling
+only a preview retains the bound upload for Back/remapping. Startup also removes
+orphaned incomplete files. Cancellation is allowed after system archival.
+Long streaming/parsing releases database/account locks and rechecks the current
+login, authorization, project revision and upload ownership before accepting a
+result. Project/upload-scoped parser callbacks also stop work on HTTP/task
+cancellation, upload cancellation or expiry while retaining the worker reservation
+until exit. Commit checks the raw digest and stored bindings before one MariaDB
+transaction updates configuration, mappings and revision.
+
 ## Required workflow and scope
 
 **Import Ansible inventory files** is a required Administrator action on a selected System, not merely an external conversion recommendation. Both single-file static INI/YAML and uploaded companion-file bundles must work with no Ansible installation on the application server. Canonical JSON is an additional compatibility path for complex inventories.
@@ -59,6 +132,6 @@ The server keeps a sanitized normalized preview, mapping hash, content/manifest 
 
 ## Contract and test assets
 
-See `contracts/inventory-import.schema.json`, `contracts/inventory-preview-binding.schema.json`, the direct-file examples, `examples/ansible/bundle/`, and its reproducible ZIP. `tools/inventory_fixture_reader.py` is a bounded **package-only sample oracle**, not the production parser. Codex must implement the full documented workflow and separately test actual upload validation, database commits, permission boundaries and browser mapping.
+See `contracts/inventory-import.schema.json`, `contracts/inventory-preview-binding.schema.json`, the direct-file examples, `examples/ansible/bundle/`, and its reproducible ZIP. `tools/inventory_fixture_reader.py` remains a bounded **package-only sample oracle**. The production parser is `backend/src/inspector/inventory_parser.py`; `inventory.py` implements staging, scope/authorization, reconciliation and commit. Unit tests cover the parser/reconciliation/bounds, MariaDB integration tests cover actual upload/commit and relational/permission boundaries, and browser tests exercise the mapping wizard. Exact executed commands/results belong in `progress/STATUS.md` and `verification/stage-7/`.
 
 Test ordinary INI (including extensionless), YAML nested groups, host-only imports, canonical JSON, companion-file bundles, repeated same-source imports, different target systems with identical aliases, address changes, preserved manual fields, stale/cross-project preview commits, unsupported/dangerous inputs and all role checks. The importer must continue working when Internet access is blocked. See AT102–AT114.

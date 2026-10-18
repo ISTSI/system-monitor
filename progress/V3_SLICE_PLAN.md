@@ -199,4 +199,49 @@ and 957 ownership/mode entries matched after startup. Port 8444 was preserved as
 found at deployment preparation, including its pre-existing shared frontend build
 change. Deployment commands, installed checks and that preservation correction
 are recorded in STATUS.md. This local upgrade does not qualify Ubuntu/Rocky
-installation or the offline release. Stop before Stage 07.
+installation or the offline release. That deployment stopped before Stage 07;
+the subsequent separately authorized stage and deployment are recorded below.
+
+## Stage 07 inventory and UI acceptance — 18 October 2026
+
+The user authorized the Stage 07 prompt. Source now includes the direct static
+INI/extensionless/YAML/canonical JSON/ZIP wizard, scoped source identity and
+revision-bound reconciliation, additive `0013_inventory` persistence, cooperative
+bounded cancellation and value-free source/field diagnostics. Reimports preserve
+manual documentation, geometry, flows and processes. Imported credentials,
+roots and hosts acquire no trust or access approval. Draft parser samples use
+the collection engine's exact UTC/physical-line contract. Literal log marks use
+the pinned Python Unicode casefold table and preserve original text/selection.
+
+Implementation verification remained isolated from the then-installed Stage 06 application: new
+disposable MariaDB schemas, the separate Stage 07 runner, bundled assets under
+`.state/stage7-build/`, and the generated browser/SFTP fixture on 8449. Exact
+results and corrected failures are in STATUS.md and `verification/stage-7/`.
+Final visual acceptance and the explicit 30-minute resource baseline are
+complete: 17 final inventory/UI browser cases, focused visible-text/reference
+checks, 1,811.7 seconds with five real monitors, exact fixture restoration and
+retained-installation preservation. The resource measurement passed; its initial
+cleanup revision conflict and separate successful recovery remain recorded.
+Stage 07 reached its source/verification gate without deployment. The subsequent
+explicit "Deploy stage 7" authorization on 18 October 2026 installed the exact
+tested artifact read-only from `.state/stage7-install/backend` at
+**https://localhost:8445**, applying `0012_offline_analysis` → `0013_inventory`.
+The pinned runtime image remains unchanged. A consistent SQL/cache/application
+backup is retained under `.secrets/stage7-install/pre-0013-inventory/`.
+Migration preserves all 44 old table counts and 43 non-Alembic checksums; the
+five new inventory tables start empty. Startup checks preserve all 34 stable
+table checksums, all 897 cache files (230,864,349 bytes), 957 ownership/mode
+entries, configuration and vault. Verified TLS/readiness pass, and the retained
+8444 container/image/start/restart/assets remain unchanged. Exact preparation,
+backup, migration and installed checks are recorded in STATUS.md and
+`verification/stage-7/deployment-*.json`.
+
+The subsequent user-authorized Preferences/Settings follow-up is also deployed
+on 8445 using a separate read-only frontend overlay, retaining the original
+Stage 07 backend/wheel, MariaDB schema and rollback assets. Actual served-asset,
+both-role/theme browser and data/cache preservation checks pass; see the dated
+entry in STATUS.md and `verification/stage-7/preferences-deployment-*.json`.
+
+Stage 07 is implemented and deployed locally. Stop at its gate. The next separate scope is
+`prompts/08_OFFLINE_RELEASE.md`; cold offline image lifecycle, Ubuntu/Rocky
+installation and release hardening are not implied by local source/build tests.

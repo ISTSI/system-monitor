@@ -9,6 +9,7 @@ from inspector.config import load_config
 from inspector.database import create_engine, migration_guard
 from inspector.persistence import (
     bundle_models,  # noqa: F401
+    inventory_models,  # noqa: F401
     investigation_models,  # noqa: F401
 )
 from inspector.persistence.models import Base

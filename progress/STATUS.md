@@ -1,9 +1,9 @@
 # Implementation status — version 3
 
-**Current: Stage 05 is complete and installed locally at https://localhost:8445.** The authorized 18 October deployment applied `0009_live` and installed the exact tested Stage 05 artifact after consistent database/cache/application backups. Existing accounts, systems, settings, vault and cached investigations were preserved and verified. Stage 02 data and the service on port 8444 are retained unchanged. The Stage 01 app on port 8443 remains stopped at the user's request; its VM database, SSH tunnel and data are preserved. The isolated Stage 05 services on 8447 and synthetic SFTP are stopped. Exact results and later-stage gates are recorded below; earlier blockers remain as dated history.
+**Current: Stage 07 is complete and installed locally at https://localhost:8445 (`0013_inventory`).** The separately authorized upgrade used the exact tested artifact, a consistent protected recovery backup and separate migration credentials. Existing accounts, settings, topology, investigations and cache bytes were preserved; the 8444 installation is unchanged. Installed browser checks and independent preservation/security audits pass. Stage 01 on 8443 and the isolated 8449 fixture remain stopped. Stage 08 has not started. Exact results and limitations are recorded below; earlier blockers remain as dated history.
 
 The UTC controls and **Additional security measures** follow-ups are now
-installed on 8445, now at schema `0009_live`. The checkbox defaults to
+installed on 8445, now at schema `0013_inventory`. The checkbox defaults to
 checked; installation preserved the existing data and security policy. See the
 dated installation entry below.
 
@@ -17,8 +17,8 @@ dated installation entry below.
 | 03 — Historical log engine | Complete; review gate | 321 units, 47 Linux DB tests, 17 browser cases, populated upgrade; 20 MiB ingest 9.72 s and warmed query p95 at most 240.307 ms on the recorded development machine |
 | 04 — SSH and collection | Complete; review gate | 463 Linux units (one platform skip), 89 real Linux DB/SSH tests, 23 distinct browser cases, populated upgrade and inspected UI; final evidence below |
 | 05 — Live monitoring | Complete; installed locally on 8445 | 595 unit passes plus 4 platform skips, 136 real MariaDB cases, 44 Linux engine/SFTP/TCP cases, 8 browser cases, populated upgrade; paced concurrent-archive p95 1,592 ms at 3.995 appends/s; backed-up migration and installed browser/data checks passed |
-| 06 — Investigation tools | Not started | — |
-| 07 — Import and UI completion | Not started | — |
+| 06 — Investigation tools | Complete; installed locally on 8445 | 155 real MariaDB cases, personal/offline browser workflows, populated upgrade, backed-up local installation and preservation audit; dated evidence below |
+| 07 — Import and UI completion | Complete; installed locally on 8445 | 800 Windows / 803 Linux unit passes; 168 MariaDB regression and 20 focused cases; 17 final browser cases plus visible-text/reference checks; 30-minute resource measurement; backed-up migration, installed browser and independent preservation/security audits |
 | 08 — Release and hardening | Not started | — |
 
 For each stage record changed files, requirement IDs, exact commands run, actual results, unexecuted checks and reasons, unresolved blockers and the next stage. Keep a distinction between a unit-tested adapter, an SSH integration tested in a local fixture environment, and a deployment verified on a real target OS.
@@ -1911,3 +1911,393 @@ ran instead. Ubuntu/Rocky and offline-release qualification remain later gates.
 
 **Stage 06 is installed locally on 8445. Stop at the Stage 06 gate; next scope is
 `prompts/07_INVENTORY_AND_UI.md`, only after separate authorization.**
+
+## 18 October 2026 — Stage 07 inventory and UI acceptance
+
+The user authorized `prompts/07_INVENTORY_AND_UI.md`. Stage 07 was implemented in
+source and verified at its stage gate before deployment. The separately
+authorized installation is recorded in the following dated entry. Implementation
+verification used fresh disposable MariaDB
+schemas, a separate cached Linux runner and the generated HTTPS/SFTP fixture on
+8449. No production targets, real credentials, remote repositories or external
+services were contacted. The IDE-selected account secret was not read or used.
+
+Implemented changes:
+
+- Safe direct INI/extensionless, static YAML, canonical JSON and bounded ZIP
+  companion-file parsing, with explicit source order, variable provenance,
+  unsupported-input diagnostics and secret omission. No Ansible, plugins,
+  uploaded code, external referenced files or SSH commands execute.
+- Project/source/upload/owner/auth/revision-bound mapping previews and atomic
+  reconciliation. Stable host/process identities survive reimport; descriptions,
+  layouts, flows and manual processes remain intact. Missing inventory members
+  are reported absent without deletion. Credential/parser/jump mappings remain
+  local to the selected system; imports do not establish trust or approvals.
+- Private staging, actual-byte/file/depth/time limits, configured lower ceilings,
+  expiry/restart cleanup and cancellation. Preview-only cancellation supports
+  Back/remapping while full cancellation removes the staged upload.
+- The working four-step Administrator wizard, draft parser sample tests with
+  exact UTC microseconds and unknown-time diagnostics, existing configured-path
+  tests, search/undo shortcuts and focus/keyboard support. Inspector endpoints
+  enforce shared-configuration denials independently of visible controls.
+- Literal matches in both virtual log viewers use generated Python Unicode
+  casefold data and acknowledged filters. Paused rows retain their matching
+  context. Marks preserve escaped source text and bounded DOM work; live text
+  selection preserves whitespace. Both supplied theme images remain original
+  reference assets, implemented through semantic tokens and actual components.
+
+Changed source groups: `backend/src/inspector/{inventory,inventory_parser,
+diagnostics}.py`, inventory persistence models, additive `0013_inventory`
+migration, app/config/security/schema wiring and generated API definitions;
+`InventoryImport`, `ParserTestPanel`, `LogText`, workspace/editor/viewer integration,
+shared styles and generated Unicode data/notices; parser/reconciliation/security/
+diagnostic/limit/build tests, real MariaDB and populated-upgrade tests, inventory/
+UI/browser regression cases; synthetic inventory fixtures and Stage 07 runner,
+fixture/build/verification helpers. README, API/import/MariaDB documentation,
+traceability, toolchain and progress records describe the implemented scope.
+
+Commands actually run (root; `PY` means `backend/.venv/Scripts/python.exe`):
+
+| Command | Actual result |
+|---|---|
+| `PY scripts/prepare_stage7_runner.py` | PASS: separate cached/pinned Linux runner built, original runner identity preserved; no dependency changes. |
+| `PY scripts/stage7_local.py prepare`, `migrate`, `fixture`, `up`, `configure` | PASS: new synthetic 8449 fixture and schema `inspector_test_s7_web_a24a99fef4`; only generated target key/password/log-root approvals. Earlier draft schema retained. |
+| `PY scripts/verify_stage7.py integration --suffix s7_59c5b714` | 168 real MariaDB regression cases passed in 420.37 s. Subsequent focused checks cover final inventory refinements. |
+| `PY scripts/verify_stage7.py inventory --suffix s7_fff6e807` | 15 passed in 17.41 s, including lower deployment ceilings, Back/remapping lifecycle and parser-worker logout recheck. |
+| `PY scripts/verify_stage7.py inventory --match mid_transaction_failure` | Fresh `s7_87adc442`: 1 passed, 15 deselected in 5.54 s. Failure after real topology/mapping SQL changes rolls back model/history/maps/revision; the same preview then commits successfully. |
+| `PY scripts/verify_stage7.py upgrade --suffix s7_upgrade_b2f96b1d` | PASS: populated `0012_offline_analysis` → `0013_inventory`; all 43 existing tables/rows, two accounts/systems, repeated scoped event IDs and captured raw bytes preserved. |
+| `PY scripts/verify_stage7.py checks` (initial) | Unit 784 passed/4 platform skips; package 128 run/9 POSIX skips; validators, Ruff, mypy, frontend lint/types/API and artifact check passed. Format check found two helper files; corrected and targeted format check passed. Original results retained under `checks-initial/`. |
+| `PY scripts/verify_stage7_linux.py`; `PY scripts/verify_stage7_linux.py --package-only` | Linux units 787 passed/1 Windows-only skip. Initial package harness omitted linked documentation; after correcting source staging, all 128 Linux package cases passed. |
+| `PY scripts/frontend.py test` | 10 behavioral/actual React renderer cases passed; generated API check passed. Exact full-Unicode Python parity and build-verifier tests also passed (11 targeted Python cases). |
+| `PY scripts/frontend.py e2e inventory.spec.ts` | Initial full wizard run: 10/10 passed, five formats, mapping/conflicts, secret omission, reimport/manual preservation, same-context project isolation and all Inspector route denials. Source-switch regression added afterward. |
+| `PY scripts/frontend.py e2e ui_acceptance.spec.ts investigation.spec.ts` | Investigation 4/4, two-subsystem role/theme/size matrix and public loading/login/logout matrix passed. Two live-selection cases caught collapsed whitespace; product CSS fixed, final rerun pending. |
+| `PY scripts/frontend.py e2e topology.spec.ts --grep 'administrator builds'` | 1 passed: real create/edit/move/undo/redo/export/import workflow; save acknowledgements awaited before subsequent reads. Separate server/profile setup case also passed. |
+| `PY scripts/build_stage7.py`; `PY scripts/verify_stage7_build.py` | Isolated frontend/wheel/sdist build and frozen source/assets verification passed. Final rebuild follows remaining verification refinements. Existing >500 kB frontend chunk warning remains; no build failure. |
+
+Browser commands use only `INSPECTOR_E2E_URL=https://localhost:8449`, the protected
+generated Stage 07 account file, and isolated `.state/stage7-build/frontend`
+assets. Exact command arrays/cwd/exit results, earlier corrected failures and
+screenshots are retained under `verification/stage-7/`. Browser routes reject
+external requests. No response mocks provide inventory/log/SSH results.
+
+Corrections found by actual checks include missing inventory permission action
+registration; nullable inspected format serialization; preview cancellation
+incorrectly discarding the upload needed for remapping; new-source selection
+retaining the previous upload; exact parser sample labels; and live whitespace
+selection. Test/harness corrections include awaiting completed saves, valid
+synthetic paths, inaccessible Chromium upload-response bodies, fresh-schema
+container mounts and complete Linux package source staging. Contracts and
+production login/collection limits were not relaxed.
+
+The follow-ups below close the focused backend, UI, resource and preservation
+checks. Stage 08, native Ubuntu/Rocky installation, full offline-image release
+lifecycle and production deployment remain outside this authorization.
+
+Final backend follow-up: `PY scripts/verify_stage7.py inventory` used fresh
+`s7_e968b222`: 19 passed and one newly added live-snapshot test failed because it
+expected the wrong top-level state. The engine correctly reports
+`interrupted / REVISION_CONFLICT` after configuration changes. With that test
+checking the actual interruption or continued use of the old captured path,
+`PY scripts/verify_stage7.py inventory --match changed_inventory_process_path`
+passed in fresh `s7_45bf1803` (1 passed, 19 deselected, 7.36 s). All 20 distinct
+focused inventory/diagnostic cases therefore pass across these two final runs
+against the same product source. No source change or timeout increase was
+needed for the test correction.
+
+Final unit follow-up: Windows **800 passed / 4 platform skips** in 28.36 s.
+The temporary package-test source copy initially missed the newly linked `.mjs`
+test file; including that real source extension fixed the harness without
+weakening validation. `PY -m unittest discover -s tests/package -q` then passed
+all 128 cases with 9 POSIX skips in 13.985 s (observed output copied into
+`windows-package-targeted.log`). `PY scripts/verify_stage7_linux.py` passed
+**803 units / 1 Windows-only skip** in 27.61 s and **all 128 package cases** in
+2.475 s. Five existing WebSocket transport deprecation warnings are retained.
+The final isolated frontend/wheel/sdist build and frozen artifact check pass.
+
+AT61 began at **00:50:23 UTC** using the existing generated system/account:
+60 configured processes on three existing servers, five original approved SFTP
+sources, one append/second total, navigation and live filter changes. Separate
+app/MariaDB/browser CPU/memory/task/socket observations are recorded under
+`soak-7a61b20c3d49.json`. No proxy is present in this direct-ASGI fixture. An
+initial proposal to create another persistent Administrator/system was rejected
+by automatic approval review; the accepted smaller setup creates neither and
+restored the temporary configuration and exact generated log bytes. The
+completed measurement and recovery results follow.
+
+Final browser and resource results:
+
+| Command / artifact | Actual result |
+|---|---|
+| `PY scripts/frontend.py e2e inventory.spec.ts ui_acceptance.spec.ts` | **17/17 passed**, no skips/flaky cases, 200.45 s; `browser-inventory-ui-final.json`. Thirteen inventory cases include all five file paths, stable reimport, conflicts/manual preservation, new-source Back navigation, real pending parse/preview cancellation, late-response isolation, two system windows and every Inspector endpoint denial. |
+| `PY scripts/frontend.py e2e ui_acceptance.spec.ts --grep 'visual matrix'` | **2/2 passed**, 1.1 min; `browser-visible-highlight-review.json`. Both roles, themes and desktop sizes bring actual marks into view, measure contrast, select unchanged text, exercise keyboard filters/pause and retain independent five-source windows. |
+| `PY scripts/frontend.py e2e ui_acceptance.spec.ts --grep 'two-subsystem reference'` | **1/1 passed**, 6.4 s; `browser-reference-fit-review.json`. The animated fit reaches a readable scale before eight role/theme/size captures. |
+| `PY scripts/frontend.py e2e stage7_soak.spec.ts` with `INSPECTOR_E2E_SOAK_RUN=7a61b20c3d49` | Timed workload completed **1,811.677 s**, with 14 actual resource samples and five continuous real monitors. Initial final topology restoration returned 409 because the document carried its old embedded revision. This browser failure remains in `soak-browser-initial-cleanup-failure.*`; it is not reported as a passing browser run. |
+| `PY scripts/frontend.py e2e stage7_soak.spec.ts --grep 'restores the completed'` (recovery mode) | **1/1 passed**: current embedded revision used for exact restoration; original configuration content restored at revision 4, only existing generated-root approvals refreshed, exact five log hashes restored. `soak-cleanup-recovery.*` records the actual recovery. |
+| `PY scripts/verify_stage7_soak.py analyze --run-id 7a61b20c3d49` | **PASS**: completed measurement, stable resource trends, no reported gaps/reconnects/browser errors, one unchanged WebSocket, and verified restoration. Summary and exact exercised source copies are retained. |
+| `PY scripts/stage7_local.py stop`; `PY scripts/verify_stage7_preservation.py` | **PASS**: only the 8449 synthetic browser/SFTP services stopped. Retained 8444/8445 readiness, verified TLS, index hashes, container/image/start/restart identities and original runner tags match their Stage 07 baseline. |
+
+The final UI matrix covers both roles/themes at 1280×720 and 1920×1080,
+system/details/menus/dialogs/settings/accounts, sample uploads and safe errors,
+real historical/live filters and coverage, empty/loading/login/logout states,
+two distinct titled systems, same-system duplicate pages, durable appearance,
+unsaved drafts, focus traps, shortcuts, 200% CSS scaling and separate 640×360
+responsive reflow. Actual rendered-text/focus reports contain **6,308 checked
+text samples, zero contrast failures, and 29 focus measurements with minimum
+5.23:1**. There are 257 retained screenshots across final and earlier attempts;
+representative final images were inspected directly, including both themes,
+selected/matching text, parser samples, inventory preview, compact settings and
+the two-subsystem scene. Narrow split panes support horizontal scrolling; the
+final captures explicitly bring the matching text into view. The earlier four
+investigation browser regressions and complete topology CRUD/server-setup cases
+also passed. Evidence is scoped to Chromium on this Windows client.
+
+AT61 actual resource measurements (60 processes on three existing servers):
+
+| Component | Observed memory | Observed CPU |
+|---|---|---|
+| Linux ASGI application | RSS 120.64 → 125.47 MiB; peak 125.47 MiB | Mean 12.77% of one core |
+| Shared local MariaDB test container | 1,017–1,018 MiB, near its existing 1 GiB container ceiling | Samples 1.47–3.46%, mean 2.13% |
+| Windows Chromium client | Working set 411.79 → 492.71 MiB; peak 525.65 MiB | Mean 5.42% of one core |
+| Proxy | Absent; direct ASGI TLS fixture | No proxy process |
+
+App OS threads/tasks remained 2, descriptors 17–19 and socket descriptors 12–14.
+The producer appended 1,811 real records; final capture counted 1,827 including
+seed history. App/database container caps total 1.5 GiB, with the measured
+host/container budgets recorded separately. This finite baseline demonstrates
+the Stage 07 60-process/five-monitor resource check; it does not qualify the
+typical 10–20-host deployment, a production proxy, internal asyncio task counts,
+native Ubuntu/Rocky installation or the cold offline release. No exactly-once
+claim is made for other rotation/truncation scenarios.
+
+Final refinements include working Cancel/Escape during upload/parse/preview,
+immediate atomic-commit/double-submit guards, two real late-response cancellation
+regressions, and explicit visible focus/highlight assertions. The soak harness
+now guarantees writer cleanup, uses run-specific immutable IDs, validates Docker
+resource identities and restores using the current revision. An additional
+generated JSON receipt was converted from PowerShell UTF-16 to UTF-8 without
+changing its data. Repository-configured Ruff/format and frontend lint pass;
+the final build and frozen source/wheel/assets check pass. Existing frontend
+chunk-size and five upstream WebSocket deprecation warnings remain documented.
+
+Final receipts: `PY .state/stage7-final-checks.py` recorded the exact argv/cwd
+and output under `verification/stage-7/final-checks/`. The latest ten checks all
+pass: 128 package cases (9 POSIX skips, 17.305 s), package validation, Ruff,
+format (163 files), mypy (37 source files), frontend lint/typecheck, 10 Node
+behavior/component tests plus generated API consistency, and frozen artifact
+verification. The initial diff harness incorrectly disabled Git's repository
+CRLF conversion and reported carriage returns as whitespace; that failed
+attempt remains separately recorded. The corrected repository-configured
+`git -c core.safecrlf=false diff --check` passed. `ui-review.json` records the
+representative images actually inspected and their current hashes. No failing
+contract was removed or relaxed.
+
+**Stage 07 complete at its review gate. No outstanding Stage 07 blocker.**
+At that gate Stage 06 remained installed on 8445; no deployment was performed
+by implementation verification. The subsequent explicit deployment authorization
+and actual upgrade are recorded below. Stage 08 remains a separate scope.
+
+## 18 October 2026 — Stage 07 deployed to the retained local application
+
+Authorization: "Deploy stage 7." Upgraded only **https://localhost:8445**
+(`runtime-stage3`, database `inspector_test_s3_web_317d3a3c4a`) from
+`0012_offline_analysis` to **`0013_inventory`**. The isolated tested backend is
+mounted read-only from `.state/stage7-install/backend`. Installed wheel SHA-256:
+`908c3befbd0053da388c8d14916e7e40ff12efb99b2ff8d43fe1296cdb63c729`.
+The pinned runtime image remains
+`sha256:668bfc011a595c63ea4f88c29eea56c326828662dbba1cd20a18a4eacdfcd8a8`.
+No dependency download, image pull, frontend rebuild, production/target-host
+connection, repository push or Stage 08 release operation occurred.
+
+Preflight verified zero active collections, live sessions and subscriptions.
+Only 8445 was stopped. A consistent protected recovery point is retained under
+`.secrets/stage7-install/pre-0013-inventory/`: SQL dump, raw-cache archive,
+byte/hash/ownership manifests, exact previous Compose/application files,
+previous backend and wrapper scripts, and a protected vault copy. The SQL dump
+is **194,617,923 compressed bytes**, SHA-256
+`e1996fc835f358471215d3e4926ea4872d75d12490ccd7adb83e7f4d1b180f80`.
+It contains no database creation/selection statements. Cache archive SHA-256:
+`54843615c24bb079ae05708c86ee0fd5f5e509589138e243878499882e15819a`.
+Both archives and vault copy were checked before migration. Prior recovery
+points remain intact. The matching written recovery procedure is
+`.cache/stage7-rollback.txt`; no rollback/restore drill is claimed.
+
+The stopped-service migration added exactly five empty inventory tables.
+**All 44 old table counts and 43 non-Alembic checksums matched before startup.**
+Post-start checks preserve all 34 stable table counts/checksums, original
+configuration/vault, **897 cache files / 230,864,349 bytes**, and **957 directory/
+file ownership and mode entries**. Normal startup authentication/workspace/job
+recovery tables were checked separately. All 62 packaged runtime/migration/web
+files and 40 runtime files match the validated wheel/frozen build. Three served
+assets match over certificate-and-hostname-verified HTTPS. The two Python/Unicode
+notices are verified in the installed bundle; this frozen app has no HTTP
+license route. Runtime remains UID/GID 10001, read-only root, dropped capabilities,
+one ASGI worker and DML-only database grants, without root/migration secret mounts.
+
+Commands actually run (repository root; `PY` is
+`backend/.venv/Scripts/python.exe`; Docker operations used approved local access):
+
+| Command/check | Actual result |
+|---|---|
+| `PY scripts/verify_stage7_build.py --output verification/stage-7/deployment-build-verification.json` | PASS: all 106 frozen runtime/build inputs, wheel and bundled assets correspond; no rebuild. |
+| `PY .cache/install_stage7.py prepare` | PASS: separate installation snapshot from the tested wheel; existing image/lock/wrapper and 8444 baseline verified. `deployment-prepared.json`. |
+| `PY scripts/audit_stage7_deployment.py pre` | PASS: verified TLS readiness, no active collection/live work, restricted runtime grants, actual unauthenticated WebSocket 403 and retained identities. `deployment-audit-pre.json`. |
+| `PY .cache/install_stage7.py backup`, then `seal` | PASS: only 8445 stopped; complete protected recovery point and independent archive/vault hash recheck. `deployment-backup.json`, `deployment-backup-verified.json`. |
+| `PY .cache/install_stage7.py migrate` | PASS: `0012_offline_analysis` → `0013_inventory`; all 44 old counts / 43 data checksums unchanged; five new empty tables. `deployment-migration.json`. |
+| `PY .cache/install_stage7.py start`, then `verify` | PASS: only `up --detach --no-deps runtime-stage3`; verified TLS/readiness 200, exact installed modules/assets, stable tables, cache hashes/permissions and 8444 preservation. `deployment-installation.json`. |
+| `PY scripts/audit_stage7_deployment.py post` | Final PASS: exact wheel membership/runtime sources, separated migration/runtime grants, TLS/WS boundaries, 8444 assets/identity and stopped Stage 05/06/07 fixtures. Initial audit-layout error and correction are recorded below. `deployment-audit-post.json`. |
+| `.toolchains/node-v24.22.0-win-x64/node.exe --check .cache/verify_stage7_install.mjs`, then that executable without `--check` | Syntax PASS; final installed browser PASS in **8.628 s**, both roles/themes at 1440×1000. Actual assets/notices, retained queries/highlights, same-context duplicate/different-system pages, draft parser known/unknown/limit diagnostics, inventory source draft/cancel and Inspector HTTP denials. All six new workspaces detached; no external/forbidden/WebSocket requests or page errors. `deployment-browser.json` records exact argv/helper SHA and ten screenshot hashes. |
+| `PY scripts/audit_stage7_deployment.py post-browser` | PASS: **53 history jobs, two terminal live sessions and 47 target-action audit rows** unchanged from preflight; zero active collections/live sessions/subscriptions. TLS readiness 200, unauthenticated WebSocket 403, runtime and 8444 preservation pass. `deployment-audit-post-browser.json`. |
+| Independent installed UI review | Root viewed the final Administrator light parser diagnostics, Administrator dark inventory wizard and Inspector dark literal-highlight screenshots. Text/actions are readable, inventory target and focus are visible, parser results scroll within the dialog. `deployment-ui-review.json`. |
+| `PY .cache/finalize_stage7_deployment.py` | PASS: package validation, repository-configured audit Ruff/format, browser-helper Node syntax, frozen source/wheel correspondence and `git -c core.safecrlf=false diff --check`. All six exact commands/exit codes/logs are retained under `deployment-final-checks/`; `deployment-final-build-verification.json` still matches the tested artifact. |
+
+Installed-browser verification used existing protected synthetic accounts
+internally, without printing passwords, cookies or tokens or changing credentials.
+Personal preferences, shared bootstrap settings, catalogue/topology in both
+systems, retained investigation workspace/bookmarks/query results and live state
+match before/after. Theme captures use page-local DOM overrides. No collection,
+live start, configured-path check, SSH, import commit, inventory source creation,
+shared settings change or global logout was issued. The installed inventory has
+no source yet, so the smoke tests its source-name draft/cancel without creating
+shared data. Actual file upload/preview/commit/reimport remain covered by the
+completed isolated Stage 07 suite against this exact artifact.
+
+Original failed operator checks are retained, not reported as passes:
+
+- The first independent post audit compared the pre-wheel source tree with the
+  extracted wheel, which also contains Hatch's force-included migrations and
+  Alembic configuration. It now checks exact wheel membership plus separate
+  runtime/migration correspondence, rejecting missing/extra files.
+  `deployment-audit-post-attempt-1.json` records the original failure.
+- The first browser attempt assumed an absent `stage3-fixture-b`. The helper
+  now chooses another existing active catalogue system and tracks its exact
+  workspace scope. The second attempt read parsers from the intentionally
+  redacted Inspector projection; the valid 403 request now reuses the already
+  validated Administrator draft in memory. Both failed reports/screenshots are
+  retained as `deployment-browser-attempt-1.json` / `-2.json`; all their newly
+  created workspaces detached. The product and installed artifact did not change.
+- Verification initially expected the bundled license files to have HTTP routes.
+  Static review corrected that check before startup: distribution hashes are
+  checked on disk; served page/JS/CSS hashes are checked over HTTPS.
+
+Changed deployment/support files: new `scripts/audit_stage7_deployment.py`,
+README/backend setup, MariaDB/traceability documentation, slice plan and this
+status; ignored guarded operator/browser helpers, isolated installed snapshot,
+the existing local Compose override, protected backups and verification receipts.
+No backend/frontend product implementation or dependency lock changed for this
+deployment. Broad unit/MariaDB/browser suites already passed for the frozen
+artifact; installation-specific migration, data, transport and browser checks
+ran here. Native Ubuntu/Rocky installation, complete recovery drill, proxy and
+offline release qualification remain Stage 08 work.
+
+**Stage 07 is installed locally on 8445. Stop at this gate. Stage 08 has not
+started and requires its separate scope authorization.**
+
+## 18 October 2026 — Separate shared Settings from account Preferences
+
+User-authorized UI follow-up: both Administrator and Inspector now open
+**Preferences** by clicking the logged-in user and choosing Preferences.
+Personal Appearance retains automatic persistence, Application default,
+Light, Dark and System modes, account-wide propagation and explicit error/Retry.
+**Settings** is visible/renderable only for Administrators and contains shared
+application settings, including the default used by new accounts and signed-out
+screens. Explicit personal themes stay unchanged. The existing MariaDB-backed
+preferences/settings endpoints, permission checks and schema are unchanged.
+
+Opening an account dialog closes the user menu; closing the dialog restores
+keyboard focus to its trigger. Public bootstrap refresh now runs independently
+of protected preference loading, so a mounted signed-out page can receive the
+updated default without a failing personal-preferences request. Ending a session
+also refreshes the safe public default. No workspace remount or selection change
+was added.
+
+Changed product files: `frontend/src/App.tsx` and
+`frontend/src/components/Management.tsx`. Browser helpers/callers were updated in
+`frontend/e2e/ui.ts`, `foundation.spec.ts`, `topology.spec.ts`, `ssh.spec.ts` and
+`ui_acceptance.spec.ts`; new `preferences.spec.ts` covers this separation.
+README, UI/access-control documentation, requirement traceability and this status
+record the new entry points (R38/R39/R41; AT67/AT70/AT71). Existing unrelated Stage
+07 work was preserved.
+
+Verification (repository root; `PY` = `backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY scripts/frontend.py build --outDir C:/_Projects/system-monitor/.state/preferences-build/frontend --emptyOutDir` | PASS: isolated production frontend build, leaving installed/frozen release assets unchanged. Existing chunk-size warning remains. |
+| `PY scripts/frontend.py lint`; `PY scripts/frontend.py typecheck` | Final PASS. Interim checks during test edits found an incomplete statement and a narrowed nullable test variable; both corrected before browser verification. |
+| `PY scripts/frontend.py test` | PASS: generated API consistency and all 10 existing Node behavior/component tests. |
+| `PY scripts/frontend.py e2e preferences.spec.ts` | Final **4/4 passed, 10.0 s**. Both roles, keyboard/menu/modal focus, Light/Dark at 1280×720 and 1920×1080, reload persistence, System mode, no admin requests from personal Preferences, real 409/retry, independent accounts, a genuinely new Inspector inheriting the default, mounted signed-out broadcasts and account-wide logout. Receipt: `verification/stage-7/preferences-browser.json`. |
+| Initial same browser command | **2 passed / 2 failed**, retained in `preferences-browser-attempt-1.json`. Exact wrapping-label lookup included the select's option text. Tests now use the exact combobox role/accessibility name and retain named-dialog assertions; no contract/product accessibility was weakened. |
+| Rendered UI review | Viewed `administrator-shared-settings-separated.png` (dark, 1920×1080) and `inspector-light-1280-personal-preferences.png`: readable controls and clear separation; screenshots reside in `verification/stage-7/screenshots/`. |
+| `git -c core.safecrlf=false diff --check` | PASS across the working tree. |
+
+Browser verification used only the existing synthetic Stage 07 MariaDB fixture
+on **8449**, protected generated test accounts and the isolated fresh frontend
+through the test asset-routing helper. Only its previously stopped
+`stage7-browser` backend was started, then stopped again; SFTP stayed stopped.
+Shared settings and existing personal appearance values were restored; the
+generated new test Inspector was disabled, retaining its audit history. No
+collection, SSH, inventory commit, migration, real credential, installed service
+update or deployment was performed. Broader inventory/live/release suites were
+not rerun for this UI-only follow-up. Stage 08 remains the next separate scope;
+this preferences change is source-only and is not installed on 8445.
+
+## 18 October 2026 — Preferences/Settings follow-up deployed locally
+
+Authorization: user requested **"DEploy."** after reviewing the completed UI
+change. The tested follow-up is now installed at **https://localhost:8445**.
+Personal Appearance is under the logged-in user menu → Preferences for both
+roles; shared Settings is Administrator-only. Refresh an existing browser page
+to load the new frontend.
+
+Deployment changes only `runtime-stage3`: a separate frozen read-only frontend
+overlay at `.state/preferences-install/frontend` is mounted onto
+`/workspace/backend/src/inspector/web`. The pinned runtime image, original
+`.state/stage7-install/backend`, its wheel, scripts, configuration, secret mounts
+and **`0013_inventory`** schema are unchanged. There was no migration, preference
+backfill, image/package download or backend replacement. The rebuilt frontend
+matches the four-test browser-verified build byte for byte. Its JS is
+`assets/index-USN31lFM.js`; the previous hashed JS remains available for pages
+which loaded the old index. Overlay manifest SHA-256 is
+`ce6e7cb047c86f2f516b9b20eb5091707261a08bc4e4bbf48f60e90a1552ca16`.
+
+Rollback retains the original frontend/backend/wheel in place and the exact
+previous Compose file in `.secrets/preferences-install/previous-compose.yaml`.
+`.state/preferences-install/ROLLBACK.txt` describes removing only this overlay
+and recreating only 8445. The earlier Stage 07 SQL/cache recovery point remains
+intact. No new database restore or full release operation is needed for this
+asset-only change; rollback was prepared but not exercised.
+
+Commands actually run from repository root (`PY` =
+`backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY scripts/frontend.py build --outDir C:/_Projects/system-monitor/.state/preferences-deploy-check/frontend --emptyOutDir` | PASS; exact five-file equality with the previously tested `.state/preferences-build/frontend`. Existing chunk-size warning only. |
+| `PY -m py_compile .cache/deploy_preferences.py`; `NODE --check .cache/verify_preferences_install.mjs` | PASS: guarded deployment and installed-browser helper syntax. |
+| `PY .cache/deploy_preferences.py prepare` | PASS: verified TLS, DML-only runtime grants, zero active collections/live sessions/subscriptions, original package integrity, database/cache fingerprints, other-application identity/assets and protected Compose rollback snapshot. `preferences-deployment-prepared.json`. |
+| `PY .cache/deploy_preferences.py deploy` | PASS: stopped only `runtime-stage3`, changed only its frontend mount, then `up --detach --no-deps runtime-stage3`. Ready with the exact overlay assets, original data/cache/backend/scripts and 8444 application intact. Automatic rollback was not needed. `preferences-deployment-installed.json`. |
+| `NODE .cache/verify_preferences_install.mjs` | **PASS, 3.411 s**: actual installed assets without test substitution, both roles/themes at 1280×720, user menu, native modal focus/Escape, personal/shared separation, Inspector absence of Settings and HTTP 403, unchanged saved preferences/shared defaults/catalogue. Ten screenshot hashes retained in `preferences-deployment-browser.json`. |
+| `PY .cache/deploy_preferences.py verify` | PASS after browser smoke: **44 stable table counts/checksums** and complete table set preserved; all **897 cache files / 230,864,349 bytes** plus 956 descendant ownership/mode entries preserved; original backend/wheel/scripts/configuration/vault unchanged. Certificate-and-hostname-verified readiness/assets, one restricted ASGI worker and unauthenticated WebSocket 403 pass. `preferences-deployment-verified.json`. |
+| Installed UI inspection | Root viewed installed Administrator light Settings and Inspector dark Preferences: readable controls, clear separation and visible focus. Captures are under `verification/stage-7/preferences-deployment-screenshots/20261018T093600660Z/`. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+As-found operational counts remain **53 history jobs, three terminal live
+sessions and 48 target-action audit rows**, with zero active work. Runtime stays
+UID/GID 10001, read-only root, all capabilities dropped, one ASGI worker and
+DML-only database grants; no root/migration secret is mounted. The 8444
+application's container identity/image/start/restart count and all its served
+assets match preflight. Test backend/SFTP services were not started.
+
+Installed-browser verification used the protected generated local test accounts
+without printing passwords/cookies/tokens. It made two logins and read-only
+requests; stored preferences/defaults were not changed, no workspace was created,
+and no logout, target/SSH/collection, inventory or other non-login write request
+was issued. Theme screenshots use temporary DOM overrides. Authentication/audit
+rows created by those logins are intentionally separate from the stable-table
+comparison. No production host, repository push or Stage 08 release work occurred.
+
+Updated documentation: README, backend setup, MariaDB/traceability docs, slice
+plan and this status. Ignored operator helpers and immutable overlay/recovery/
+verification files retain the deployment details. **The Preferences/Settings
+follow-up is deployed; Stage 08 remains the next separately authorized scope.**

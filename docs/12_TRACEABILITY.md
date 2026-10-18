@@ -4,15 +4,26 @@ All 56 requirements map to application acceptance targets. The requirement table
 
 The user-authorized compact navigation update (17 October 2026) retains R05/R10/R11
 editing through the System menu, moves Undo/Redo beside Documented topology, and
-places personal R38 appearance in Settings for both roles. R39/R46 system lifecycle
+originally placed personal R38 appearance in Settings for both roles. The
+18 October 2026 user-requested separation moves it to Preferences under the
+logged-in user menu, keeps Settings Administrator-only, and uses its shared
+default for new accounts and signed-out screens. R39/R46 system lifecycle
 controls now live in the dedicated Administrator view. R47/R49 retain ordinary
 system links and fresh page workspaces; Ctrl-click replaces the dedicated Open
 separately control at the user's request. Browser coverage in
-`frontend/e2e/topology.spec.ts`, `foundation.spec.ts`, `historical.spec.ts` and
+`frontend/e2e/preferences.spec.ts`, `topology.spec.ts`, `foundation.spec.ts`, `historical.spec.ts` and
 `ssh.spec.ts` checks menu actions, themes, roles, manual new-tab navigation and
 same-context isolation. Actual results are recorded in `progress/STATUS.md`.
 
-Actual stage evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Authentication, appearance, scoped topology/configuration, independent browser workspaces, historical indexing and approved SSH collection have executable unit, MariaDB and browser coverage. Live monitoring and full personal investigation tools now have executable coverage. Inventory import and the complete offline release remain later-stage gates. Passing a subset does not complete an entire acceptance target.
+The Preferences/Settings follow-up is deployed on the retained local 8445
+application. Its [installed-browser receipt](../verification/stage-7/preferences-deployment-browser.json)
+checks the actual served asset hashes, both roles/themes, keyboard menu/dialog
+focus, Inspector denial and unchanged saved preferences/shared defaults. It
+performs no personal/shared writes, workspace creation or target operation.
+The original Stage 07 backend/wheel and database schema are retained; this is
+a frontend deployment, not Stage 08 release qualification.
+
+Actual stage evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Authentication, appearance, scoped topology/configuration, independent browser workspaces, historical indexing and approved SSH collection have executable unit, MariaDB and browser coverage. Live monitoring, personal investigation tools and static inventory reconciliation now have executable coverage. The complete offline release remains Stage 08. Passing a subset does not complete an entire acceptance target.
 
 The authorized temporary VM now supplies actual MariaDB evidence for part of R42/R44/R46/R48/R56: the initial migration, binary identities, owner/role/scope behavior, composite FK rejection, exact BIGINT values and named migration locks pass in `backend/tests/vm/test_vm_mariadb.py`. Those rollback-only checks also prove the supplied migration account is refused for serving. They do not replace restricted-runtime/API/browser or disposable-schema integration targets.
 
@@ -328,3 +339,161 @@ byte-range/checksum provenance. It does not provide an original binary-source
 archive or enable a raw source download from imported provenance. Redaction
 changes exported copies only; unchanged original cache bytes and the immutable
 imported event document remain separate from personal analysis.
+
+## Stage 07 — static inventory, diagnostics and UI acceptance
+
+Stage 07 adds the implementation and evidence below on 18 October 2026.
+Earlier stage sections remain historical evidence for their stated scope.
+The source expects `0013_inventory`. Implementation verification preserved the
+then-installed Stage 06 artifact and retained data; the subsequent separately
+authorized local Stage 07 deployment is recorded below. Acceptance IDs identify
+the behavior exercised, not an automatic declaration that every part of that
+target or the Stage 08 release gate is complete.
+
+| Requirements / acceptance | Implementation and executable evidence |
+|---|---|
+| R11/R51/R52 / AT55, AT102–AT105 | [Production static parser](../backend/src/inspector/inventory_parser.py), [parser unit tests](../backend/tests/unit/test_inventory_parser.py), [actual MariaDB inventory tests](../backend/tests/integration/test_inventory.py) and [inventory browser tests](../frontend/e2e/inventory.spec.ts) use supplied INI, extensionless `hosts`, nested YAML, canonical JSON and companion ZIP directly. Expected output is three aliases/host mappings; INI/extensionless input has zero processes, while the supplied YAML/JSON/ZIP extensions have five. Tests cover literal all/ancestor/child/host precedence, explicit ZIP source order, uploaded-relative companions, ignored files and value/declaration provenance. No Ansible installation or server-filesystem fallback is used. |
+| R06/R52 / AT57, AT107, AT113 | [Wizard](../frontend/src/components/InventoryImport.tsx) and [reconciliation tests](../backend/tests/unit/test_inventory_reconcile.py) require one subsystem per host, allow an explicit host override, retain accepted cross-cutting/manual tags and show exact tag differences. New mapped subsystem IDs create empty named definitions. Optional process IDs/log sources are validated; parser/jump/credential references resolve in the selected system. A real MariaDB test maps five initially missing parser references to an existing same-system parser and rejects an existing foreign-system parser. Explicit subsystem mapping resolves only subsystem ambiguity; other unsupported static conflicts require corrected input or trusted canonical JSON. |
+| R11/R48/R53 / AT56, AT108–AT109 | [Inventory service](../backend/src/inspector/inventory.py) persists source+alias/local-process mappings rather than matching filenames/IPs. Unit/MariaDB/browser cases cover same-source renamed-file reimport, independent systems/sources, stable IDs, address updates, exact changes, preserved descriptions/geometry/flows/unrelated processes/manual tags, absent host/process retention and blocked manual-field conflicts. An unchanged accepted import does not increment topology revision. Unmapped predictable-ID collisions cannot adopt manually configured entities. A real approved SFTP monitor remains bound to its original stored snapshot when reimport changes an optional process path; the test verifies the new path is never opened and the existing monitor retains its old revision/snapshot with an honest revision-conflict interruption. |
+| R35/R39/R41/R48/R53 / AT110, AT114 | Every source/upload/parse/preview/commit/cancel route checks Administrator authority and project/owner scope; HTTP mutations require CSRF. MariaDB tests reject wrong project/owner/source upload relations, stale revisions, modified mapping digests, expired staging and forged Inspector requests without topology changes. In-flight upload revocation releases auth locks and rejects the result. Preview-only cancellation preserves the upload for Back/remapping; upload/wizard cancellation removes it and all previews. A dedicated injected-failure test observes real uncommitted topology/mapping/revision SQL, proves rollback restores all of them and keeps the preview/raw upload retryable, then commits the same preview successfully. Its [isolated result](../verification/stage-7/s7_87adc442.log) passes. |
+| R13/R35/R52/R54 / AT58, AT106, AT111–AT112 | Recursive secret omission excludes password/key/become/token values and unsafe SSH arguments from normalized data, responses and diagnostics. Tests reject dynamic/script/plugin/required-template/Vault semantics; duplicate JSON/YAML keys, tags/anchors/aliases/cycles; unsafe, linked, encrypted, normalized-colliding or nested archive members; and actual byte/file/depth/node/line/field/time limits. [Configured-limit tests](../backend/tests/unit/test_inventory_limits.py) plus real upload cases prove lower deployment upload/expanded/file ceilings are enforced and rejected uploads leave no staging. Restricted raw files expire after 15 minutes; commit/upload cancel/expiry cleanup is exercised. [Worker cancellation tests](../backend/tests/unit/test_inventory_workers.py) exercise actual parser callbacks on HTTP/task cancellation and project-scoped staging removal; the shared worker slot is held until exit. Real MariaDB/API cases pass for cooperative parser termination after upload cancellation and expiry/reaping. Import creates no SSH trust or source-approval rows and starts no connection. |
+| R17/R19/R35/R39 / AT59 | [Parser diagnostics](../backend/src/inspector/diagnostics.py) uses the collection timestamp/metadata engine for unsaved drafts. [Unit tests](../backend/tests/unit/test_diagnostics.py) assert ISO and fixed-width UTC results, exact integer microseconds, original text/physical-line framing, null invalid timestamps and safe errors. Bounds are 64 KiB UTF-8, 100 physical lines and 4 KiB per line. [MariaDB API tests](../backend/tests/integration/test_diagnostics.py) check role/CSRF/project/revision, no persisted sample/draft and logout while the off-loop worker runs. Configured path/archive access diagnostics retain the Stage 04 approved-ID SFTP boundary; the expanded UI test exercises the actual path check and pasted/uploaded sample panels. |
+| R24/R34/R35/R38 / AT60, AT67–AT70 | [Log highlight helper](../frontend/src/logHighlight.ts) and shared React log rendering apply only acknowledged historical/live global and owning-process filters. [Ten Node cases](../frontend/tests/log-highlight.test.mjs) cover literal punctuation, Unicode expansions/sigma/Turkish forms, UTF-16/astral offsets, overlapping terms, hidden timestamp prefixes, draft-versus-applied state, clearing, bounded mark counts, escaped text and preservation of every source character. [One generated-table parity test](../backend/tests/unit/test_casefold_generated.py) verifies the bundled browser casefold data exactly matches the locked Python 3.13 Unicode table. Highlighting does not change backend matching, source text or event identity. |
+| R42/R44/R48/R53/R55 / AT83, AT110, AT115–AT117 | [Migration 0013](../backend/migrations/versions/0013_inventory.py) adds scoped source/upload/preview/host/process mapping tables. Preview-to-upload FKs include project, upload, source and owner; mapping targets reference same-project immutable identities. [Populated upgrade verifier](../backend/tests/migrations/verify_stage7_upgrade.py) upgrades a new guarded Stage 06 schema and checks all existing rows, accounts, system IDs, repeated scoped event IDs and raw bytes. [Recorded result](../verification/stage-7/s7_upgrade_b2f96b1d.log) preserves all 43 existing tables and their data. No SQLite or retained installation is used. |
+| R34/R38/R39/R47/R49 / AT60, AT70, AT88, AT119 | [Expanded UI acceptance suite](../frontend/e2e/ui_acceptance.spec.ts) passes its four cases in the [final combined browser run](../verification/stage-7/browser-inventory-ui-final.json). It exercises both roles/themes at 1280×720 and 1920×1080, measured rendered text/focus contrast, keyboard navigation, 200% CSS zoom and 640×360 responsive reflow, menus/dialogs/error/empty/loading states, durable appearance, public login/defaults and account-wide logout. Same-context five-plus-five monitors verify pause/theme/filter-draft/Stop isolation and unambiguous system titles; a two-subsystem scene checks the reference layout. The [focused visible-mark/selected-text rerun](../verification/stage-7/browser-visible-highlight-review.json) passes 2/2 after scrolling matches into view and asserting actual visibility. The [reference-fit review](../verification/stage-7/browser-reference-fit-review.json) passes 1/1 after awaiting animated Fit and readable node widths. [Manual review](../verification/stage-7/ui-review.json) covers nine representative final images, with 257 retained screenshots including earlier attempts, 60 contrast reports, 6,308 rendered-text samples with zero failures and 29 focus measurements with minimum contrast 5.23. |
+| R03/R34/R37 / AT61 | [Thirty-minute synthetic workload](../frontend/e2e/stage7_soak.spec.ts) navigates a 60-process model while five real SFTP sources append at a combined one line/second. [Measurement/analyzer result](../verification/stage-7/soak-7a61b20c3d49-summary.json) passes after 1,811.677 actual seconds with no observed source errors, gaps or reconnects. This uses the existing three-server fixture, not the full 10–20-host or native-OS deployment baseline. Measurement completion and the separate successful cleanup recovery are distinguished below from the original browser flow's cleanup failure. |
+
+The [raw AT61 observations](../verification/stage-7/soak-7a61b20c3d49.json)
+contain 14 resource samples across 1,811.677 seconds. Actual component results
+are reported separately; the browser is a Windows client and MariaDB is a
+shared synthetic-test container.
+
+| Component | Observed memory | Observed CPU |
+|---|---|---|
+| Linux ASGI application | RSS 120.64 → 125.47 MiB; peak 125.47 MiB | Average 12.77% of one core |
+| Windows Chromium client processes | Working set 411.79 → 492.71 MiB; peak 525.65 MiB | Average 5.42% of one core |
+| Shared MariaDB fixture | Docker memory 1,017–1,018 MiB under its 1 GiB container cap | Sampled 1.47–3.46%; mean 2.13% |
+| HTTPS proxy | Absent; 0 bytes in this direct-ASGI-TLS fixture | 0; no proxy qualification |
+
+The application used two OS tasks/threads, 12–14 socket descriptors and
+17–19 total descriptors; the monitor retained one WebSocket with no reconnects.
+These are measured OS counts, not an assertion about unexposed asyncio task
+objects. The finite workload stayed below the application RSS target and showed
+bounded trends; it does not establish the full native Ubuntu/Rocky, 10–20-host,
+proxy-inclusive release resource envelope.
+
+The measurement and analyzer pass are **not an original soak-browser pass**.
+The [initial browser failure](../verification/stage-7/soak-browser-initial-cleanup-failure.log)
+occurred only during post-measurement cleanup: restoration submitted the original
+embedded project revision 2 while the current expected revision was 3, receiving
+409. The [separate real cleanup recovery](../verification/stage-7/soak-cleanup-recovery.json)
+passed **1/1** after normalizing that embedded revision. It restored the exact
+configuration content at revision 4, the same target/root approval and original
+log-byte hashes. Original failure artifacts remain preserved.
+
+Recorded verification separates the complete regression run from the final
+focused tests added after it:
+
+- [Full Linux MariaDB/SFTP regression](../verification/stage-7/s7_59c5b714.log):
+  **168 passed**, using a new disposable schema.
+- [Final focused inventory/diagnostics run](../verification/stage-7/s7_e968b222.log):
+  **19 passed, 1 failed** in 31.50 seconds. Cooperative cancellation/reaping,
+  lower ceilings, remapping, positive same-system parser mapping, injected
+  rollback/retry and parser logout-after-worker pass. The new live-path test
+  incorrectly required top-level `blocked`; the existing guard actually records
+  `interrupted` / `REVISION_CONFLICT`. This was a test assumption, not a product
+  retargeting defect.
+- [Corrected live-path isolated rerun](../verification/stage-7/s7_45bf1803.log):
+  **1 passed, 19 deselected** in 7.36 seconds. The test now appends a distinct
+  sentinel to the old path, verifies old-path continuation or an honest
+  revision-conflict interruption, and rejects any new-path open/data while
+  preserving the stored source snapshot. Serving source is identical across
+  these two runs: **all 20 distinct focused cases have passing evidence**, not
+  a single 20-pass run. The earlier [15-pass run](../verification/stage-7/s7_fff6e807.log)
+  and [isolated injected rollback check](../verification/stage-7/s7_87adc442.log)
+  remain preserved as earlier verification.
+- [Windows backend units](../verification/stage-7/checks/unit.log):
+  **800 passed, 4 skipped** in 28.36 seconds. The final
+  [combined Linux verification](../verification/stage-7/linux-unit-package.log)
+  reports **803 unit tests passed, 1 skipped**, with five known warnings, in
+  27.61 seconds, followed by **all 128 package cases passing** in 2.475 seconds.
+  These are recorded platform-specific runs, not a claim that skipped checks ran.
+  The earlier [128-pass Linux package-only check](../verification/stage-7/linux-package-only.log)
+  remains earlier evidence; the combined run is now the final Linux result.
+- [Final Windows package run](../verification/stage-7/final-checks/package.log):
+  **128 tests, 9 skipped; exit 0**, in 17.305 seconds. The earlier
+  [corrected targeted receipt](../verification/stage-7/windows-package-targeted.log)
+  records the same counts in 13.985 seconds. The earlier
+  [package log](../verification/stage-7/checks/package.log) retains a temporary
+  source-copy failure because the newly linked `.mjs` test was omitted from that
+  copy. Including `.mjs` in the verification source copy fixes that harness
+  failure; no application requirement or assertion was removed. Earlier Linux
+  source-copy/link failures and their corrected reruns are recorded in
+  `progress/STATUS.md`; the final combined Linux log contains the successful run.
+- [Final combined inventory/UI browser run](../verification/stage-7/browser-inventory-ui-final.json):
+  **17/17 passed** in 200.45 seconds, with no skips, unexpected or flaky cases.
+  All 13 inventory and four UI cases use the same final built artifact. Inventory
+  coverage includes the five inputs/reimports, conflicts/manual preservation,
+  Back/source switching, cancellation during parse/preview followed by a fresh
+  retry, two system-scoped windows and Inspector endpoint denials. Non-origin
+  requests are blocked. The earlier [10-pass inventory run](../verification/stage-7/browser-inventory.json)
+  remains historical evidence. Additional same-artifact focused reviews pass
+  [2/2 visible-mark/text cases](../verification/stage-7/browser-visible-highlight-review.json)
+  in 68.31 seconds and [1/1 reference-fit case](../verification/stage-7/browser-reference-fit-review.json)
+  in 6.40 seconds; these are focused reruns, not additional distinct cases in
+  the 17-case combined count.
+- [Frontend Node tests](../verification/stage-7/frontend-tests-final.log):
+  **10 passed**, including generated API consistency. Final
+  [Ruff](../verification/stage-7/final-checks/ruff.log),
+  [format](../verification/stage-7/final-checks/format.log) (163 files),
+  [mypy](../verification/stage-7/final-checks/mypy.log) (37 source files), frontend
+  lint/types, API/Node tests, artifact verification, package validation and normal
+  repository-configured diff checks all pass in the
+  [ten-command final receipt](../verification/stage-7/final-checks/commands.json).
+  The earlier diff harness incorrectly overrode `core.autocrlf=false`, producing
+  CRLF whitespace errors; its [receipt](../verification/stage-7/final-checks/commands-with-crlf-override.json)
+  and [output](../verification/stage-7/final-checks/diff-crlf-override.log) are
+  retained. The corrected diff uses the repository's line-ending configuration
+  and exits 0; prior attempts are not relabelled as passes.
+
+The combined visual matrix/contrast/keyboard/zoom run, focused visible-text and
+reference-layout captures, and representative manual review are complete.
+AT61's thirty-minute 60-process/five-monitor workload
+has the measured evidence and separate cleanup recovery above. Native
+Ubuntu/Rocky installation, the full 10–20-host/proxy-inclusive resource baseline
+and AT120's final three-image cold offline
+backup/restore release remain outside that evidence. Stage 08 remains separate.
+Exact commands, corrected failures and
+remaining gates are maintained in [STATUS.md](../progress/STATUS.md).
+
+The Stage 07 synthetic fixture services are stopped. The
+[retained-installation comparison](../verification/stage-7/retained-comparison.json)
+matches the recorded 8444/8445 container/image identities, start/restart state,
+served asset hashes and existing runner tags at the source/verification gate.
+Building and verifying Stage 07 did not install it over those retained applications.
+
+The later explicit "Deploy stage 7" authorization on 18 October 2026 upgraded
+only **https://localhost:8445** from `0012_offline_analysis` to
+`0013_inventory`. The exact tested wheel
+`908c3befbd0053da388c8d14916e7e40ff12efb99b2ff8d43fe1296cdb63c729`
+is installed read-only under `.state/stage7-install/backend`, using the same
+pinned runtime image. The [backup receipt](../verification/stage-7/deployment-backup.json)
+records a consistent 194,617,923-byte SQL dump, its checksum and matching cache;
+protected recovery material remains under
+`.secrets/stage7-install/pre-0013-inventory/`. The
+[migration receipt](../verification/stage-7/deployment-migration.json)
+preserves all 44 old table counts and 43 non-Alembic checksums and verifies five
+new empty inventory tables. The
+[installation receipt](../verification/stage-7/deployment-installation.json)
+checks the installed module/assets against the wheel, verified TLS/readiness,
+all 34 stable table checksums, 897 original cache files (230,864,349 bytes),
+957 ownership/mode entries and unchanged configuration/vault. Port 8444's
+container, image, start/restart state and assets remain unchanged. Exact
+wheel membership and installed-runtime checks also pass in the
+[independent post-deployment audit](../verification/stage-7/deployment-audit-post.json):
+62 wheel members, 40 runtime files, three served assets and two bundled notices;
+unauthenticated WebSockets return 403 and runtime database grants remain
+DML-only. Installed browser results, preserved failed helper attempts and their
+scope are recorded in
+[STATUS.md](../progress/STATUS.md). Stage 08 has not started; this local upgrade
+does not qualify the offline release or native Ubuntu/Rocky installation.

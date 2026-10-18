@@ -5,7 +5,7 @@ import { ErrorNotice, Icon } from './components/Common';
 import Login from './components/Login';
 import Catalogue from './components/Catalogue';
 import SystemWorkspace from './components/SystemWorkspace';
-import { PasswordDialog, SettingsDialog, UsersDialog } from './components/Management';
+import { PasswordDialog, PreferencesDialog, SettingsDialog, UsersDialog } from './components/Management';
 import { useAppearance } from './theme/useAppearance';
 
 type AccountEvent = 'appearance' | 'authentication';
@@ -19,12 +19,14 @@ export default function App() {
   const [sessionError, setSessionError] = useState('');
   const [notice, setNotice] = useState('');
   const [path, setPath] = useState(window.location.pathname);
-  const [dialog, setDialog] = useState<'password' | 'settings' | 'users' | null>(null);
+  const [dialog, setDialog] = useState<'password' | 'preferences' | 'settings' | 'users' | null>(null);
   const [appearanceError, setAppearanceError] = useState('');
   const [appearanceBusy, setAppearanceBusy] = useState(false);
   const authEpoch = useRef(0);
   const failedMode = useRef<ThemeMode | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
+  const accountMenu = useRef<HTMLDetailsElement | null>(null);
+  const hasAccountPreferences = Boolean(session && !session.must_change_password);
   useAppearance(bootstrap, preferences);
 
   const clearProtected = useCallback((text = 'Your session ended. Sign in to continue.') => {
@@ -32,6 +34,7 @@ export default function App() {
     setSession(null); setPreferences(null); setDialog(null); clearCsrf(); setNotice(text);
     setAppearanceError(''); setAppearanceBusy(false); failedMode.current = null;
     setSessionError('');
+    void request<Bootstrap>('/ui/bootstrap').then(setBootstrap).catch(() => { /* Retain the last known public default while offline. */ });
   }, []);
   const loadAccount = useCallback(async () => {
     const epoch = authEpoch.current;
@@ -70,13 +73,17 @@ export default function App() {
       if (event.data === 'authentication') { clearProtected(); }
       if (event.data === 'appearance') {
         const epoch = authEpoch.current;
-        void Promise.all([request<Bootstrap>('/ui/bootstrap'), request<Preferences>('/me/preferences')])
-          .then(([publicInfo, prefs]) => { if (epoch === authEpoch.current) { setBootstrap(publicInfo); setPreferences(prefs); } })
-          .catch(() => { /* The next protected action displays a connection/authentication error. */ });
+        void request<Bootstrap>('/ui/bootstrap').then(setBootstrap)
+          .catch(() => { /* Retain the last known public default while offline. */ });
+        if (hasAccountPreferences) {
+          void request<Preferences>('/me/preferences')
+            .then(prefs => { if (epoch === authEpoch.current) setPreferences(prefs); })
+            .catch(() => { /* The next protected action displays a connection/authentication error. */ });
+        }
       }
     };
     return () => { channel.current = null; broadcast.close(); };
-  }, [clearProtected]);
+  }, [clearProtected, hasAccountPreferences]);
   useEffect(() => {
     if (!session?.user_id) return;
     const epoch = authEpoch.current;
@@ -101,6 +108,13 @@ export default function App() {
 
   function broadcast(kind: AccountEvent) { channel.current?.postMessage(kind); }
   function navigate(target: string) { window.history.pushState({}, '', target); setPath(target); }
+  function openAccountDialog(target: 'preferences' | 'password') {
+    if (accountMenu.current) {
+      accountMenu.current.open = false;
+      accountMenu.current.querySelector('summary')?.focus();
+    }
+    setDialog(target);
+  }
   async function logout() {
     try {
       await write('/auth/logout');
@@ -138,22 +152,23 @@ export default function App() {
       <nav aria-label="Application">
         <a href="/" className={!projectId && !adminView ? 'active' : ''} onClick={(event) => { if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { event.preventDefault(); navigate('/'); } }}>Systems</a>
         {administrator && <button onClick={() => setDialog('users')}>Accounts</button>}
-        <button onClick={() => setDialog('settings')}>Settings</button>
+        {administrator && <button onClick={() => setDialog('settings')}>Settings</button>}
         {administrator && <a href="/admin" className={adminView ? 'active' : ''} onClick={(event) => { if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { event.preventDefault(); navigate('/admin'); } }}>Admin</a>}
       </nav>
       <div className="account-controls">
         {bootstrap.demo_mode && <span className="demo-label">SYNTHETIC DEMO DATA</span>}
-        <details className="account-menu"><summary><span className="avatar">{(session.display_name || session.username).slice(0, 1).toUpperCase()}</span><span className="account-summary"><strong>{session.display_name || session.username}</strong><small>{administrator ? 'Administrator' : 'Inspector'}</small></span><span aria-hidden="true">⌄</span></summary><div className="account-popup"><p>{session.username}</p><button onClick={() => setDialog('password')}>Change password</button><button onClick={() => { void logout(); }}>Sign out all windows</button></div></details>
+        <details ref={accountMenu} className="account-menu" onKeyDown={event => { if (event.key === 'Escape' && accountMenu.current?.open) { accountMenu.current.open = false; accountMenu.current.querySelector('summary')?.focus(); } }}><summary><span className="avatar">{(session.display_name || session.username).slice(0, 1).toUpperCase()}</span><span className="account-summary"><strong>{session.display_name || session.username}</strong><small>{administrator ? 'Administrator' : 'Inspector'}</small></span><span aria-hidden="true">⌄</span></summary><div className="account-popup"><p>{session.username}</p><button onClick={() => openAccountDialog('preferences')}>Preferences</button><button onClick={() => openAccountDialog('password')}>Change password</button><button onClick={() => { void logout(); }}>Sign out all windows</button></div></details>
       </div>
     </header>
-    {appearanceError && dialog !== 'settings' && <div className="page-notice"><ErrorNotice retry={retryAppearance}>{appearanceError}</ErrorNotice></div>}
+    {appearanceError && dialog !== 'preferences' && <div className="page-notice"><ErrorNotice retry={retryAppearance}>{appearanceError}</ErrorNotice></div>}
     <div className="session-boundary">{sessionError && <div className="page-notice"><ErrorNotice>{sessionError} Protected requests require a ready server. Retrying automatically.</ErrorNotice></div>}</div>
     {projectId ? <SystemWorkspace key={projectId} projectId={projectId} session={session} navigate={navigate} branding={bootstrap.branding} historicalDemoEnabled={bootstrap.historical_demo_enabled} section={section} investigationId={investigationId} />
       : adminView && !administrator ? <main className="catalogue-page"><ErrorNotice>Administrator access is required to manage systems.</ErrorNotice><a href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>Back to systems</a></main>
         : <Catalogue key={adminView ? 'admin' : 'systems'} session={session} navigate={navigate} branding={bootstrap.branding} manage={adminView} />}
     <footer className="app-footer"><span>{bootstrap.branding} · Topology and log investigation</span><span>All times UTC · Offline at runtime</span></footer>
     {dialog === 'password' && <PasswordDialog onClose={() => setDialog(null)} onChanged={() => { clearProtected('Password changed. Sign in with your new password.'); broadcast('authentication'); }} />}
-    {dialog === 'settings' && <SettingsDialog administrator={administrator} appearance={preferences?.theme_mode ?? 'default'} appearanceBusy={appearanceBusy} appearanceError={appearanceError} onAppearanceChange={(mode) => { void saveAppearance(mode); }} onAppearanceRetry={retryAppearance} onClose={() => setDialog(null)} onSaved={(settings) => { setBootstrap((current) => current ? { ...current, branding: settings.branding, default_theme_mode: settings.default_theme_mode } : current); broadcast('appearance'); }} />}
+    {dialog === 'preferences' && <PreferencesDialog appearance={preferences?.theme_mode ?? 'default'} appearanceBusy={appearanceBusy} appearanceError={appearanceError} onAppearanceChange={(mode) => { void saveAppearance(mode); }} onAppearanceRetry={retryAppearance} onClose={() => setDialog(null)} />}
+    {dialog === 'settings' && administrator && <SettingsDialog onClose={() => setDialog(null)} onSaved={(settings) => { setBootstrap((current) => current ? { ...current, branding: settings.branding, default_theme_mode: settings.default_theme_mode } : current); broadcast('appearance'); }} />}
     {dialog === 'users' && <UsersDialog session={session} onClose={() => setDialog(null)} onSelfRevoked={() => { clearProtected('Your account changed. Sign in again to continue.'); broadcast('authentication'); }} />}
   </div>;
 }

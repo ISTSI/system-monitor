@@ -148,3 +148,20 @@ def test_role_denials_unknown_actions_and_private_owner_checks() -> None:
     assert error.value.status == 403
     with pytest.raises(DomainError):
         authorize(Principal("forged", "root", 1), "system.list")
+
+
+@pytest.mark.parametrize(
+    "action",
+    [
+        "parser.test",
+        "inventory.import",
+        "inventory.upload",
+        "inventory.source.manage",
+        "inventory.upload.cancel",
+    ],
+)
+def test_inventory_and_parser_actions_require_administrator(action):
+    authorize(Principal("administrator", "administrator", 1), action)
+    with pytest.raises(DomainError) as denied:
+        authorize(Principal("inspector", "inspector", 1), action)
+    assert denied.value.status == 403

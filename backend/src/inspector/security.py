@@ -176,6 +176,11 @@ _ADMIN_ACTIONS = frozenset(
         "connection.test",
         "source_access.manage",
         "source.test",
+        "parser.test",
+        "inventory.import",
+        "inventory.upload",
+        "inventory.source.manage",
+        "inventory.upload.cancel",
     }
 )
 _OWN_ACTIONS = frozenset(

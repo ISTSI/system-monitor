@@ -1,5 +1,68 @@
 # 14 — MariaDB persistence, configuration and lifecycle
 
+Stage 07 source requires additive revision `0013_inventory`, following
+`0012_offline_analysis`. It creates `inventory_sources`, `inventory_uploads`,
+`inventory_previews`, `inventory_host_mappings` and `inventory_process_mappings`.
+It changes no existing topology, account, event or saved-analysis rows.
+The separately authorized local deployment on 18 October 2026 upgraded
+**https://localhost:8445** from `0012_offline_analysis` to `0013_inventory`.
+Migrations remain an explicit stopped-service operation with separate migration
+credentials; the serving application receives neither root nor migration secrets.
+
+The separately authorized Preferences/Settings follow-up on 18 October 2026
+changes only the local 8445 frontend through a read-only asset overlay. It needs
+no MariaDB migration or preference backfill: the existing account preferences,
+shared default and `0013_inventory` schema remain authoritative. Deployment
+preserves the original backend/wheel and provides a Compose-only frontend
+rollback; the deployment receipts are recorded in `progress/STATUS.md`.
+
+Sources have project-scoped IDs and casefold-unique names. Host mappings are
+keyed by `(project_id,source_id,alias)`; process mappings additionally include
+the extension's local process ID. Their target references use the same project's
+immutable entity identities, allowing current topology rows to be rebuilt while
+retaining import provenance. Baseline JSON contains sanitized managed-field
+values for manual-edit detection; source absence never deletes those mappings
+or topology entities.
+
+Upload metadata records owner/auth version, project/source, expected topology
+revision, manifest/content digests and expiry. Preview-to-upload has a composite
+foreign key over `(project_id,upload_id,source_id,owner_user_id)`, preventing a
+preview from referencing another system, source or owner's upload at the database
+boundary. Previews retain only sanitized normalized data, mapping/content/manifest
+bindings and expiry. One transaction saves topology, mappings and revision, or
+leaves all unchanged. Idempotent reimports consume their staging without a new
+topology revision. No migration/import writes vault bindings, host-key trust or
+target/root approval rows.
+
+Uploaded raw bytes stay outside MariaDB in restricted generated files under
+`deployment.state_dir/inventory-staging`. They are short-lived sensitive staging,
+not a second configuration writer or a recoverable config artifact. Commit and
+upload/wizard cancellation remove them; preview-only cancellation permits
+remapping while retaining the upload. Expired staging is reaped every 30 seconds, and startup
+removes expired/orphaned files. Do not retain these raw uploads in long-lived
+configuration exports or backups. Missing/expired staging requires a fresh
+upload. The optional deployment inventory limits default to 10 MiB uploaded,
+20 MiB expanded and 200 files, preserve explicit lower values, and cannot raise
+the importer hard bounds. Upload bytes also obey `config_upload_bytes`.
+
+Stage 07 migration verification uses a new disposable MariaDB schema populated
+at `0012_offline_analysis`, then compares all existing table data and raw cache
+checksums after upgrade. Actual scope/owner/source foreign-key rejection and
+atomic reconciliation are covered by MariaDB integration tests; command output
+is recorded under `verification/stage-7/`. These checks authorize no retained
+installation, infrastructure change or Stage 08 release operation. The later
+explicit Stage 07 deployment authorization is recorded separately: a consistent
+194,617,923-byte SQL backup and matching cache were retained under
+`.secrets/stage7-install/pre-0013-inventory/` before migration. All 44 existing
+table counts and 43 non-Alembic checksums matched after migration, and all five
+new inventory tables were empty. Startup verification preserved all 34 stable
+table checksums, 897 original cache files (230,864,349 bytes), 957 ownership/mode
+entries, configuration and vault; readiness and verified TLS pass. The retained
+8444 application is unchanged. Exact backup checksums, migration and installation
+receipts are in `verification/stage-7/deployment-*.json` and
+[STATUS.md](../progress/STATUS.md). This is a local upgrade, not Stage 08
+offline-release or native Ubuntu/Rocky qualification.
+
 Stage 06 adds `0010_investigations` (saved analysis and bookmarks) and
 `0011_investigation_bundles` (private previews/downloads, offline data and cursors),
 and `0012_offline_analysis` (revisioned personal analysis separate from the
@@ -18,7 +81,9 @@ MariaDB schemas and compares all existing populated Stage 05 rows. On 18 October
 2026, the separately authorized local deployment upgraded the retained 8445
 installation from `0009_live` to `0012_offline_analysis` after consistent SQL/cache
 backups. All 37 old table counts and 36 non-Alembic checksums matched before
-startup. Source changes alone do not authorize another installation upgrade.
+startup. The separately authorized Stage 07 deployment then applied
+`0013_inventory` as described above. Source changes alone do not authorize
+another installation upgrade.
 
 ## Selected database architecture
 

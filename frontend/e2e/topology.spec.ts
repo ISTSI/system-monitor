@@ -1,16 +1,17 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { editSystemDetails, setAppearance, submitSignIn, systemAction } from './ui';
+import { editSystemDetails, openPreferences, serveBuiltAssets, setAppearance, submitSignIn, systemAction } from './ui';
 import type { Config, EntityKind, Topology } from '../src/topology';
 
-const screenshots = resolve(`../verification/${process.env.INSPECTOR_E2E_REPORT_STAGE ?? 'stage-2'}/screenshots`);
+const screenshots = resolve(`../verification/${process.env.INSPECTOR_E2E_REPORT_STAGE ?? (process.env.INSPECTOR_E2E_URL === 'https://localhost:8449' ? 'stage-7' : 'stage-2')}/screenshots`);
 type Role = 'administrator' | 'inspector';
 const browserErrors = new WeakMap<Page, string[]>();
-test.beforeEach(({ page }) => {
+test.beforeEach(async ({ page, context, baseURL }) => {
   const errors: string[] = [];
   browserErrors.set(page, errors);
   page.on('pageerror', error => errors.push(error.message));
+  if (process.env.INSPECTOR_E2E_LOCAL_ASSETS === '1') await serveBuiltAssets(context, baseURL!);
 });
 test.afterEach(async ({ page, baseURL }) => {
   try { expect(browserErrors.get(page)).toEqual([]); } finally {
@@ -100,7 +101,7 @@ test('compact topology keeps system actions in a dismissible menu and administra
   const menu = page.getByRole('menu', { name: 'System', exact: true });
   await trigger.click();
   await expect(menu).toBeVisible();
-  const actions = ['Add subsystem', 'Add server', 'Add process', 'Add flow', 'List connections', 'List Parsers', 'Import configuration', 'Export JSON', 'Export YAML'];
+  const actions = ['Add subsystem', 'Add server', 'Add process', 'Add flow', 'List connections', 'List Parsers', 'Import configuration', 'Import Ansible inventory files', 'Export JSON', 'Export YAML'];
   await expect(menu.getByRole('menuitem')).toHaveCount(actions.length);
   for (const name of actions) await expect(menu.getByRole('menuitem', { name, exact: true })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: actions[0], exact: true })).toBeFocused();
@@ -136,7 +137,8 @@ test('compact topology keeps system actions in a dismissible menu and administra
       await page.keyboard.press('Escape');
       await page.getByRole('button', { name: 'Settings', exact: true }).click();
       const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
-      await expect(settings.getByLabel('Appearance', { exact: true })).toBeEnabled();
+      await expect(settings.getByLabel('Appearance', { exact: true })).toHaveCount(0);
+      await expect(settings.getByRole('combobox', { name: 'Application default appearance', exact: true })).toBeEnabled();
       await expect(settings.getByRole('button', { name: 'Save application settings', exact: true })).toBeVisible();
       await capture(page, `administrator-settings-${theme}-${size.width}x${size.height}`);
       await settings.getByRole('button', { name: 'Close', exact: true }).click();
@@ -217,6 +219,7 @@ test('administrator builds and edits a complete graph, preserves identity and ro
   await page.getByRole('button', { name: 'Edit selected', exact: true }).click();
   await page.getByRole('dialog').getByLabel('Name', { exact: true }).fill('Renamed ingress');
   await page.getByRole('button', { name: 'Save process', exact: true }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
   let current = await readTopology(page, id);
   expect(current.config.processes.find(process => process.id === 'ingest')?.name).toBe('Renamed ingress');
   expect(current.config.flows).toEqual(initial.config.flows);
@@ -227,6 +230,7 @@ test('administrator builds and edits a complete graph, preserves identity and ro
   await page.getByRole('button', { name: 'Move to server', exact: true }).click();
   await page.getByRole('combobox', { name: 'New server', exact: true }).selectOption('host-two');
   await page.getByRole('button', { name: 'Confirm move', exact: true }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
   current = await readTopology(page, id);
   expect(current.config.processes.find(process => process.id === 'ingest')?.server_id).toBe('host-two');
   expect(current.config.flows).toEqual(initial.config.flows);
@@ -334,7 +338,7 @@ test('Inspector safely navigates real topology in both themes without shared mut
   await expect(page.getByRole('button', { name: 'Import configuration', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'System', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
   const select = page.getByRole('button', { name: /^Select process / }).first();
   await select.focus();
   await page.keyboard.press('Enter');
@@ -347,12 +351,11 @@ test('Inspector safely navigates real topology in both themes without shared mut
       await expect(select).toHaveAttribute('aria-pressed', 'true');
       await capture(page, `inspector-${theme}-${size.width}x${size.height}`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
-      await page.getByRole('button', { name: 'Settings', exact: true }).click();
-      const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
-      await expect(settings.getByLabel('Appearance', { exact: true })).toBeEnabled();
-      await expect(settings.getByRole('button', { name: 'Save application settings', exact: true })).toHaveCount(0);
-      await capture(page, `inspector-settings-${theme}-${size.width}x${size.height}`);
-      await settings.getByRole('button', { name: 'Close', exact: true }).click();
+      const preferences = await openPreferences(page);
+      await expect(preferences.getByLabel('Appearance', { exact: true })).toBeEnabled();
+      await expect(preferences.getByRole('button', { name: 'Save application settings', exact: true })).toHaveCount(0);
+      await capture(page, `inspector-preferences-${theme}-${size.width}x${size.height}`);
+      await preferences.getByRole('button', { name: 'Close', exact: true }).click();
     }
   }
   const after = await readTopology(page, 'demo-foundation-b');

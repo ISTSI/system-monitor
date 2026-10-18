@@ -71,6 +71,11 @@ Require a backend dependency/service permission check for every HTTP and WebSock
 
 Personal `/me/preferences` is an explicit allowlist (`theme_mode` plus `expected_revision` in update requests; `revision` in responses). It cannot accept `role`, `owner_user_id`, database settings, policy limits or a shared default theme. Admin settings have their own API and revision/validation/audit boundary. Bootstrap DB location and vault-key files remain server-managed, with a safe Administrator-only read-only diagnostics summary and restart instructions; do not build a dangerous live DB-switch control.
 
+Both roles open personal Preferences from the logged-in user menu. The top-bar
+Settings dialog is Administrator-only and contains the shared appearance default
+for new accounts, signed-out screens and accounts following Application default.
+Opening Preferences does not request administrative settings or diagnostics.
+
 Inspectors have no shared drag/reparent/edit/connection handles, while selection, pan/zoom, collapse/expand, search and log actions remain available. Do not disable the whole diagram. Hide/admin-label routes and controls for clarity, then test forged HTTP/WS requests because visual restrictions are not a security boundary.
 
 ## Audit and acceptance

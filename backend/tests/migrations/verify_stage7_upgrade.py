@@ -1,0 +1,324 @@
+"""Verify a populated 0012_offline_analysis -> head upgrade in a new isolated MariaDB schema."""
+
+import asyncio
+import copy
+import hashlib
+import json
+import os
+import re
+import secrets
+import tempfile
+import time
+from pathlib import Path
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from verify_populated_upgrade import migrate, require_empty_mariadb
+
+from inspector import auth, foundation, services, topology
+from inspector.config import parse_config
+from inspector.database import SCHEMA_REVISION, check_schema, create_engine
+from inspector.domain import Principal
+from inspector.persistence.bundle_models import OfflineAnalysis, OfflineInvestigation
+from inspector.persistence.investigation_models import InvestigationBookmark, SavedInvestigation
+from inspector.persistence.models import (
+    HistoryEvent,
+    HistoryJob,
+    HistorySource,
+    TopologyState,
+    UserPreference,
+    Workspace,
+)
+
+ROOT = Path(__file__).resolve().parents[3]
+STAGE_SIX = "0012_offline_analysis"
+
+
+def guarded_configuration():
+    if os.environ.get("SI_TEST_DISPOSABLE_MARIADB") != "1":
+        raise RuntimeError("Explicit disposable MariaDB opt-in is required.")
+    path = os.environ.get("INSPECTOR_TEST_CONFIG")
+    migration_user = os.environ.get("SI_MIGRATION_DB_USERNAME")
+    migration_file = os.environ.get("SI_MIGRATION_DB_PASSWORD_FILE")
+    if not path or not migration_user or not migration_file:
+        raise RuntimeError("Separate runtime and migration identities are required.")
+    raw = Path(path).read_bytes()
+    runtime = parse_config(raw, environment={})
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("SI_DB_") and not key.startswith("SI_MIGRATION_DB_")
+    }
+    environment.update(
+        SI_MIGRATION_DB_USERNAME=migration_user,
+        SI_MIGRATION_DB_PASSWORD_FILE=migration_file,
+        INSPECTOR_CONFIG_FILE=str(Path(path).resolve()),
+    )
+    migrator = parse_config(raw, environment=environment, migration=True)
+    if not re.fullmatch(r"inspector_test_s7_upgrade_[a-z0-9_]+", runtime.database.name):
+        raise RuntimeError("A newly provisioned Stage 07 upgrade schema is required.")
+    if (
+        runtime.database.username == migration_user
+        or Path(runtime.database.password_file).resolve() == Path(migration_file).resolve()
+    ):
+        raise RuntimeError("Runtime and migration identities must differ.")
+    return runtime, migrator, environment
+
+
+async def snapshot(session, tables=None):
+    if tables is None:
+        tables = (
+            await session.scalars(
+                text(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema=DATABASE() AND table_name <> 'alembic_version' "
+                    "ORDER BY table_name"
+                )
+            )
+        ).all()
+    result = {}
+    for name in tables:
+        if not re.fullmatch(r"[a-z][a-z0-9_]+", name):
+            raise RuntimeError("Unexpected table identity.")
+        rows = (await session.execute(text(f"SELECT * FROM `{name}`"))).mappings().all()
+        result[name] = copy.deepcopy(
+            sorted([dict(row) for row in rows], key=lambda row: repr(sorted(row.items())))
+        )
+    return result
+
+
+async def seed(config):
+    engine = create_engine(config.database)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False).begin() as session:
+            assert (
+                await session.scalar(text("SELECT version_num FROM alembic_version")) == STAGE_SIX
+            )
+            administrator = await auth.bootstrap_admin(
+                session,
+                "upgrade-administrator",
+                "Synthetic retained administrator",
+                secrets.token_urlsafe(32),
+            )
+            actor = Principal(administrator.id, administrator.role, administrator.auth_version)
+            inspector = await auth.create_user(
+                session,
+                actor,
+                "upgrade-inspector",
+                "Synthetic retained inspector",
+                secrets.token_urlsafe(32),
+            )
+            await foundation.initialize_settings(session, config)
+            await session.execute(
+                text("UPDATE application_settings SET additional_security_measures=0")
+            )
+            session.add(UserPreference(user_id=inspector.id, revision=4, theme_mode="light"))
+            now = time.time_ns() // 1000
+            for project_id in ("retained-a", "retained-b"):
+                project = await services.create_project(
+                    session, actor, project_id, "Retained notes", project_id=project_id
+                )
+                document = json.loads((ROOT / "examples/project.example.json").read_text("utf-8"))
+                document["project"].update(id=project_id, name=project_id, revision=1)
+                state = await session.get(TopologyState, project_id)
+                await topology.save(
+                    session,
+                    actor,
+                    project,
+                    state,
+                    document,
+                    confirmed_deletions=False,
+                    reparent=False,
+                )
+                session.add(
+                    Workspace(
+                        project_id=project_id,
+                        id="retained-workspace",
+                        owner_user_id=inspector.id,
+                        opened_revision=2,
+                        revision=1,
+                        state="detached",
+                        created_us=now,
+                        expires_us=now + 300_000_000,
+                    )
+                )
+                await session.flush()
+                session.add(
+                    HistoryJob(
+                        project_id=project_id,
+                        id="retained-capture",
+                        workspace_id="retained-workspace",
+                        owner_user_id=inspector.id,
+                        auth_version=inspector.auth_version,
+                        auth_session_hash="0" * 64,
+                        config_revision=2,
+                        config_snapshot=document,
+                        process_ids=["p-ingest-a"],
+                        from_us=0,
+                        to_us=2_000_000,
+                        status="completed",
+                        snapshot_revision=1,
+                        event_count=1,
+                        parse_issue_count=0,
+                        downloaded_bytes=5,
+                        expanded_bytes=5,
+                        created_us=now,
+                        errors=[],
+                    )
+                )
+                await session.flush()
+                session.add(
+                    HistorySource(
+                        project_id=project_id,
+                        job_id="retained-capture",
+                        id="retained-source",
+                        process_id="p-ingest-a",
+                        remote_path="/var/log/inspector-demo/ingest/app.log",
+                        kind="plain",
+                        cache_name="retained-cache",
+                        checksum=hashlib.sha256(b"data\n").hexdigest(),
+                        status="completed",
+                        event_count=1,
+                        downloaded_bytes=5,
+                        expanded_bytes=5,
+                        manifest={"retained": True},
+                    )
+                )
+                await session.flush()
+                session.add(
+                    HistoryEvent(
+                        project_id=project_id,
+                        job_id="retained-capture",
+                        event_id="retained-event",
+                        process_id="p-ingest-a",
+                        source_revision_id="retained-source",
+                        capture_seq=1,
+                        timestamp_us=1_000_000,
+                        member_order=0,
+                        byte_start=0,
+                        raw_line="data",
+                        payload={"project_id": project_id, "retained": True},
+                    )
+                )
+            await session.flush()
+            for project_id in ("retained-a", "retained-b"):
+                session.add(
+                    SavedInvestigation(
+                        project_id=project_id,
+                        job_id="retained-capture",
+                        owner_user_id=inspector.id,
+                        revision=7,
+                        state={
+                            "title": "Retained analysis",
+                            "notes": "Retained private notes",
+                            "filter": {"include": ["Straße"]},
+                        },
+                        pinned=True,
+                        expired=False,
+                        updated_us=now,
+                    )
+                )
+                session.add(
+                    InvestigationBookmark(
+                        project_id=project_id,
+                        job_id="retained-capture",
+                        id="retained-bookmark",
+                        owner_user_id=inspector.id,
+                        event_id="retained-event",
+                        reference_event_id="retained-event",
+                        annotation="Retained annotation",
+                        pin_context=True,
+                        context={"retained": True},
+                        process_name_snapshot="Original process",
+                        server_name_snapshot="Original server",
+                        created_us=now,
+                    )
+                )
+                session.add(
+                    OfflineInvestigation(
+                        project_id=project_id,
+                        id="retained-offline",
+                        owner_user_id=inspector.id,
+                        digest="a" * 64,
+                        document={"retained": True},
+                        created_us=now,
+                    )
+                )
+                await session.flush()
+                session.add(
+                    OfflineAnalysis(
+                        project_id=project_id,
+                        investigation_id="retained-offline",
+                        owner_user_id=inspector.id,
+                        revision=3,
+                        state={"notes": "Offline retained analysis"},
+                        bookmarks=[{"annotation": "Offline retained bookmark"}],
+                    )
+                )
+            await session.flush()
+            return await snapshot(session)
+    finally:
+        await engine.dispose()
+
+
+async def verify(config, before):
+    engine = create_engine(config.database)
+    try:
+        async with engine.connect() as connection:
+            await check_schema(connection)
+        async with async_sessionmaker(engine)() as session:
+            assert await snapshot(session, before) == before
+            assert await session.scalar(text("SELECT COUNT(*) FROM history_events")) == 2
+            assert await session.scalar(text("SELECT COUNT(*) FROM users")) == 2
+    finally:
+        await engine.dispose()
+
+
+def main():
+    phase = "configuration_guard"
+    try:
+        runtime, migrator, environment = guarded_configuration()
+        phase = "empty_mariadb_guard"
+        asyncio.run(require_empty_mariadb(migrator))
+        phase = "migrate_stage_six"
+        migrate(STAGE_SIX, environment)
+        phase = "seed_populated_stage_six"
+        before = asyncio.run(seed(runtime))
+        with tempfile.TemporaryDirectory(prefix="si-s7-upgrade-") as directory:
+            cache = Path(directory) / "retained-cache"
+            cache.write_bytes(b"data\n")
+            phase = "upgrade_to_head"
+            migrate("head", environment)
+            phase = "verify_all_existing_rows_and_raw_bytes"
+            asyncio.run(verify(runtime, before))
+            assert cache.read_bytes() == b"data\n"
+        print(
+            json.dumps(
+                {
+                    "passed": True,
+                    "from_revision": STAGE_SIX,
+                    "to_revision": SCHEMA_REVISION,
+                    "existing_tables_preserved": len(before),
+                    "projects_preserved": 2,
+                    "accounts_preserved": 2,
+                    "scoped_identical_event_ids_preserved": 2,
+                    "all_existing_rows_preserved": True,
+                    "raw_bytes_unchanged": True,
+                }
+            )
+        )
+    except Exception:
+        print(
+            json.dumps(
+                {
+                    "passed": False,
+                    "failed_phase": phase,
+                    "reason": "Guard, migration or preservation assertion failed; synthetic schema retained.",
+                }
+            )
+        )
+        raise SystemExit(1) from None
+
+
+if __name__ == "__main__":
+    main()

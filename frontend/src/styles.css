@@ -42,6 +42,7 @@
 .live-column-headings { position: sticky; z-index: 2; top: 0; height: 30px; background: var(--si-header); font-weight: 650; font-size: 10px; }
 .live-log-content { position: relative; min-width: 1060px; }
 .live-log-columns > * { padding: 5px 10px; white-space: nowrap; }
+.live-log-columns > .live-message { user-select: text; white-space: pre; }
 .live-event { position: absolute; top: 0; left: 0; width: 100%; border-bottom: 1px solid color-mix(in srgb, var(--si-border) 45%, transparent); }
 .live-event > span { overflow: hidden; text-overflow: ellipsis; }
 .live-late { color: var(--si-warning); font-size: 9px; margin-left: 6px; }

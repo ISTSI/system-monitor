@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 // Opt-in source verification against a running local API without replacing its
 // deployed bundle. Every page in the context uses the same fresh build.
 export async function serveBuiltAssets(context: BrowserContext, baseURL: string): Promise<void> {
-  const directory = resolve('dist');
+  const directory = resolve(process.env.INSPECTOR_E2E_ASSET_DIR ?? 'dist');
   if (!existsSync(resolve(directory, 'index.html'))) throw new Error('Build the frontend before enabling local browser assets.');
   const origin = new URL(baseURL).origin;
   await context.route('**/*', async route => {
@@ -43,14 +43,22 @@ export async function systemAction(page: Page, name: string): Promise<void> {
   await page.getByRole('menuitem', { name, exact: true }).click();
 }
 
+export async function openPreferences(page: Page) {
+  if (await page.locator('.account-menu').getAttribute('open') === null) await page.locator('.account-menu > summary').click();
+  await page.getByRole('button', { name: 'Preferences', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Preferences', exact: true });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
 // Appearance is intentionally account-wide. A second page exercises the real
-// Settings control without dismissing the first page's form or investigation.
+// Preferences control without dismissing the first page's form or investigation.
 export async function setAppearance(page: Page, mode: 'light' | 'dark' | 'system' | 'default'): Promise<void> {
   const settingsPage = await page.context().newPage();
   try {
     await settingsPage.goto('/');
-    await settingsPage.getByRole('button', { name: 'Settings', exact: true }).click();
-    const appearance = settingsPage.getByLabel('Appearance', { exact: true });
+    const preferences = await openPreferences(settingsPage);
+    const appearance = preferences.getByLabel('Appearance', { exact: true });
     await expect(appearance).toBeEnabled();
     await appearance.selectOption(mode);
     await expect(appearance).toBeEnabled();

@@ -1,11 +1,90 @@
 # System Inspector backend
 
+Stage 07 source adds the Administrator **Import Ansible inventory files** wizard,
+safe static INI/extensionless-hosts/YAML/canonical-JSON parsing, ZIP companion
+variables, project-scoped source identities and revision-bound atomic
+reconciliation. It also adds parser-draft diagnostics using the real collection
+parser. The current source expects additive MariaDB revision `0013_inventory`.
+Following isolated synthetic verification and separate deployment authorization
+on 18 October 2026, the exact tested artifact is installed at
+**https://localhost:8445**. Production release and offline installation remain
+Stage 08 work.
+
+The subsequent authorized Preferences/Settings UI update on the same local
+8445 application uses `.state/preferences-install/frontend` as a read-only
+overlay at `/workspace/backend/src/inspector/web`. The original Stage 07 wheel,
+backend snapshot, runtime image and `0013_inventory` schema remain unchanged.
+Rollback removes only that runtime overlay using the protected previous Compose
+file; details and actual verification are recorded in `progress/STATUS.md`.
+
+On the selected system's topology page, choose/create one stable inventory
+source, upload the file or ZIP, select source entries in explicit order, parse,
+map groups/individual hosts to exactly one subsystem each, then review exact
+changes and commit. The system name/ID and expected revision stay visible.
+An explicit new subsystem ID creates an initially empty subsystem named with
+that ID. Optional process definitions require a same-system parser; host-only
+inventories create zero processes. Missing SSH usernames/credentials remain
+unresolved proposals. Imported profiles start without new host-key trust or
+target/root approval. Credentials and jumps use explicit existing project
+references, and import itself opens no SSH connection.
+
+Reimports use source+host alias and optional local process ID, preserving existing
+documentation, diagram geometry, flows, unrelated processes and manual tags.
+Missing records remain present and are reported as absent. Manual edits to
+imported managed fields block commit for review; there is no force-overwrite
+option. An unchanged reimport preserves IDs and the topology revision. Correct
+unsupported/ambiguous input or resolve supported subsystem mappings before
+obtaining a fresh preview. The importer does not run Ansible, scripts, plugins,
+Jinja, shell arguments or uploaded configuration files. See the full
+[static subset, limits and reconciliation rules](../docs/10_ANSIBLE_IMPORT.md)
+and [implemented API](../docs/05_API_AND_WEBSOCKET.md).
+
+Raw uploads use protected, expiring files under
+`deployment.state_dir/inventory-staging`, with sanitized metadata/previews and
+field baselines in MariaDB. Default hard bounds are 10 MiB upload, 20 MiB expanded,
+200 files, two upload slots and ten pending uploads/account; lower configured
+`inventory_upload_bytes`, `inventory_expanded_bytes` and `inventory_file_limit`
+are enforced. Upload bytes also respect `config_upload_bytes`. Commit or
+upload/wizard cancellation removes raw staging. Preview-only cancellation keeps
+the upload for remapping; staging expires after 15 minutes and the reaper runs every
+30 seconds. Upload/parser workers release database/auth locks and revalidate
+login, role, ownership and revision before publishing their result.
+Cooperative parser callbacks stop work after HTTP/task cancellation, upload
+cancellation or expiry; bounded worker reservations remain held until exit.
+
+The parser editor's **Test parser sample** accepts up to 64 KiB UTF-8, 100
+physical lines and 4 KiB/line. It returns original/UTC timestamps, exact
+microseconds, metadata and timestamp errors without saving the draft/sample.
+Failed timestamps retain a diagnostic explanation. Configured remote path tests
+remain in the separate Administrator connection/source-access panel and require
+the existing project credential, host-key and approval policy.
+
+Stage 07 verification helpers use fresh disposable schemas or a separately
+prepared synthetic HTTPS/SFTP fixture on port 8449, preserving existing schemas
+and installations. With the pinned runner image already prepared:
+
+```sh
+python scripts/verify_stage7.py inventory
+python scripts/verify_stage7.py integration
+python scripts/verify_stage7.py upgrade
+python scripts/verify_stage7.py checks
+```
+
+The isolated browser fixture uses `scripts/stage7_local.py` commands `prepare`,
+`migrate`, `fixture`, `up` and `configure`; `stop` retains that synthetic data.
+Its generated account file stays protected under `.secrets/stage7-browser/`.
+Migration tools require a stopped fixture and distinct migration credentials.
+The populated-upgrade check compares Stage 06 data before/after `0013_inventory`;
+actual commands/results and remaining stage-gate limitations are recorded in
+[STATUS.md](../progress/STATUS.md) and `verification/stage-7/`.
+
 Stage 06 source adds owned saved workspaces, exact parsed-field and literal
 correlation traces, annotations/bookmarks, source-local context pins, provenance,
 explicit cache expiry, and previewed sanitized ZIP bundles. Both roles have the
-same personal tools. The additive schema is `0012_offline_analysis`, installed
-on the retained local 8445 application after separate deployment authorization.
-Do not run an older serving artifact against this schema. Stage 06 implementation
+same personal tools. Its additive schema `0012_offline_analysis` was installed
+on the retained local 8445 application after separate Stage 06 deployment
+authorization, before the subsequent Stage 07 upgrade to `0013_inventory`.
+Do not run an older serving artifact against the current schema. Stage 06 implementation
 verification used an isolated synthetic HTTPS/SFTP fixture on port 8448.
 
 Saved analysis has one optimistic revision across workspace and bookmark edits.
@@ -23,12 +102,12 @@ Exports contain a typed topology projection and retained event data, and apply
 literal redaction to every string. Review the full preview: the redactor cannot
 identify unspecified sensitive values. Original cache files remain unchanged.
 
-Stage 06 is installed at **https://localhost:8445**, using migration `0012_offline_analysis`
+Stage 07 is installed at **https://localhost:8445**, using migration `0013_inventory`
 and the tested Python environment (including BSD-licensed `websockets` 16.1.1).
-The isolated installed artifact is `.state/stage6-install/backend`; the Compose
+The isolated installed artifact is `.state/stage7-install/backend`; the Compose
 override pins the tested runtime image. Existing data, configuration, cache and
-vault were backed up and verified unchanged. The isolated Stage 05/06 test fixtures
-on 8447/8448 are stopped; their commands are for synthetic verification only.
+vault were backed up and verified unchanged. The isolated Stage 05/06/07 test fixtures
+on 8447/8448/8449 are stopped; their commands are for synthetic verification only.
 
 Both roles can select configured processes and choose **Monitor selected** or
 open **Live monitor** in the logs workspace. Starting is explicit. Each page
@@ -65,7 +144,7 @@ offline through the historical viewer, with original source labels/provenance.
 Captured ranges may start after byte zero or have gaps; their cache contains
 only recorded ranges. These sources remain explicitly partial and cannot use
 the complete-source raw download action. Stopping/cancelling, restart and
-recording failures retain committed partial results. The installed Stage 06 tools
+recording failures retain committed partial results. The installed investigation tools
 add personal analysis, correlation, bookmarks and bundle exchange to these captures.
 
 For a synthetic browser test installation, use the existing local MariaDB
@@ -93,8 +172,9 @@ context and owner/project-bound snapshot pagination. Stage 04 adds encrypted
 passwords, independent host-key and target/root approval, configured path checks,
 and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds
 supervised live SFTP capture, independent monitor leases, protocol 2 WebSockets,
-retained literal refiltering and explicit recording. Saved analysis tools and
-Ansible inventory reconciliation remain later work.
+retained literal refiltering and explicit recording. Stage 06 adds the personal
+analysis/bundle tools described above; Stage 07 source adds inventory
+reconciliation and parser diagnostics.
 
 To configure a server as an Administrator, add a subsystem, then choose **Add
 server**. Its **SSH connection** section shows the selected profile's host and
@@ -185,8 +265,9 @@ dedicated account permissions remain essential. Symlinks are rejected. A
 successful scan describes its candidates, not continuous or exactly-once history.
 
 The retained local app at **https://localhost:8445** now uses the existing
-Stage 03 accounts/configuration and database upgraded to `0012_offline_analysis` on
-18 October. Its tested artifact at `.state/stage6-install/backend` is mounted
+Stage 03 accounts/configuration and database upgraded from `0012_offline_analysis`
+to `0013_inventory` on 18 October 2026. Its tested artifact at
+`.state/stage7-install/backend` is mounted
 read-only into `runtime-stage3`; the image is pinned to
 `sha256:668bfc011a595c63ea4f88c29eea56c326828662dbba1cd20a18a4eacdfcd8a8`.
 It runs one worker with explicit `websockets`, a 16 KiB message limit and a
@@ -202,21 +283,25 @@ For a normal restart, use the existing local MariaDB base Compose file plus
 commands also operate SSH fixtures. Preserve the installed snapshot and its
 image; future source updates require a fresh tested artifact.
 
-The matching pre-upgrade schema `0009_live` SQL dump, raw-cache
-archive with byte/permission manifests, prior backend, exact deployment files
-and protected vault copy are retained under
-`.secrets/stage6-install/pre-0012-offline-analysis/`. All previous Stage 04/05 artifacts and
-backups remain available. Rollback after migration must restore a matching
-database/cache/application state. The deployment verified every old table before
-startup, all retained cache bytes/ownership/modes, both browser roles and the
-8444 container and its assets as found at deployment preparation. See
-`verification/stage-6/deployment-*.json` and
-[STATUS.md](../progress/STATUS.md); no rollback drill was performed for this upgrade.
-`python scripts/verify_stage6_preservation.py --installed-stage6` performs the
-read-only installed-image/TLS/retained-service check. Its default mode retains
-the earlier Stage 06 pre-deployment expectations. Port 8444 already served the
-latest shared frontend build before this deployment; that pre-existing asset
-change and the unchanged backend container are recorded separately in STATUS.md.
+The matching pre-upgrade schema `0012_offline_analysis` SQL dump (194,617,923
+bytes), raw-cache archive with byte/permission manifests, prior backend, exact
+deployment files and protected vault copy are retained under
+`.secrets/stage7-install/pre-0013-inventory/`. All previous Stage 04/05/06 artifacts
+and backups remain available. Rollback after migration must restore a matching
+database/cache/application state; no rollback drill was performed for this
+upgrade. The Stage 07 migration preserved all 44 old table counts and all 43
+non-Alembic checksums and added five initially empty inventory tables. After
+startup, all 34 stable table checksums, 897 cache files (230,864,349 bytes), 957
+ownership/mode entries, configuration and vault matched the backup baseline.
+TLS/hostname verification and readiness pass. Port 8444's container, image,
+start/restart state and served assets remain unchanged. See
+`verification/stage-7/deployment-*.json` and
+[STATUS.md](../progress/STATUS.md) for exact commands and installed checks.
+The installed wheel SHA-256 is
+`908c3befbd0053da388c8d14916e7e40ff12efb99b2ff8d43fe1296cdb63c729`.
+The earlier `verify_stage6_preservation.py --installed-stage6` command checks
+historical Stage 06 expectations and is not a current Stage 07 installation
+check. This local deployment performs no production rollout or Stage 08 release.
 
 `scripts/verify_stage4.py integration` runs the real MariaDB/SSH gate in a fresh
 disposable local schema; `upgrade` checks populated additive migration and
@@ -358,7 +443,8 @@ Set `INSPECTOR_E2E_URL`, `INSPECTOR_E2E_ACCOUNTS` and
 `INSPECTOR_E2E_REPORT_STAGE=stage-2` for the browser suite. `stop` retains data.
 Migrations run with the test server stopped and separate migration credentials.
 Project configuration import accepts version 2 YAML/JSON and previewed version 1
-conversion; Ansible inventory files and reconciliation arrive in Stage 07.
+conversion. The separate Stage 07 inventory workflow is described above; these
+historical Stage 02 fixture commands do not install that later implementation.
 
 Each document creates a fresh workspace using POST under its URL's project.
 There is no mutable current-project session, browser storage or shared filter.

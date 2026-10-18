@@ -1,5 +1,80 @@
 # 05 — HTTP API and live protocol
 
+## Stage 07 inventory and parser diagnostics API
+
+These implemented routes use `/api/v1/projects/{project_id}`. Every route is
+Administrator-only, including source listing, upload inspection, parsing and
+diagnostics. POST requests require the normal same-origin cookie/CSRF protection.
+Uploads and previews belong to the authenticated actor; another Administrator
+has no ownership bypass. No inventory operation starts SSH or creates credentials,
+host-key trust or target/root approval.
+
+| Method/path | Request and result |
+|---|---|
+| `GET /inventory/sources` | `{project_id,items:[{project_id,id,name,created_us}]}`; `created_us` is an integer-microsecond string |
+| `POST /inventory/sources` | `{name}`; returns the source row above; names are casefold-unique within the selected project |
+| `POST /inventory/uploads?inventory_source_id=…&expected_revision=…` | Raw file bytes with `Content-Type: application/octet-stream` and URL-encoded basename in `X-Inventory-Filename`; returns an opaque `upload_id`, selected project/source/revision, expiry and sanitized file manifest |
+| `POST /inventory/parse` | `{inventory_source_id,upload_id,expected_revision,format,source_files}`; parses only the staged uploaded bytes and explicitly ordered source entries |
+| `POST /inventory/preview` | Exact `contracts/inventory-import.schema.json` body; stores a normalized, revision-bound reconciliation preview |
+| `POST /inventory/commit` | Exactly `{preview_id,expected_revision}`; commits stored normalized data, consumes staging, and returns the existing `TopologyResponse` |
+| `POST /inventory/uploads/{upload_id}/cancel` | `{}`; deletes the owner's upload, associated previews and raw staged bytes; returns `{cancelled:true}` |
+| `POST /inventory/previews/{preview_id}/cancel` | `{}`; deletes only the owner's preview, preserving its upload for remapping; returns `{cancelled:true}` |
+| `POST /parsers/test` | `{project_id,expected_revision,parser,sample}`; tests a parser draft against bounded supplied text without persisting the draft or sample |
+
+`format` is `ini`, `yaml`, `canonical_json` or `static_zip`. `source_files` is a
+nonempty ordered list of uploaded paths, including the uploaded filename for a
+direct file. An upload response includes `filename`, detected `format` (nullable),
+`files` entries with `path,size,role,format,sha256`, `file_count`, `expanded_bytes`,
+`source_candidates`, `ignored_files`, `warnings`, `content_sha256` and
+`manifest_sha256`. It also returns `project_id`, `inventory_source_id`, `upload_id`,
+`expected_revision` and `expires_us`; expiry is an integer-microsecond string.
+It never returns source-file contents or imported secret values.
+
+The parse response identifies the same project/source/upload/revision and returns
+`hosts`, `groups`, `warnings`, `conflicts`, `provenance`, `manifest`,
+`process_count` and `omitted_variables`. A normalized host has stable `alias` /
+`inventory_hostname`, address/port/user proposals, groups, sanitized relevant vars,
+optional processes, field provenance/declarations and warnings. Group records
+contain name, children, hosts, sanitized relevant vars and provenance.
+
+Preview mapping contains `group_to_subsystem`, `host_to_subsystem`,
+`tag_only_groups`, `credential_mapping`, `jump_mapping`, `parser_mapping`,
+`preserve_existing_documentation:true`, `preserve_existing_layout:true` and
+`delete_missing_hosts:false`. Host overrides take precedence over group mappings.
+A new explicitly mapped subsystem ID creates a subsystem with that ID as its
+initial display name. Credential aliases must already be bound to this project;
+jump profiles and parser mappings must resolve here. Mapping does not approve
+these definitions for remote access.
+
+Preview returns `project_id`, `inventory_source_id`, `preview_id`,
+`expected_revision`, `expires_us`, `can_commit`, `records`, `warnings`, `conflicts`
+and `process_count`. Host/process records include alias, proposed target ID,
+optional local process ID, status and exact `{field,before,after}` changes.
+Statuses are `added`, `changed`, `unchanged`, `conflicting`, `unassigned` or
+`absent`. Unresolved conflicts block commit. A content-identical accepted
+reimport consumes staging without incrementing the topology revision.
+
+Raw uploads expire after 15 minutes, permit at most ten pending uploads per
+account and use two upload slots. Actual upload/expanded bytes and file counts
+honor lower deployment inventory ceilings; hard bounds are 10 MiB / 20 MiB /
+200 files. The shared topology size/entity limits also apply. A 30-second upload
+timeout and bounded parser workers prevent slow input from holding account or
+topology locks. Project/upload-scoped cooperative parser signals handle HTTP/task
+cancellation, upload cancellation and expiry; worker reservations remain held
+until the parser exits. Authentication, ownership and project revision are checked again
+after worker execution. Commit revalidates stored content/mapping/manifest
+bindings. Cross-project/owner lookups return 404; stale bindings return 409,
+expired staging 410, actual-byte limits 413, unsafe/unsupported input 422 and
+busy/quota admission 429. Cancellation remains available on archived systems.
+
+Parser tests accept at most 64 KiB UTF-8, 100 physical LF-delimited lines and
+4 KiB per line. Responses contain `project_id,revision,parser_id,lines,valid_count,
+error_count`; each line reports original text, original/UTC timestamp, exact
+`timestamp_us` string, parsed metadata and nullable error. Invalid timestamps
+remain null with a diagnostic-lane explanation. The account and expected project
+revision are rechecked after parsing. Configured remote path diagnostics retain
+the separate approved-ID `/connections/{id}/source-access/test` boundary.
+
 ## Stage 06 investigation API
 
 The Stage 06 routes below are under `/api/v1/projects/{project_id}`. Every
@@ -81,7 +156,7 @@ Prefix all routes with `/api/v1`. Use same-origin HTTPS with server-side cookie 
 | `POST /projects/{project_id}/config/preview`, `/config/commit` | Previewed versioned config conversion/import | Administrator; own preview |
 | `GET /projects/{project_id}/config/export` | Secret-free v2 YAML/JSON configuration export | Administrator |
 | `POST /projects/{project_id}/search` | Model-wide search; terms in body, not URL/access logs | Both |
-| `POST /projects/{project_id}/inventory/preview`, `/inventory/commit` | Safe inventory parsing, mapping and commit | Administrator; own preview |
+| `GET/POST /projects/{project_id}/inventory/sources`; `POST /inventory/uploads`, `/inventory/parse`, `/inventory/preview`, `/inventory/commit` | Static inventory source/upload/mapping workflow detailed above | Administrator; own upload/preview |
 | `POST /credentials`, `PUT/DELETE /credentials/{id}` | Write-only SSH credential management | Administrator |
 | `POST /projects/{project_id}/connections/{id}/test` | Approved connection/access test | Administrator |
 | `POST /projects/{project_id}/connections/{id}/host-key/inspect`, `/host-key/approve` | Fingerprint inspection and explicit trust approval | Administrator |
@@ -262,10 +337,12 @@ All routes below retain the `/api/v1` prefix. The browser routes `/systems/{proj
 | `POST /projects/{project_id}/live-sessions/{id}/attach` | Explicit owner/project-checked transfer to a new workspace; expected lease revision; 409 on occupied controller |
 | `GET /projects/{project_id}/usage` | Own per-workspace/project/account limits and counts; no another owner's log/filter data |
 | `GET/POST /projects/{project_id}/inventory/sources` | Administrator persistent source list/creation; file basename is not identity |
-| `POST /projects/{project_id}/inventory/uploads` | Administrator multipart staging of direct file or bounded ZIP; server-created opaque upload ID, no arbitrary server path |
+| `POST /projects/{project_id}/inventory/uploads` | Administrator raw-byte staging of direct file or bounded ZIP; query source/revision and encoded filename header, server-created opaque upload ID, no arbitrary server path |
+| `POST /projects/{project_id}/inventory/parse` | Own staged upload plus format and ordered uploaded source paths; sanitized hosts/groups/provenance/diagnostics |
 | `POST /projects/{project_id}/inventory/preview` | `inventory-import.schema.json`; validate selected files, source, mapping, hashes and expected revision |
 | `POST /projects/{project_id}/inventory/commit` | Own server-held preview ID + expected revision only; no replacement upload/mapping accepted |
 | `POST /projects/{project_id}/inventory/uploads/{id}/cancel` | Owner-only staged-data deletion; commit/cancel/expiry delete raw staged uploads |
+| `POST /projects/{project_id}/inventory/previews/{id}/cancel` | Owner-only preview deletion; retain its upload for new mappings; wizard close cancels the upload separately |
 | `GET/POST/DELETE /projects/{project_id}/credential-bindings[/{id}]` | Administrator explicit binding of a global vault reference to this project; never returns secret values |
 
 A System selector is not an authorization check. Resolve every nested object in its route project and verify its permitted parent and owner. Repeated body project IDs must match the route (422); an object/preview from a different project or owner is not found (404). Live controls include workspace context and verify the current control lease, not only the user ID. Authoritative owner/project/lease values are read on the server. Explicit audited Administrator stop remains the narrowly defined exception.

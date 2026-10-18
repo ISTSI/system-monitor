@@ -91,6 +91,9 @@ class Config:
     max_workspaces_global: int
     default_theme_mode: str = "dark"
     config_upload_bytes: int = 10_485_760
+    inventory_upload_bytes: int = 10_485_760
+    inventory_expanded_bytes: int = 20_971_520
+    inventory_file_limit: int = 200
     cache_dir: str = "/var/cache/system-inspector"
     history_limits: dict[str, int] = field(default_factory=dict)
     local_history_demo: bool = False
@@ -226,6 +229,9 @@ def parse_config(
         max_workspaces_global=limits.get("max_workspaces_global", 64),
         default_theme_mode=data["bootstrap_settings"]["default_theme_mode"],
         config_upload_bytes=limits["config_upload_bytes"],
+        inventory_upload_bytes=limits.get("inventory_upload_bytes", 10_485_760),
+        inventory_expanded_bytes=limits.get("inventory_expanded_bytes", 20_971_520),
+        inventory_file_limit=limits.get("inventory_file_limit", 200),
         cache_dir=data["deployment"]["cache_dir"],
         history_limits={
             **SOURCE_SCAN_DEFAULTS,

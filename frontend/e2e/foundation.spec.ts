@@ -1,7 +1,7 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { editSystemDetails, setAppearance } from './ui';
+import { editSystemDetails, openPreferences, setAppearance } from './ui';
 
 type Role = 'administrator' | 'inspector';
 type Account = { username: string; password: string };
@@ -139,7 +139,7 @@ for (const role of ['administrator', 'inspector'] as const) {
         await expect(page.locator('.subsystem-card')).toHaveCount(2);
         await expect(page.getByRole('region', { name: 'Process details' })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Edit system details', exact: true })).toHaveCount(0);
-        await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(1);
+        await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(role === 'administrator' ? 1 : 0);
         await expect(page.getByRole('link', { name: 'Admin', exact: true })).toHaveCount(role === 'administrator' ? 1 : 0);
         await screenshot(page, `${role}-${theme}-${viewport.width}x${viewport.height}-topology-process`);
         const hasHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
@@ -187,13 +187,12 @@ test('duplicate same-system page has a fresh workspace and isolated selection; l
   await page.getByRole('button', { name: /^Select process / }).first().click();
   await expect(duplicate.getByRole('heading', { name: 'Select a process', exact: true })).toBeVisible();
   await page.getByLabel('Search this system', { exact: true }).fill('kept in this page');
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
-  await settings.getByLabel('Appearance', { exact: true }).selectOption('light');
-  await expect(settings.getByLabel('Appearance', { exact: true })).toBeEnabled();
-  await expect(settings.getByRole('button', { name: 'Save application settings', exact: true })).toHaveCount(0);
+  const preferences = await openPreferences(page);
+  await preferences.getByLabel('Appearance', { exact: true }).selectOption('light');
+  await expect(preferences.getByLabel('Appearance', { exact: true })).toBeEnabled();
+  await expect(preferences.getByRole('button', { name: 'Save application settings', exact: true })).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await expect(settings).not.toBeVisible();
+  await expect(preferences).not.toBeVisible();
   await expect(duplicate.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.getByTestId('workspace-id')).toHaveText(original);
   await expect(duplicate.getByTestId('workspace-id')).toHaveText(duplicateWorkspace);
@@ -387,10 +386,17 @@ test.describe('200 percent layout equivalent', () => {
     await expect(save).toBeFocused();
     await expect(save).toBeInViewport();
     await noHorizontalOverflow();
-    await page.getByLabel('Appearance', { exact: true }).focus();
-    await expect(page.getByLabel('Appearance', { exact: true })).toBeFocused();
+    await expect(dialog.getByLabel('Appearance', { exact: true })).toHaveCount(0);
+    await dialog.getByRole('combobox', { name: 'Application default appearance', exact: true }).focus();
+    await expect(dialog.getByRole('combobox', { name: 'Application default appearance', exact: true })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
+    const preferences = await openPreferences(page);
+    await preferences.getByLabel('Appearance', { exact: true }).focus();
+    await expect(preferences.getByLabel('Appearance', { exact: true })).toBeFocused();
+    await noHorizontalOverflow();
+    await page.keyboard.press('Escape');
+    await expect(preferences).toHaveCount(0);
     await appearance(page, 'light');
     await openSystem(page, systemA);
     const process = page.getByRole('button', { name: /^Select process / }).first();

@@ -1373,7 +1373,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PreviewResponse"
+                  "$ref": "#/components/schemas/inspector__topology__PreviewResponse"
                 }
               }
             }
@@ -1412,7 +1412,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CommitInput"
+                "$ref": "#/components/schemas/inspector__topology__CommitInput"
               }
             }
           }
@@ -1494,6 +1494,470 @@
           }
         },
         "x-permission": "project_config.export"
+      }
+    },
+    "/api/v1/projects/{project_id}/inventory/sources": {
+      "get": {
+        "summary": "List Sources",
+        "operationId": "list_sources_api_v1_projects__project_id__inventory_sources_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "inventory.source.manage"
+      },
+      "post": {
+        "summary": "Create Source",
+        "operationId": "create_source_api_v1_projects__project_id__inventory_sources_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "inventory.source.manage"
+      }
+    },
+    "/api/v1/projects/{project_id}/inventory/uploads": {
+      "post": {
+        "summary": "Upload",
+        "operationId": "upload_api_v1_projects__project_id__inventory_uploads_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "inventory_source_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Inventory Source Id"
+            }
+          },
+          {
+            "name": "expected_revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Expected Revision"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "inventory.upload"
+      }
+    },
+    "/api/v1/projects/{project_id}/inventory/parse": {
+      "post": {
+        "summary": "Parse",
+        "operationId": "parse_api_v1_projects__project_id__inventory_parse_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "inventory.import"
+      }
+    },
+    "/api/v1/projects/{project_id}/inventory/preview": {
+      "post": {
+        "summary": "Preview",
+        "operationId": "preview_api_v1_projects__project_id__inventory_preview_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/inspector__inventory__PreviewInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inspector__inventory__PreviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "inventory.import"
+      }
+    },
+    "/api/v1/projects/{project_id}/inventory/commit": {
+      "post": {
+        "summary": "Commit",
+        "operationId": "commit_api_v1_projects__project_id__inventory_commit_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/inspector__inventory__CommitInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopologyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "inventory.import"
+      }
+    },
+    "/api/v1/projects/{project_id}/inventory/uploads/{upload_id}/cancel": {
+      "post": {
+        "summary": "Cancel Upload",
+        "operationId": "cancel_upload_api_v1_projects__project_id__inventory_uploads__upload_id__cancel_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "inventory.upload.cancel"
+      }
+    },
+    "/api/v1/projects/{project_id}/inventory/previews/{preview_id}/cancel": {
+      "post": {
+        "summary": "Cancel Preview",
+        "operationId": "cancel_preview_api_v1_projects__project_id__inventory_previews__preview_id__cancel_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "preview_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Preview Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "inventory.upload.cancel"
+      }
+    },
+    "/api/v1/projects/{project_id}/parsers/test": {
+      "post": {
+        "summary": "Test Parser",
+        "operationId": "test_parser_api_v1_projects__project_id__parsers_test_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParserTestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParserTestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "parser.test"
       }
     },
     "/api/v1/projects/{project_id}/collections/plan": {
@@ -5442,6 +5906,20 @@
         ],
         "title": "BundleSelection"
       },
+      "CancelResponse": {
+        "properties": {
+          "cancelled": {
+            "type": "boolean",
+            "title": "Cancelled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cancelled"
+        ],
+        "title": "CancelResponse"
+      },
       "CatalogueEntry": {
         "properties": {
           "project_id": {
@@ -5531,43 +6009,6 @@
           "new_password"
         ],
         "title": "ChangePasswordInput"
-      },
-      "CommitInput": {
-        "properties": {
-          "expected_revision": {
-            "type": "integer",
-            "maximum": 2147483646.0,
-            "minimum": 1.0,
-            "title": "Expected Revision"
-          },
-          "preview_id": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
-            "title": "Preview Id"
-          },
-          "confirmed_deletions": {
-            "type": "boolean",
-            "title": "Confirmed Deletions",
-            "default": false
-          },
-          "reparent": {
-            "type": "boolean",
-            "title": "Reparent",
-            "default": false
-          },
-          "confirm_project_remap": {
-            "type": "boolean",
-            "title": "Confirm Project Remap",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "expected_revision",
-          "preview_id"
-        ],
-        "title": "CommitInput"
       },
       "CorrelationInput": {
         "properties": {
@@ -7756,6 +8197,94 @@
         ],
         "title": "LoginResponse"
       },
+      "MappingInput": {
+        "properties": {
+          "group_to_subsystem": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "maxProperties": 1000,
+            "title": "Group To Subsystem"
+          },
+          "host_to_subsystem": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "maxProperties": 1000,
+            "title": "Host To Subsystem"
+          },
+          "tag_only_groups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Tag Only Groups"
+          },
+          "credential_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "maxProperties": 1000,
+            "title": "Credential Mapping"
+          },
+          "jump_mapping": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "maxProperties": 1000,
+            "title": "Jump Mapping"
+          },
+          "parser_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "maxProperties": 1000,
+            "title": "Parser Mapping"
+          },
+          "preserve_existing_documentation": {
+            "type": "boolean",
+            "const": true,
+            "title": "Preserve Existing Documentation"
+          },
+          "preserve_existing_layout": {
+            "type": "boolean",
+            "const": true,
+            "title": "Preserve Existing Layout"
+          },
+          "delete_missing_hosts": {
+            "type": "boolean",
+            "const": false,
+            "title": "Delete Missing Hosts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "group_to_subsystem",
+          "host_to_subsystem",
+          "tag_only_groups",
+          "credential_mapping",
+          "jump_mapping",
+          "parser_mapping",
+          "preserve_existing_documentation",
+          "preserve_existing_layout",
+          "delete_missing_hosts"
+        ],
+        "title": "MappingInput"
+      },
       "MetadataInput": {
         "properties": {
           "name": {
@@ -7879,6 +8408,297 @@
         ],
         "title": "OfflineSummaryResponse"
       },
+      "ParseInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "inventory_source_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Inventory Source Id"
+          },
+          "upload_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Upload Id"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "ini",
+              "yaml",
+              "canonical_json",
+              "static_zip"
+            ],
+            "title": "Format"
+          },
+          "source_files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Source Files"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "inventory_source_id",
+          "upload_id",
+          "format",
+          "source_files"
+        ],
+        "title": "ParseInput"
+      },
+      "ParseResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "inventory_source_id": {
+            "type": "string",
+            "title": "Inventory Source Id"
+          },
+          "upload_id": {
+            "type": "string",
+            "title": "Upload Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "title": "Expected Revision"
+          },
+          "hosts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Hosts"
+          },
+          "groups": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Groups"
+          },
+          "warnings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "conflicts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Conflicts"
+          },
+          "provenance": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Provenance"
+          },
+          "manifest": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Manifest"
+          },
+          "process_count": {
+            "type": "integer",
+            "title": "Process Count"
+          },
+          "omitted_variables": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Omitted Variables"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "inventory_source_id",
+          "upload_id",
+          "expected_revision",
+          "hosts",
+          "groups",
+          "warnings",
+          "conflicts",
+          "provenance",
+          "manifest",
+          "process_count",
+          "omitted_variables"
+        ],
+        "title": "ParseResponse"
+      },
+      "ParserTestInput": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Project Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "parser": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parser"
+          },
+          "sample": {
+            "type": "string",
+            "maxLength": 65536,
+            "title": "Sample"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "expected_revision",
+          "parser",
+          "sample"
+        ],
+        "title": "ParserTestInput"
+      },
+      "ParserTestLine": {
+        "properties": {
+          "line_number": {
+            "type": "integer",
+            "title": "Line Number"
+          },
+          "original_line": {
+            "type": "string",
+            "title": "Original Line"
+          },
+          "timestamp_original": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Original"
+          },
+          "timestamp_utc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Utc"
+          },
+          "timestamp_us": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp Us"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Metadata"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "line_number",
+          "original_line",
+          "timestamp_original",
+          "timestamp_utc",
+          "timestamp_us",
+          "metadata",
+          "error"
+        ],
+        "title": "ParserTestLine"
+      },
+      "ParserTestResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "parser_id": {
+            "type": "string",
+            "title": "Parser Id"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ParserTestLine"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "valid_count": {
+            "type": "integer",
+            "title": "Valid Count"
+          },
+          "error_count": {
+            "type": "integer",
+            "title": "Error Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "revision",
+          "parser_id",
+          "lines",
+          "valid_count",
+          "error_count"
+        ],
+        "title": "ParserTestResponse"
+      },
       "PasswordChangedResponse": {
         "properties": {
           "status": {
@@ -7981,77 +8801,6 @@
           "theme_mode"
         ],
         "title": "PreferenceResponse"
-      },
-      "PreviewResponse": {
-        "properties": {
-          "preview_id": {
-            "type": "string",
-            "title": "Preview Id"
-          },
-          "project_id": {
-            "type": "string",
-            "title": "Project Id"
-          },
-          "expected_revision": {
-            "type": "integer",
-            "title": "Expected Revision"
-          },
-          "expires_us": {
-            "type": "string",
-            "title": "Expires Us"
-          },
-          "warnings": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Warnings"
-          },
-          "source_project_id": {
-            "type": "string",
-            "title": "Source Project Id"
-          },
-          "target_project_id": {
-            "type": "string",
-            "title": "Target Project Id"
-          },
-          "changes": {
-            "additionalProperties": {
-              "items": {
-                "additionalProperties": {
-                  "type": "string"
-                },
-                "type": "object"
-              },
-              "type": "array"
-            },
-            "type": "object",
-            "title": "Changes"
-          },
-          "requires_delete_confirmation": {
-            "type": "boolean",
-            "title": "Requires Delete Confirmation"
-          },
-          "requires_reparent_confirmation": {
-            "type": "boolean",
-            "title": "Requires Reparent Confirmation"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "preview_id",
-          "project_id",
-          "expected_revision",
-          "expires_us",
-          "warnings",
-          "source_project_id",
-          "target_project_id",
-          "changes",
-          "requires_delete_confirmation",
-          "requires_reparent_confirmation"
-        ],
-        "title": "PreviewResponse"
       },
       "ProjectInput": {
         "properties": {
@@ -8939,6 +9688,23 @@
         ],
         "title": "SourceDetails"
       },
+      "SourceInput": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SourceInput"
+      },
       "SourcePathResult": {
         "properties": {
           "process_id": {
@@ -9012,6 +9778,35 @@
         ],
         "title": "SourcePathTestResponse"
       },
+      "SourceResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "created_us": {
+            "type": "string",
+            "title": "Created Us"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "id",
+          "name",
+          "created_us"
+        ],
+        "title": "SourceResponse"
+      },
       "SourceRevisionInput": {
         "properties": {
           "expected_config_revision": {
@@ -9047,6 +9842,28 @@
           "expected_config_revision"
         ],
         "title": "SourceTestInput"
+      },
+      "SourcesResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SourceResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "items"
+        ],
+        "title": "SourcesResponse"
       },
       "TestResponse": {
         "properties": {
@@ -9334,6 +10151,111 @@
         ],
         "title": "UpdateAccountInput"
       },
+      "UploadResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "inventory_source_id": {
+            "type": "string",
+            "title": "Inventory Source Id"
+          },
+          "upload_id": {
+            "type": "string",
+            "title": "Upload Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "title": "Expected Revision"
+          },
+          "expires_us": {
+            "type": "string",
+            "title": "Expires Us"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format"
+          },
+          "files": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "file_count": {
+            "type": "integer",
+            "title": "File Count"
+          },
+          "expanded_bytes": {
+            "type": "integer",
+            "title": "Expanded Bytes"
+          },
+          "source_candidates": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Candidates"
+          },
+          "ignored_files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ignored Files"
+          },
+          "warnings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "content_sha256": {
+            "type": "string",
+            "title": "Content Sha256"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "title": "Manifest Sha256"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "inventory_source_id",
+          "upload_id",
+          "expected_revision",
+          "expires_us",
+          "filename",
+          "format",
+          "files",
+          "file_count",
+          "expanded_bytes",
+          "source_candidates",
+          "ignored_files",
+          "warnings",
+          "content_sha256",
+          "manifest_sha256"
+        ],
+        "title": "UploadResponse"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -9466,6 +10388,158 @@
         ],
         "title": "RevisionInput"
       },
+      "inspector__inventory__CommitInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "preview_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Preview Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "preview_id"
+        ],
+        "title": "CommitInput"
+      },
+      "inspector__inventory__PreviewInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "inventory_source_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Inventory Source Id"
+          },
+          "upload_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Upload Id"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "ini",
+              "yaml",
+              "canonical_json",
+              "static_zip"
+            ],
+            "title": "Format"
+          },
+          "source_files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Source Files"
+          },
+          "project_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Project Id"
+          },
+          "mapping": {
+            "$ref": "#/components/schemas/MappingInput"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "inventory_source_id",
+          "upload_id",
+          "format",
+          "source_files",
+          "project_id",
+          "mapping"
+        ],
+        "title": "PreviewInput"
+      },
+      "inspector__inventory__PreviewResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "inventory_source_id": {
+            "type": "string",
+            "title": "Inventory Source Id"
+          },
+          "preview_id": {
+            "type": "string",
+            "title": "Preview Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "title": "Expected Revision"
+          },
+          "expires_us": {
+            "type": "string",
+            "title": "Expires Us"
+          },
+          "can_commit": {
+            "type": "boolean",
+            "title": "Can Commit"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Records"
+          },
+          "warnings": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "conflicts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Conflicts"
+          },
+          "process_count": {
+            "type": "integer",
+            "title": "Process Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "inventory_source_id",
+          "preview_id",
+          "expected_revision",
+          "expires_us",
+          "can_commit",
+          "records",
+          "warnings",
+          "conflicts",
+          "process_count"
+        ],
+        "title": "PreviewResponse"
+      },
       "inspector__investigation_bundles__PreviewInput": {
         "properties": {
           "preview_id": {
@@ -9511,6 +10585,43 @@
         ],
         "title": "RevisionInput"
       },
+      "inspector__topology__CommitInput": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "maximum": 2147483646.0,
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "preview_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+            "title": "Preview Id"
+          },
+          "confirmed_deletions": {
+            "type": "boolean",
+            "title": "Confirmed Deletions",
+            "default": false
+          },
+          "reparent": {
+            "type": "boolean",
+            "title": "Reparent",
+            "default": false
+          },
+          "confirm_project_remap": {
+            "type": "boolean",
+            "title": "Confirm Project Remap",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "preview_id"
+        ],
+        "title": "CommitInput"
+      },
       "inspector__topology__PreviewInput": {
         "properties": {
           "expected_revision": {
@@ -9541,6 +10652,77 @@
           "format"
         ],
         "title": "PreviewInput"
+      },
+      "inspector__topology__PreviewResponse": {
+        "properties": {
+          "preview_id": {
+            "type": "string",
+            "title": "Preview Id"
+          },
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "title": "Expected Revision"
+          },
+          "expires_us": {
+            "type": "string",
+            "title": "Expires Us"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "source_project_id": {
+            "type": "string",
+            "title": "Source Project Id"
+          },
+          "target_project_id": {
+            "type": "string",
+            "title": "Target Project Id"
+          },
+          "changes": {
+            "additionalProperties": {
+              "items": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Changes"
+          },
+          "requires_delete_confirmation": {
+            "type": "boolean",
+            "title": "Requires Delete Confirmation"
+          },
+          "requires_reparent_confirmation": {
+            "type": "boolean",
+            "title": "Requires Reparent Confirmation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "preview_id",
+          "project_id",
+          "expected_revision",
+          "expires_us",
+          "warnings",
+          "source_project_id",
+          "target_project_id",
+          "changes",
+          "requires_delete_confirmation",
+          "requires_reparent_confirmation"
+        ],
+        "title": "PreviewResponse"
       },
       "inspector__topology__RevisionInput": {
         "properties": {

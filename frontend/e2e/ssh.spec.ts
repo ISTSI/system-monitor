@@ -1,7 +1,7 @@
 import { test, expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { serveBuiltAssets, setAppearance, submitSignIn, systemAction } from './ui';
+import { openPreferences, serveBuiltAssets, setAppearance, submitSignIn, systemAction } from './ui';
 import type { Config, Connection, Topology } from '../src/topology';
 import type { components } from '../src/api/schema';
 
@@ -277,10 +277,10 @@ test('Inspector cannot view or mutate SSH setup through either UI or forged requ
   const requestHeaders = await headers(page);
   expect((await page.request.post('/api/v1/auth/logout', { headers: requestHeaders, data: {} })).status()).toBe(200);
   await login(page, 'inspector');
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
-  await expect(settings.getByRole('checkbox', { name: 'Additional security measures', exact: true })).toHaveCount(0);
-  await settings.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Settings', exact: true })).toHaveCount(0);
+  const preferences = await openPreferences(page);
+  await expect(preferences.getByRole('checkbox', { name: 'Additional security measures', exact: true })).toHaveCount(0);
+  await preferences.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await openSystem(page, id);
   await page.getByRole('button', { name: 'Select server Synthetic SSH server', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Password & connection test', exact: true })).toHaveCount(0);

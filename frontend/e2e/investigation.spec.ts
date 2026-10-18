@@ -6,17 +6,18 @@ import { serveBuiltAssets, setAppearance, submitSignIn } from './ui';
 import type { components } from '../src/api/schema';
 import type { BundlePreview, Trace } from '../src/investigation';
 
-const enabled = process.env.INSPECTOR_E2E_URL === 'https://localhost:8448';
+const stage = process.env.INSPECTOR_E2E_URL === 'https://localhost:8449' ? 7 : 6;
+const enabled = process.env.INSPECTOR_E2E_URL === `https://localhost:${stage === 7 ? 8449 : 8448}`;
 const root = resolve('..');
-const fixture = enabled ? JSON.parse(readFileSync(resolve(root, '.state/stage6-browser/public-fixture.json'), 'utf8')) as { synthetic: boolean; host: string; projects: string[] } : null;
-if (enabled && (!fixture?.synthetic || fixture.host !== 'stage6-sftp' || fixture.projects.join(',') !== 'stage6-fixture-a,stage6-fixture-b')) throw new Error('Only the isolated generated Stage 06 fixture is authorized.');
-const [systemA, systemB] = fixture?.projects ?? ['stage6-fixture-a', 'stage6-fixture-b'];
+const fixture = enabled ? JSON.parse(readFileSync(resolve(root, `.state/stage${stage}-browser/public-fixture.json`), 'utf8')) as { synthetic: boolean; host: string; projects: string[] } : null;
+if (enabled && (!fixture?.synthetic || fixture.host !== `stage${stage}-sftp` || !Array.isArray(fixture.projects) || fixture.projects.join(',') !== `stage${stage}-fixture-a,stage${stage}-fixture-b`)) throw new Error(`Only the isolated generated Stage 0${stage} fixture is authorized.`);
+const [systemA, systemB] = fixture?.projects ?? [`stage${stage}-fixture-a`, `stage${stage}-fixture-b`];
 const from = '2026-10-16T12:00:00.000000Z'; const to = '2026-10-16T12:00:02.000000Z';
 const oracle = JSON.parse(readFileSync(resolve(root, 'fixtures/expected/events.json'), 'utf8')) as components['schemas']['HistoricalEvent'][];
 const expected = oracle.filter(event => event.timestamp_utc && event.timestamp_utc >= from && event.timestamp_utc < to);
 const failures = new WeakMap<BrowserContext, string[]>();
 const external = new WeakMap<BrowserContext, string[]>();
-test.skip(!enabled, 'Requires the generated Stage 06 real SFTP/MariaDB fixture at https://localhost:8448.');
+test.skip(!enabled, 'Requires the generated Stage 06 or Stage 07 real SFTP/MariaDB fixture at https://localhost:8448 or https://localhost:8449.');
 test.beforeEach(async ({ page, context, baseURL }) => {
   const found: string[] = []; failures.set(context, found); page.on('pageerror', error => found.push(error.message));
   context.on('page', current => current.on('pageerror', error => found.push(error.message)));
@@ -36,7 +37,7 @@ test.afterEach(async ({ context, page, baseURL }) => {
 });
 async function login(page: Page, role: 'administrator' | 'inspector') {
   const filename = process.env.INSPECTOR_E2E_ACCOUNTS;
-  if (!filename) throw new Error('Protected generated Stage 06 account fixture is required.');
+  if (!filename) throw new Error(`Protected generated Stage 0${stage} account fixture is required.`);
   const account = (JSON.parse(readFileSync(resolve(filename), 'utf8')) as Record<string, { username: string; password: string }>)[role];
   await page.goto('/'); await page.getByLabel('Username', { exact: true }).fill(account.username);
   try { await page.getByLabel('Password', { exact: true }).fill(account.password); if ((await submitSignIn(page)).status() !== 200) throw new Error(); }
@@ -67,7 +68,7 @@ async function correlation(page: Page, mode: 'exact' | 'literal') {
   return await response.json() as Trace;
 }
 async function screenshot(page: Page, name: string) {
-  const directory = resolve(root, 'verification/stage-6/screenshots'); mkdirSync(directory, { recursive: true });
+  const directory = resolve(root, `verification/stage-${stage}/screenshots`); mkdirSync(directory, { recursive: true });
   await page.screenshot({ path: resolve(directory, `${name}.png`), fullPage: false, animations: 'disabled' });
 }
 

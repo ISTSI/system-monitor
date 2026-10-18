@@ -60,7 +60,8 @@ body {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
 }
 :focus-visible { outline: 2px solid var(--si-focus); outline-offset: 3px; }
-.si-log mark { background: var(--si-match-background); color: var(--si-match-text); }
+::selection { background: var(--si-selection-background); color: var(--si-text); }
+.si-log mark, mark.literal-match { background: var(--si-match-background); color: var(--si-match-text); font: inherit; padding: 0; }
 .react-flow {
   --xy-edge-stroke-default: var(--si-flow);
   --xy-edge-stroke-selected-default: var(--si-selection-border);

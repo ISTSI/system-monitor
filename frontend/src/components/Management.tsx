@@ -16,9 +16,22 @@ export function PasswordDialog({ onClose, onChanged, forced = false }: { onClose
   return forced ? <section className="login-card"><p className="eyebrow">ACCOUNT SECURITY</p><h1>Change your password</h1>{contents}</section> : <Modal title="Change password" onClose={onClose}>{contents}</Modal>;
 }
 
-export function SettingsDialog({ administrator, appearance, appearanceBusy, appearanceError, onAppearanceChange, onAppearanceRetry, onClose, onSaved }: { administrator: boolean; appearance: ThemeMode; appearanceBusy: boolean; appearanceError: string; onAppearanceChange: (mode: ThemeMode) => void; onAppearanceRetry?: () => void; onClose: () => void; onSaved: (settings: Settings) => void }) {
+export function PreferencesDialog({ appearance, appearanceBusy, appearanceError, onAppearanceChange, onAppearanceRetry, onClose }: { appearance: ThemeMode; appearanceBusy: boolean; appearanceError: string; onAppearanceChange: (mode: ThemeMode) => void; onAppearanceRetry?: () => void; onClose: () => void }) {
+  return <Modal title="Preferences" onClose={onClose}>
+    <section className="settings-section" aria-label="Personal appearance">
+      <h3>Appearance</h3><p className="muted">Your appearance preference applies to every window for this account.</p>
+      {appearanceError && <ErrorNotice retry={onAppearanceRetry}>{appearanceError}</ErrorNotice>}
+      <label>Appearance<select aria-label="Appearance" value={appearance} disabled={appearanceBusy} onChange={(event) => onAppearanceChange(event.target.value as ThemeMode)}><option value="default">Application default</option><option value="light">Light · Cool Slate</option><option value="dark">Dark · Graphite Dusk</option><option value="system">System</option></select></label>
+      <p className="field-help">Choose a theme for your account, or follow the application default set by an Administrator.</p>
+      <p className="field-help" role="status">{appearanceBusy ? 'Saving appearance…' : 'Changes save automatically.'}</p>
+    </section>
+    <div className="form-actions"><button type="button" onClick={onClose}>Close</button></div>
+  </Modal>;
+}
+
+export function SettingsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: (settings: Settings) => void }) {
   const [settings, setSettings] = useState<Settings | null>(null); const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [saved, setSaved] = useState(false); const [diagnostics, setDiagnostics] = useState<Record<string, unknown> | null>(null);
-  const load = useCallback(async () => { if (!administrator) return; setError(''); try { const [current, status] = await Promise.all([request<Settings>('/admin/settings'), request<Record<string, unknown>>('/admin/database/status')]); setSettings(current); setDiagnostics(status); } catch (cause) { setError(message(cause)); } }, [administrator]);
+  const load = useCallback(async () => { setError(''); try { const [current, status] = await Promise.all([request<Settings>('/admin/settings'), request<Record<string, unknown>>('/admin/database/status')]); setSettings(current); setDiagnostics(status); } catch (cause) { setError(message(cause)); } }, []);
   useEffect(() => { void load(); }, [load]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!settings) return; const data = new FormData(event.currentTarget); setBusy(true); setError(''); setSaved(false);
@@ -26,26 +39,20 @@ export function SettingsDialog({ administrator, appearance, appearanceBusy, appe
     catch (cause) { setError(message(cause)); } finally { setBusy(false); }
   }
   return <Modal title="Settings" onClose={onClose}>
-    <section className="settings-section" aria-label="Personal appearance">
-      <h3>Appearance</h3><p className="muted">Your appearance preference applies to every window for this account.</p>
-      {appearanceError && <ErrorNotice retry={onAppearanceRetry}>{appearanceError}</ErrorNotice>}
-      <label>Appearance<select aria-label="Appearance" value={appearance} disabled={appearanceBusy} onChange={(event) => onAppearanceChange(event.target.value as ThemeMode)}><option value="default">Application default</option><option value="light">Light · Cool Slate</option><option value="dark">Dark · Graphite Dusk</option><option value="system">System</option></select></label>
-      <p className="field-help" role="status">{appearanceBusy ? 'Saving appearance…' : 'Changes save automatically.'}</p>
-    </section>
-    {administrator && <section className="settings-section" aria-label="Shared application settings">
+    <section className="settings-section" aria-label="Shared application settings">
       <h3>Application settings</h3><p className="muted">Administrator changes apply to the deployment. Explicit personal appearance choices stay unchanged.</p>
       {error && <ErrorNotice retry={() => { void load(); }}>{error}</ErrorNotice>}
       {saved && <p className="notice success" role="status">Application settings saved.</p>}
       {settings ? <form onSubmit={(event) => { void submit(event); }}>
         <label>Product name<input name="branding" required maxLength={128} defaultValue={settings.branding} /></label>
         <label>Application default appearance<select name="default_theme_mode" defaultValue={settings.default_theme_mode}><option value="dark">Dark · Graphite Dusk</option><option value="light">Light · Cool Slate</option><option value="system">Follow browser system preference</option></select></label>
-        <p className="field-help">People using “Application default” follow this choice.</p>
+        <p className="field-help">This theme is used on the signed-out screen and for new accounts. People using “Application default” also follow this choice. Change your own theme in Preferences under your user menu.</p>
         <label className="checkbox-label"><input type="checkbox" name="additional_security_measures" checked={settings.additional_security_measures} onChange={event => { const checked = event.target.checked; setSettings(current => current ? { ...current, additional_security_measures: checked } : current); setSaved(false); }} aria-describedby="additional-security-help" disabled={busy} />Additional security measures</label>
         <p id="additional-security-help" className="field-help">Require Administrator confirmation of the target and log roots after configuration changes, including paths and parsers. When unchecked, saved changes apply automatically. SSH host keys always require explicit verification.</p>
         <div className="read-only-settings"><h3>Database · server managed</h3><p>The database endpoint and secret files are set in deployment configuration. Changing them requires an operator-managed restart.</p>{diagnostics && <dl>{Object.entries(diagnostics).filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value)).map(([key, value]) => <div key={key}><dt>{key.replaceAll('_', ' ')}</dt><dd>{String(value)}</dd></div>)}</dl>}</div>
         <div className="form-actions"><span className="muted">Revision {settings.revision}</span><button className="primary" disabled={busy}>{busy ? 'Saving…' : 'Save application settings'}</button></div>
       </form> : !error && <p role="status">Loading application settings…</p>}
-    </section>}
+    </section>
     <div className="form-actions"><button type="button" onClick={onClose}>Close</button></div>
   </Modal>;
 }

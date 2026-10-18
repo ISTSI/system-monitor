@@ -93,3 +93,17 @@ unchanged. The existing 8444/8445 services are not recreated by Stage 05 tests.
 The synthetic browser fixture uses 8447 and grants Chromium's local-network
 permission only for that test origin; this is test setup, not an application or
 SSH trust exception. Actual results are in STATUS.md and verification/stage-5.
+
+Stage 07 retains the existing dependency locks and toolchain versions. Browser
+literal highlighting bundles a generated casefold table from the locked Python
+3.13.16 runtime's Unicode 15.1.0 database; a full-table parity test prevents drift
+from backend matching. Original Python and Unicode notices are included in
+`frontend/public/licenses/` and the built assets. No new dependency or font is
+introduced. `scripts/generate_casefold.py --check` reproduces the data offline.
+
+The separate `system-inspector-runner:stage7` image and 8449 synthetic fixture
+leave the retained runner tags and installations intact. Stage 07 builds to
+`.state/stage7-build/`; an artifact verifier compares frozen inputs, packaged
+backend modules/migrations, frontend assets and wheel contents. This avoids
+changing the frontend directories mounted by retained local services. These are
+local verification artifacts, not Stage 08 offline release qualification.

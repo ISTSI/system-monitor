@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { message } from '../api/client';
 import { ancestors, defaultGeometry, entityList, newId, type Config, type Connection, type EditEntity, type EntityKind, type Flow, type Parser, type Process, type Server, type View } from '../topology';
 import { ErrorNotice, Modal } from './Common';
+import ParserTestPanel from './ParserTestPanel';
 
 type Props = { kind: EntityKind; item?: EditEntity; config: Config; currentView?: View; defaults?: Partial<Flow>; onClose: () => void; onSave: (kind: EntityKind, item: EditEntity, connection?: Connection) => Promise<void> };
 const rootChangeHelp = 'Keep the current roots and add the new root on another line, save, then update the affected processes before removing an old root.';
@@ -25,6 +26,8 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
   const [id] = useState(() => item?.id ?? newId(kind));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+  const [parserDraftVersion, setParserDraftVersion] = useState(0);
   const process = kind === 'process' ? item as Process | undefined : undefined;
   const server = kind === 'server' ? item as Server | undefined : undefined;
   const connection = kind === 'connection' ? item as Connection | undefined : undefined;
@@ -40,6 +43,10 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
   const entities = [...config.subsystems, ...config.servers, ...config.processes];
   const text = (data: FormData, name: string) => String(data.get(name) ?? '').trim();
   const list = (data: FormData, name: string) => text(data, name).split('\n').map(value => value.trim()).filter(Boolean);
+
+  function parserDraft(data: FormData): Parser {
+    return { id: text(data, 'id') || id, name: text(data, 'name') || 'Parser preview', timestamp: timestampKind === 'iso8601_prefix' ? { kind: 'iso8601_prefix', naive_timezone: 'UTC' } : { kind: 'fixed_width', width: Number(data.get('width')), format: text(data, 'format'), naive_timezone: 'UTC' }, correlation_markers: JSON.parse(text(data, 'correlation_markers') || '[]') as Parser['correlation_markers'] };
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); setError('');
@@ -61,7 +68,7 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
           if (excluded.length) throw new Error(`These log roots exclude ${excluded.length} configured log ${excluded.length === 1 ? 'path' : 'paths'}. ${rootChangeHelp}`);
           value = { ...base, ...fields }; break;
         }
-        case 'parser': value = { ...base, timestamp: timestampKind === 'iso8601_prefix' ? { kind: 'iso8601_prefix', naive_timezone: 'UTC' } : { kind: 'fixed_width', width: Number(data.get('width')), format: text(data, 'format'), naive_timezone: 'UTC' }, correlation_markers: JSON.parse(text(data, 'correlation_markers') || '[]') as Parser['correlation_markers'] }; break;
+        case 'parser': value = { ...parserDraft(data), ...base }; break;
         case 'flow': value = { ...base, source_process_id: text(data, 'source_process_id'), target_process_id: text(data, 'target_process_id'), protocol: text(data, 'protocol'), description: String(data.get('description') ?? '') }; break;
         case 'view': {
           const include = new Set(visibleIds.flatMap(elementId => [...ancestors(config, elementId), elementId]));
@@ -74,7 +81,7 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
     } catch (cause) { setError(cause instanceof SyntaxError ? 'Enter valid JSON in the advanced fields. No changes were saved.' : message(cause)); } finally { setBusy(false); }
   }
 
-  return <Modal title={`${item ? 'Edit' : 'Add'} ${kind}`} onClose={onClose}><p className="target-system">Target system: <strong>{config.project.name}</strong><code>{config.project.id}</code></p>{error && <ErrorNotice>{error}</ErrorNotice>}<form onSubmit={event => { void submit(event); }}>
+  return <Modal title={`${item ? 'Edit' : 'Add'} ${kind}`} onClose={onClose}><p className="target-system">Target system: <strong>{config.project.name}</strong><code>{config.project.id}</code></p>{error && <ErrorNotice>{error}</ErrorNotice>}<form ref={formRef} onChange={event => { if (kind === 'parser' && !event.target.closest('.parser-test')) setParserDraftVersion(value => value + 1); }} onSubmit={event => { void submit(event); }}>
     <div className="form-grid"><label>Name<input name="name" defaultValue={item?.name ?? ''} maxLength={256} required autoFocus /></label><label>Stable ID<input name="id" defaultValue={id} readOnly={!!item} pattern="[A-Za-z0-9][A-Za-z0-9_.:\-]{0,127}" required maxLength={128} /></label></div>
     {!item && <p className="field-help">The ID is permanent. Renaming an element preserves its relationships.</p>}
     {['subsystem', 'server', 'process'].includes(kind) && <><label>Documentation (Markdown)<textarea name="description" rows={5} defaultValue={item && 'description' in item ? item.description : ''} /></label><label>Tags (comma separated)<input name="tags" defaultValue={item && 'tags' in item ? item.tags.join(', ') : ''} /></label></>}
@@ -95,6 +102,7 @@ export default function TopologyEditor({ kind, item, config, currentView, defaul
       {timestampKind === 'fixed_width' && <div className="form-grid"><label>Timestamp width<input type="number" name="width" defaultValue={parser?.timestamp.kind === 'fixed_width' ? parser.timestamp.width : 23} min={1} max={64} required /></label><label>Timestamp format<input name="format" defaultValue={parser?.timestamp.kind === 'fixed_width' ? parser.timestamp.format : '%Y-%m-%d %H:%M:%S,%f'} required /></label></div>}
       <label>Correlation markers (JSON)<textarea name="correlation_markers" className="config-text" defaultValue={JSON.stringify(parser?.correlation_markers ?? [], null, 2)} rows={5} /></label><p className="field-help">Example: [{'{'}"key":"request_id","prefix":"request_id=","terminators":" "{'}'}]</p>
     </>}
+    {kind === 'parser' && <ParserTestPanel config={config} draftVersion={parserDraftVersion} getParser={() => parserDraft(new FormData(formRef.current!))} />}
     {kind === 'flow' && <>
       <div className="form-grid"><label>Source process<select name="source_process_id" defaultValue={flow?.source_process_id} required>{config.processes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Target process<select name="target_process_id" defaultValue={flow?.target_process_id ?? config.processes[1]?.id} required>{config.processes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div>
       <label>Protocol<input name="protocol" defaultValue={flow?.protocol ?? ''} /></label><label>Documentation (Markdown)<textarea name="description" rows={4} defaultValue={flow?.description ?? ''} /></label><p className="field-help">This describes a possible transfer; it does not establish observed causality.</p>

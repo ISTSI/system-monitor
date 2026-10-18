@@ -27,9 +27,11 @@ from inspector import auth, foundation, services
 from inspector.accounts import build_account_router
 from inspector.config import Config, load_config
 from inspector.database import create_engine, local_state_lock, supervisor_guard
+from inspector.diagnostics import build_diagnostics_router
 from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
 from inspector.history import NONTERMINAL, HistoryManager, build_history_router
+from inspector.inventory import InventoryStaging, build_inventory_router
 from inspector.investigation_bundles import build_bundle_router
 from inspector.investigations import build_investigation_router
 from inspector.live import LiveManager, build_live_router
@@ -233,9 +235,12 @@ def create_app(config: Config | None = None) -> FastAPI:
                         app.state.source_access,
                         app.state.history,
                     )
+                    app.state.inventory = InventoryStaging(config.state_dir, app.state.sessions)
+                    await app.state.inventory.start()
                     try:
                         yield
                     finally:
+                        await app.state.inventory.close()
                         await app.state.live.close()
                         await app.state.history.close()
         finally:
@@ -346,13 +351,20 @@ def create_app(config: Config | None = None) -> FastAPI:
                 if history_query or live_filter
                 else 16384
             )
-            bundle_upload = request.method == "POST" and bool(
+            streamed_upload = request.method == "POST" and bool(
                 re.fullmatch(
-                    r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/bundles/import/preview",
+                    r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/(?:bundles/import/preview|inventory/uploads)",
                     request.url.path,
                 )
             )
-            if not bundle_upload:
+            if "/inventory/" in request.url.path:
+                maximum_body = config.config_upload_bytes
+            if re.fullmatch(
+                r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/parsers/test",
+                request.url.path,
+            ):
+                maximum_body = 6 * 65_536 + 16_384
+            if not streamed_upload:
                 chunks, size = [], 0
                 async for chunk in request.stream():
                     size += len(chunk)
@@ -712,6 +724,8 @@ def create_app(config: Config | None = None) -> FastAPI:
 
     app.include_router(build_account_router(transaction, authenticated, protected_write))
     app.include_router(build_topology_router(transaction, authenticated, protected_write))
+    app.include_router(build_inventory_router(transaction, authenticated, protected_write))
+    app.include_router(build_diagnostics_router(transaction, authenticated, protected_write))
     app.include_router(build_history_router(transaction, authenticated, protected_write))
     app.include_router(build_investigation_router(transaction, authenticated, protected_write))
     app.include_router(build_bundle_router(transaction, authenticated, protected_write))

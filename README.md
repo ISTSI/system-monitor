@@ -1,13 +1,19 @@
 # System Inspector — Codex implementation package
 
-The application includes the real backend, MariaDB migrations, local accounts, persistent appearance, independent system workspaces and the Stage 02 topology/configuration implementation. Administrators edit nested diagrams, documentation, flows and named views, with revision checks, undo/redo and explicit configuration import previews. Inspectors navigate a safe read-only projection. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Stage 03 adds the historical parser, safe archives, MariaDB event index and virtualised query/context viewer. Stage 04 adds encrypted passwords, explicit host-key and source/root approval, configured path checks, and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds supervised live SFTP capture, scoped WebSockets, independent per-page controls, retained literal refiltering, split/merged panes and explicit recording. Stage 06 adds saved personal analysis, exact correlation traces, annotations, pinned context and previewed sanitized offline bundle exchange. Ansible inventory reconciliation and release hardening remain later work. The original package description below is retained as the handoff baseline.
+The application includes the real backend, MariaDB migrations, local accounts, persistent appearance, independent system workspaces and the Stage 02 topology/configuration implementation. Administrators edit nested diagrams, documentation, flows and named views, with revision checks, undo/redo and explicit configuration import previews. Inspectors navigate a safe read-only projection. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Stage 03 adds the historical parser, safe archives, MariaDB event index and virtualised query/context viewer. Stage 04 adds encrypted passwords, explicit host-key and source/root approval, configured path checks, and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds supervised live SFTP capture, scoped WebSockets, independent per-page controls, retained literal refiltering, split/merged panes and explicit recording. Stage 06 adds saved personal analysis, exact correlation traces, annotations, pinned context and previewed sanitized offline bundle exchange. Stage 07 adds the safe static Ansible file/ZIP setup wizard, system-scoped preview/reconciliation and parser draft diagnostics. Its verification is recorded in the status document; release qualification remains Stage 08. The original package description below is retained as the handoff baseline.
 
-Stage 06 is installed locally at **https://localhost:8445**, with schema
-`0012_offline_analysis`. The separately authorized, backed-up upgrade preserved
-existing accounts, systems, security settings and cached investigations. Private
-saved analysis, exact correlation traces, annotations, context pins and previewed
-offline bundle exchange are available there. See the dated deployment entry in
-[STATUS.md](progress/STATUS.md).
+Stage 07 is installed locally at **https://localhost:8445**, with schema
+`0013_inventory`, following the separate deployment authorization on 18 October
+2026. The backed-up upgrade preserved existing accounts, systems, security
+settings and cached investigations. Inventory import/reimport and parser-draft
+diagnostics are available alongside the Stage 06 investigation tools. See the
+dated deployment entry in [STATUS.md](progress/STATUS.md). This local upgrade
+does not complete Stage 08 offline-release qualification.
+
+The separately authorized Preferences/Settings follow-up is also installed on
+8445. Personal appearance is under the logged-in user menu → Preferences;
+Settings is Administrator-only. Its read-only frontend overlay preserves the
+original backend, database schema and previous assets for rollback.
 
 **Package version 3.0 · 17 October 2026**
 
@@ -46,6 +52,10 @@ Original functionality remains: subsystem → physical server → process diagra
 ## Themes, roles and database remain unchanged in purpose
 
 The two original references remain byte-for-byte unchanged: [Light — Cool Slate](assets/themes/light-cool-slate.png) and [Dark — Graphite Dusk](assets/themes/dark-graphite-dusk.png), with shared [tokens](assets/themes/tokens.json) and [CSS](assets/themes/tokens.css). Theme changes cannot reset live sessions. Working branding is configurable System Inspector, English UI; mockup green badges are not health telemetry.
+
+Both roles change their own theme through the logged-in user menu → Preferences.
+Administrator-only Settings contains the shared default for new accounts, the
+signed-out screen and accounts following Application default.
 
 Administrators manage all shared system definitions/settings, users, credentials/trust and inventory imports. Inspectors select systems and inspect approved topology/logs but cannot change shared configuration. Both roles keep their own investigations, notes/bookmarks and appearance. These remain global roles across systems, not new per-system ACLs or a multi-tenant isolation claim. Private ownership still applies. [Full role rules](docs/13_ROLES_AND_AUTHORIZATION.md).
 
