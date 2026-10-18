@@ -1,0 +1,788 @@
+{
+  "$defs": {
+    "BundleBookmark": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "title": "Id",
+          "type": "string"
+        },
+        "event_id": {
+          "maxLength": 128,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "annotation": {
+          "maxLength": 10000,
+          "title": "Annotation",
+          "type": "string"
+        },
+        "pin_context": {
+          "title": "Pin Context",
+          "type": "boolean"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HistoricalContextResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "process_name_snapshot": {
+          "maxLength": 512,
+          "title": "Process Name Snapshot",
+          "type": "string"
+        },
+        "server_name_snapshot": {
+          "maxLength": 512,
+          "title": "Server Name Snapshot",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "event_id",
+        "annotation",
+        "pin_context",
+        "context",
+        "process_name_snapshot",
+        "server_name_snapshot",
+        "created_at"
+      ],
+      "title": "BundleBookmark",
+      "type": "object"
+    },
+    "BundleOrigin": {
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "maxLength": 128,
+          "title": "Project Id",
+          "type": "string"
+        },
+        "investigation_id": {
+          "maxLength": 128,
+          "title": "Investigation Id",
+          "type": "string"
+        },
+        "config_revision": {
+          "minimum": 1,
+          "title": "Config Revision",
+          "type": "integer"
+        },
+        "snapshot_revision": {
+          "minimum": 0,
+          "title": "Snapshot Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "project_id",
+        "investigation_id",
+        "config_revision",
+        "snapshot_revision"
+      ],
+      "title": "BundleOrigin",
+      "type": "object"
+    },
+    "BundleSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "maxLength": 512,
+          "title": "Title",
+          "type": "string"
+        },
+        "process_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 200,
+          "minItems": 1,
+          "title": "Process Ids",
+          "type": "array"
+        },
+        "from": {
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "title": "To",
+          "type": "string"
+        },
+        "filter": {
+          "$ref": "#/$defs/HistoricalFilter"
+        },
+        "per_process_filters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/HistoricalFilter"
+          },
+          "maxProperties": 200,
+          "title": "Per Process Filters",
+          "type": "object"
+        },
+        "layout": {
+          "default": "merged",
+          "enum": [
+            "merged",
+            "split"
+          ],
+          "title": "Layout",
+          "type": "string"
+        },
+        "notes": {
+          "default": "",
+          "maxLength": 10000,
+          "title": "Notes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "process_ids",
+        "from",
+        "to"
+      ],
+      "title": "BundleSelection",
+      "type": "object"
+    },
+    "HistoricalContextItem": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "$ref": "#/$defs/HistoricalEvent"
+        },
+        "outside_time_bounds": {
+          "title": "Outside Time Bounds",
+          "type": "boolean"
+        },
+        "matches_filter": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Matches Filter"
+        },
+        "is_anchor": {
+          "title": "Is Anchor",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "event",
+        "outside_time_bounds",
+        "matches_filter",
+        "is_anchor"
+      ],
+      "title": "HistoricalContextItem",
+      "type": "object"
+    },
+    "HistoricalContextResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "event_id": {
+          "title": "Event Id",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/HistoricalContextItem"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "project_id",
+        "event_id",
+        "items"
+      ],
+      "title": "HistoricalContextResponse",
+      "type": "object"
+    },
+    "HistoricalCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "source_revision_id": {
+          "title": "Source Revision Id",
+          "type": "string"
+        },
+        "process_id": {
+          "title": "Process Id",
+          "type": "string"
+        },
+        "remote_path": {
+          "title": "Remote Path",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "events": {
+          "title": "Events",
+          "type": "integer"
+        },
+        "bytes": {
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "expanded_bytes": {
+          "title": "Expanded Bytes",
+          "type": "integer"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error Code"
+        },
+        "checksum": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Checksum"
+        },
+        "byte_start": {
+          "title": "Byte Start",
+          "type": "integer"
+        },
+        "byte_end": {
+          "title": "Byte End",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_revision_id",
+        "process_id",
+        "remote_path",
+        "status",
+        "events",
+        "bytes",
+        "expanded_bytes",
+        "error_code",
+        "checksum",
+        "byte_start",
+        "byte_end"
+      ],
+      "title": "HistoricalCoverage",
+      "type": "object"
+    },
+    "HistoricalEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "event_id": {
+          "title": "Event Id",
+          "type": "string"
+        },
+        "process_id": {
+          "title": "Process Id",
+          "type": "string"
+        },
+        "server_id": {
+          "title": "Server Id",
+          "type": "string"
+        },
+        "process_name_snapshot": {
+          "title": "Process Name Snapshot",
+          "type": "string"
+        },
+        "server_name_snapshot": {
+          "title": "Server Name Snapshot",
+          "type": "string"
+        },
+        "raw_line": {
+          "title": "Raw Line",
+          "type": "string"
+        },
+        "timestamp_original": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Timestamp Original"
+        },
+        "timestamp_utc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Timestamp Utc"
+        },
+        "timestamp_us": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Timestamp Us"
+        },
+        "received_at": {
+          "title": "Received At",
+          "type": "string"
+        },
+        "parse_status": {
+          "title": "Parse Status",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Metadata",
+          "type": "object"
+        },
+        "source": {
+          "$ref": "#/$defs/HistoricalSourceProvenance"
+        }
+      },
+      "required": [
+        "schema_version",
+        "project_id",
+        "event_id",
+        "process_id",
+        "server_id",
+        "process_name_snapshot",
+        "server_name_snapshot",
+        "raw_line",
+        "timestamp_original",
+        "timestamp_utc",
+        "timestamp_us",
+        "received_at",
+        "parse_status",
+        "metadata",
+        "source"
+      ],
+      "title": "HistoricalEvent",
+      "type": "object"
+    },
+    "HistoricalFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "include": {
+          "items": {
+            "maxLength": 512,
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Include",
+          "type": "array"
+        },
+        "include_mode": {
+          "default": "any",
+          "enum": [
+            "any",
+            "all"
+          ],
+          "title": "Include Mode",
+          "type": "string"
+        },
+        "exclude": {
+          "items": {
+            "maxLength": 512,
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Exclude",
+          "type": "array"
+        },
+        "case_sensitive": {
+          "default": true,
+          "title": "Case Sensitive",
+          "type": "boolean"
+        }
+      },
+      "title": "HistoricalFilter",
+      "type": "object"
+    },
+    "HistoricalSourceProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "source_revision_id": {
+          "title": "Source Revision Id",
+          "type": "string"
+        },
+        "remote_path": {
+          "title": "Remote Path",
+          "type": "string"
+        },
+        "archive_member": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Archive Member"
+        },
+        "member_ordinal": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Member Ordinal"
+        },
+        "byte_start": {
+          "title": "Byte Start",
+          "type": "integer"
+        },
+        "byte_end": {
+          "title": "Byte End",
+          "type": "integer"
+        },
+        "line_number": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Line Number"
+        },
+        "content_sha256": {
+          "title": "Content Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_revision_id",
+        "remote_path",
+        "archive_member",
+        "member_ordinal",
+        "byte_start",
+        "byte_end",
+        "line_number",
+        "content_sha256"
+      ],
+      "title": "HistoricalSourceProvenance",
+      "type": "object"
+    },
+    "Redaction": {
+      "additionalProperties": false,
+      "properties": {
+        "applied": {
+          "title": "Applied",
+          "type": "boolean"
+        },
+        "term_count": {
+          "maximum": 20,
+          "minimum": 0,
+          "title": "Term Count",
+          "type": "integer"
+        },
+        "replacement": {
+          "maxLength": 128,
+          "title": "Replacement",
+          "type": "string"
+        },
+        "warning": {
+          "title": "Warning",
+          "type": "string"
+        }
+      },
+      "required": [
+        "applied",
+        "term_count",
+        "replacement",
+        "warning"
+      ],
+      "title": "Redaction",
+      "type": "object"
+    },
+    "SnapshotFlow": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "title": "Id",
+          "type": "string"
+        },
+        "source_process_id": {
+          "maxLength": 128,
+          "title": "Source Process Id",
+          "type": "string"
+        },
+        "target_process_id": {
+          "maxLength": 128,
+          "title": "Target Process Id",
+          "type": "string"
+        },
+        "label": {
+          "default": "",
+          "maxLength": 512,
+          "title": "Label",
+          "type": "string"
+        },
+        "protocol": {
+          "default": "",
+          "maxLength": 512,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 100000,
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "source_process_id",
+        "target_process_id"
+      ],
+      "title": "SnapshotFlow",
+      "type": "object"
+    },
+    "SnapshotNode": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 512,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 100000,
+          "title": "Description",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 200,
+          "title": "Tags",
+          "type": "array"
+        },
+        "subsystem_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subsystem Id"
+        },
+        "server_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Server Id"
+        },
+        "pcs_resource_name": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pcs Resource Name"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "SnapshotNode",
+      "type": "object"
+    },
+    "TopologySnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "$ref": "#/$defs/SnapshotNode"
+        },
+        "subsystems": {
+          "items": {
+            "$ref": "#/$defs/SnapshotNode"
+          },
+          "maxItems": 5000,
+          "title": "Subsystems",
+          "type": "array"
+        },
+        "servers": {
+          "items": {
+            "$ref": "#/$defs/SnapshotNode"
+          },
+          "maxItems": 5000,
+          "title": "Servers",
+          "type": "array"
+        },
+        "processes": {
+          "items": {
+            "$ref": "#/$defs/SnapshotNode"
+          },
+          "maxItems": 200,
+          "title": "Processes",
+          "type": "array"
+        },
+        "flows": {
+          "items": {
+            "$ref": "#/$defs/SnapshotFlow"
+          },
+          "maxItems": 10000,
+          "title": "Flows",
+          "type": "array"
+        }
+      },
+      "required": [
+        "project",
+        "subsystems",
+        "servers",
+        "processes",
+        "flows"
+      ],
+      "title": "TopologySnapshot",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "origin": {
+      "$ref": "#/$defs/BundleOrigin"
+    },
+    "selection": {
+      "$ref": "#/$defs/BundleSelection"
+    },
+    "topology": {
+      "$ref": "#/$defs/TopologySnapshot"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/HistoricalCoverage"
+      },
+      "maxItems": 10000,
+      "title": "Sources",
+      "type": "array"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/HistoricalEvent"
+      },
+      "maxItems": 1000000,
+      "title": "Events",
+      "type": "array"
+    },
+    "bookmarks": {
+      "items": {
+        "$ref": "#/$defs/BundleBookmark"
+      },
+      "maxItems": 10000,
+      "title": "Bookmarks",
+      "type": "array"
+    },
+    "coverage_status": {
+      "maxLength": 64,
+      "title": "Coverage Status",
+      "type": "string"
+    },
+    "errors": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Errors",
+      "type": "array"
+    },
+    "redaction": {
+      "$ref": "#/$defs/Redaction"
+    }
+  },
+  "required": [
+    "schema_version",
+    "origin",
+    "selection",
+    "topology",
+    "sources",
+    "events",
+    "bookmarks",
+    "coverage_status",
+    "errors",
+    "redaction"
+  ],
+  "title": "BundleDocument",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://system-inspector.invalid/contracts/investigation-bundle.schema.json"
+}

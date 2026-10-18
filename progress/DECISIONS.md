@@ -131,3 +131,32 @@ Version 3 fixed requirements: multiple named systems per deployment; same-accoun
 - Maintenance actions must take the monitor's control lock and recheck current
   state before applying an earlier scan's intent. An explicit Stop or workspace
   transfer must not be overwritten by a stale maintenance result.
+
+
+## 18 October 2026 - Stage 06 investigation storage and exchange
+
+- Retain historical job/investigation and source/event identities. Saved analysis
+  uses a separate owner/project-scoped row with one optimistic revision shared
+  by workspace/bookmark edits; no display name or graph position becomes a key.
+- Whole-investigation pins preserve source cache. Bookmark pins preserve bounded
+  independent text/provenance context snapshots. Explicit unpinned expiry keeps
+  notes and pinned context, nulls live anchor FKs before removing index rows, and
+  reports unavailable data independently of empty matches.
+- Exchange exactly two versioned ZIP members: a manifest and typed investigation
+  document. Stream validated regular members without extraction, validate actual
+  lengths/SHA-256/version/identities, and require an owner/project/login-bound
+  preview before import or download. All-string literal redaction includes keys,
+  labels, filenames, notes, context and topology. Active connection/trust/secret
+  fields are excluded through typed projections regardless of redaction rules.
+- Imported documents are independent private offline data. Foreign IDs are origin
+  provenance, never destination active-entity FKs. A separately revisioned
+  OfflineAnalysis row allows notes/bookmarks/filter/layout edits and re-export
+  while the original imported event document remains unchanged.
+- Keep archive CPU/file work in the existing bounded executor, bound upload
+  admission separately, and release DB/authentication locks before receiving a
+  file or waiting on a worker. Reauthenticate the actual login before protected
+  commit/dispatch; current User state alone cannot detect logout during a wait.
+- Keep exact correlation equality in the scoped MariaDB query and quote metadata
+  keys with the same ASCII escaping as SQLAlchemy's persisted JSON. Real MariaDB
+  tests verify punctuation/quotes/Unicode and distinguish literal escape text.
+  Literal matching retains the shared Unicode-casefold engine contract.

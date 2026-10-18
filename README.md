@@ -1,11 +1,13 @@
 # System Inspector — Codex implementation package
 
-The application includes the real backend, MariaDB migrations, local accounts, persistent appearance, independent system workspaces and the Stage 02 topology/configuration implementation. Administrators edit nested diagrams, documentation, flows and named views, with revision checks, undo/redo and explicit configuration import previews. Inspectors navigate a safe read-only projection. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Stage 03 adds the historical parser, safe archives, MariaDB event index and virtualised query/context viewer. Stage 04 adds encrypted passwords, explicit host-key and source/root approval, configured path checks, and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds supervised live SFTP capture, scoped WebSockets, independent per-page controls, retained literal refiltering, split/merged panes and explicit recording. Full investigation tools, Ansible inventory reconciliation and release hardening remain later work. The original package description below is retained as the handoff baseline.
+The application includes the real backend, MariaDB migrations, local accounts, persistent appearance, independent system workspaces and the Stage 02 topology/configuration implementation. Administrators edit nested diagrams, documentation, flows and named views, with revision checks, undo/redo and explicit configuration import previews. Inspectors navigate a safe read-only projection. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Stage 03 adds the historical parser, safe archives, MariaDB event index and virtualised query/context viewer. Stage 04 adds encrypted passwords, explicit host-key and source/root approval, configured path checks, and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds supervised live SFTP capture, scoped WebSockets, independent per-page controls, retained literal refiltering, split/merged panes and explicit recording. Stage 06 adds saved personal analysis, exact correlation traces, annotations, pinned context and previewed sanitized offline bundle exchange. Ansible inventory reconciliation and release hardening remain later work. The original package description below is retained as the handoff baseline.
 
-Stage 05 is installed locally at **https://localhost:8445**, with schema
-`0009_live`. The backed-up upgrade preserved existing accounts, systems,
-security settings and cached investigations. See the dated deployment entry in
-[STATUS.md](progress/STATUS.md). Stage 06 has not started.
+Stage 06 is installed locally at **https://localhost:8445**, with schema
+`0012_offline_analysis`. The separately authorized, backed-up upgrade preserved
+existing accounts, systems, security settings and cached investigations. Private
+saved analysis, exact correlation traces, annotations, context pins and previewed
+offline bundle exchange are available there. See the dated deployment entry in
+[STATUS.md](progress/STATUS.md).
 
 **Package version 3.0 · 17 October 2026**
 

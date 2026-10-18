@@ -104,6 +104,12 @@ class HistoricalScopeInput(StrictInput):
         return self
 
 
+class HistoricalCorrelation(StrictInput):
+    mode: Literal["exact", "literal"]
+    field: str = Field(default="request_id", min_length=1, max_length=64)
+    value: str = Field(min_length=1, max_length=512)
+
+
 class HistoricalQueryInput(StrictInput):
     process_ids: list[Annotated[str, Field(pattern=ID_PATTERN)]] = Field(
         min_length=1, max_length=200
@@ -115,6 +121,7 @@ class HistoricalQueryInput(StrictInput):
     limit: int = Field(default=200, ge=1, le=1000)
     cursor: str | None = Field(default=None, max_length=128)
     lane: Literal["events", "diagnostic"] = "events"
+    correlation: HistoricalCorrelation | None = None
 
     @model_validator(mode="after")
     def valid_interval(self) -> "HistoricalQueryInput":
@@ -134,6 +141,12 @@ class HistoricalContextInput(StrictInput):
     to: str = Field(pattern=UTC_PATTERN)
     filter: HistoricalFilter = Field(default_factory=HistoricalFilter)
     per_process_filters: dict[str, HistoricalFilter] = Field(default_factory=dict, max_length=200)
+
+    @model_validator(mode="after")
+    def valid_interval(self) -> "HistoricalContextInput":
+        if canonical_time(self.from_) >= canonical_time(self.to):
+            raise ValueError("The exclusive end must follow the inclusive start.")
+        return self
 
 
 class HistoricalSourceProvenance(StrictInput):
@@ -235,6 +248,7 @@ class HistoricalQueryResponse(StrictInput):
     source_snapshot_revision: int
     partial: bool
     coverage: list[HistoricalCoverage]
+    availability: Literal["retained", "partial", "unavailable"] = "retained"
 
 
 class HistoricalContextItem(StrictInput):
@@ -277,7 +291,13 @@ def not_found() -> DomainError:
 
 
 async def checked_job(
-    session: AsyncSession, actor: Principal, project_id: str, job_id: str, *, lock: bool = False
+    session: AsyncSession,
+    actor: Principal,
+    project_id: str,
+    job_id: str,
+    *,
+    lock: bool = False,
+    action: str = "investigation.read",
 ) -> HistoryJob:
     actor = await services.current_actor(session, actor)
     ProjectContext(project_id, actor.user_id)
@@ -291,7 +311,7 @@ async def checked_job(
     job = await session.scalar(query)
     if job is None:
         raise not_found()
-    authorize(actor, "investigation.read", owner_user_id=job.owner_user_id)
+    authorize(actor, action, owner_user_id=job.owner_user_id)
     return job
 
 
@@ -322,9 +342,9 @@ async def job_response(session: AsyncSession, job: HistoryJob) -> dict:
         expanded_bytes=job.expanded_bytes,
         coverage_status=(
             "complete_for_scanned_candidates"
-            if job.status == "completed"
+            if job.status == "completed" and all(s.status == "completed" for s in sources)
             else "partial"
-            if job.event_count
+            if job.event_count and any(s.status in {"completed", "partial"} for s in sources)
             else "unavailable"
             if job.status in TERMINAL
             else "unknown_candidate_coverage"
@@ -847,11 +867,27 @@ async def historical_query(
                 HistoryEvent.timestamp_us < canonical_time(payload.to),
             ]
         )
+    if payload.correlation is not None and payload.correlation.mode == "exact":
+        # MariaDB matches escaped JSON object-key representations. Quote with
+        # the same ASCII escaping as SQLAlchemy's persisted JSON serializer.
+        conditions.append(
+            func.binary(
+                func.json_unquote(
+                    func.json_extract(
+                        HistoryEvent.payload,
+                        "$.metadata." + json.dumps(payload.correlation.field, ensure_ascii=True),
+                    )
+                )
+            )
+            == payload.correlation.value.encode("utf-8")
+        )
     predicate = payload.filter.predicate()
     per_process = {p: f.predicate() for p, f in payload.per_process_filters.items()}
     no_filter = not any(payload.filter.include + payload.filter.exclude) and not any(
         any(f.include + f.exclude) for f in payload.per_process_filters.values()
     )
+    if payload.correlation is not None and payload.correlation.mode == "literal":
+        no_filter = False
     ids: list[str] = []
     last = None
     matched = 0
@@ -929,6 +965,9 @@ async def historical_query(
             canonical_time(payload.from_),
             canonical_time(payload.to),
             payload.lane,
+            (payload.correlation.mode, payload.correlation.field, payload.correlation.value)
+            if payload.correlation
+            else None,
         )
         async with asyncio.timeout(120):
             async for batch in candidate_batches(
@@ -949,6 +988,16 @@ async def historical_query(
                         )
                     ):
                         continue
+                    if (
+                        not oversized
+                        and payload.correlation is not None
+                        and payload.correlation.mode == "literal"
+                    ):
+                        text, term = cached_row[6], payload.correlation.value
+                        if not payload.filter.case_sensitive:
+                            text, term = text.casefold(), term.casefold()
+                        if term not in text:
+                            continue
                     matched += 1
                     key = list(cached_row[:6])
                     if after_key is None or key > after_key:
@@ -1016,11 +1065,21 @@ async def historical_query(
         project_id=project_id,
         items=items,
         next_cursor=next_cursor,
-        matched_count=matched if captured_status in TERMINAL and not unknown_filter else None,
+        matched_count=matched
+        if captured_status in TERMINAL
+        and not unknown_filter
+        and response["coverage_status"] != "unavailable"
+        else None,
         parse_issue_count=issues,
         source_snapshot_revision=snapshot,
-        partial=captured_status != "completed" or snapshot != captured_revision,
+        partial=response["coverage_status"] != "complete_for_scanned_candidates"
+        or snapshot != captured_revision,
         coverage=response["coverage"],
+        availability="unavailable"
+        if response["coverage_status"] == "unavailable"
+        else "retained"
+        if response["coverage_status"] == "complete_for_scanned_candidates"
+        else "partial",
     )
 
 
@@ -1130,6 +1189,7 @@ class HistoryManager:
         workers = min(2, config.history_limits.get("concurrent_archive_tasks", 2))
         self.executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="history")
         self.slots = asyncio.Semaphore(workers)
+        self.bundle_upload_slots = asyncio.Semaphore(workers)
         self.tasks: dict[tuple[str, str], asyncio.Task] = {}
         self.tokens: dict[tuple[str, str], Any] = {}
         self.resource_locks: dict[tuple[str, str], tuple[asyncio.Lock, int]] = {}
@@ -1175,6 +1235,10 @@ class HistoryManager:
         self, session: AsyncSession, actor: Principal, project_id: str, job_id: str
     ) -> dict:
         from inspector.history_retention import stage_cache
+        from inspector.persistence.investigation_models import (
+            InvestigationBookmark,
+            SavedInvestigation,
+        )
 
         async with self.use_capture(project_id, job_id):
             job = await checked_job(session, actor, project_id, job_id, lock=True)
@@ -1182,6 +1246,21 @@ class HistoryManager:
             if job.status not in TERMINAL:
                 raise DomainError(
                     "COLLECTION_ACTIVE", "Stop the collection before deleting it.", 409
+                )
+            saved = await session.get(SavedInvestigation, (project_id, job_id))
+            bookmarks = await session.scalar(
+                select(func.count())
+                .select_from(InvestigationBookmark)
+                .where(
+                    InvestigationBookmark.project_id == project_id,
+                    InvestigationBookmark.job_id == job_id,
+                )
+            )
+            if (saved and saved.pinned) or bookmarks:
+                raise DomainError(
+                    "INVESTIGATION_PINNED",
+                    "Unpin the investigation and remove its bookmarks before deleting it.",
+                    409,
                 )
             path = self.cache_path(project_id, job_id, "unused").parent
             source_count = await session.scalar(
@@ -1203,7 +1282,13 @@ class HistoryManager:
                     )
                     .values(investigation_id=None, recording=False)
                 )
-                for model in (HistoryDownload, HistoryCursor, HistoryEvent, HistorySource):
+                for model in (
+                    SavedInvestigation,
+                    HistoryDownload,
+                    HistoryCursor,
+                    HistoryEvent,
+                    HistorySource,
+                ):
                     await session.execute(
                         delete(model).where(model.project_id == project_id, model.job_id == job_id)
                     )

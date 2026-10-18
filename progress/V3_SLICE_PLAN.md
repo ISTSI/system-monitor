@@ -169,3 +169,34 @@ Stop here. Next scope, after separate authorization, is
 `prompts/06_INVESTIGATION_TOOLS.md`.
 Do not start the investigation editor/correlation/bookmark/bundle stage from
 live test success; Ansible import and release hardening remain later gates.
+
+
+## Stage 06 investigation workflow - 18 October 2026
+
+The authorized Stage 06 source implements saved personal analysis, exact/literal
+chronological traces, bookmarks/annotations, source-order pinned context,
+provenance, explicit cache expiry and dependency-neighbour selection. Versioned
+previewed/redacted bundles import into private offline data with origin identity;
+separate offline analysis permits further notes, bookmarks, traces and re-export
+without changing the imported event document or enabling targets. Both roles
+share these personal tools and all routes check owner and project.
+
+The source schema is `0012_offline_analysis`. During implementation, the retained
+8445 installation remained Stage 05 (`0009_live`); only new disposable schemas and
+the synthetic 8448 fixture were used. Actual full/focused/backend/browser,
+upgrade, build and preservation evidence is recorded in STATUS.md and
+`verification/stage-6/`. Stage 06 is complete within the recorded local synthetic baseline. Stop at its review gate.
+
+Next stage after that gate is `prompts/07_INVENTORY_AND_UI.md`. Inventory reconciliation, remaining UI completion
+and release qualification are not included in Stage 06.
+
+The separate "Deploy stage 6" authorization on 18 October upgraded only the
+retained local 8445 application to `0012_offline_analysis`, using the exact tested
+wheel in `.state/stage6-install/backend`. Consistent database/cache and prior
+application backups are retained. All 37 existing table counts and 36 non-Alembic
+checksums matched after migration; all 897 original cache files (230,864,349 bytes)
+and 957 ownership/mode entries matched after startup. Port 8444 was preserved as
+found at deployment preparation, including its pre-existing shared frontend build
+change. Deployment commands, installed checks and that preservation correction
+are recorded in STATUS.md. This local upgrade does not qualify Ubuntu/Rocky
+installation or the offline release. Stop before Stage 07.

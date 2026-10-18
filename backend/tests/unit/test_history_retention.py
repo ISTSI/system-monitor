@@ -131,7 +131,8 @@ async def test_delete_restores_staged_bytes_when_rollback_reports_failure(tmp_pa
         raise OSError("Synthetic connection cleanup failure after rollback.")
 
     session = SimpleNamespace(
-        scalar=AsyncMock(return_value=1),
+        get=AsyncMock(return_value=None),
+        scalar=AsyncMock(side_effect=[0, 1]),
         execute=AsyncMock(
             side_effect=DomainError("SYNTHETIC_DELETE_FAILURE", "Synthetic failure.", 409)
         ),

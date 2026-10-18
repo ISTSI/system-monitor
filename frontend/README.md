@@ -1,5 +1,21 @@
 # System Inspector web application
 
+Stage 06 adds personal investigation tools to historical captures and explicit
+live recordings. Save a title, notes, process/time/filter selection and pane
+layout; reopen the investigation URL in a separate page without collection.
+Exact correlation search compares a complete parsed metadata value; literal
+search also finds longer strings. Chronological traces show integer microsecond
+deltas with clock/causality limitations. Bookmarks preserve source labels and can
+pin surrounding unmatched or out-of-range context independently of source cache.
+
+The investigation panel exposes source provenance and explicit unpinned cache
+expiry. Missing data is shown as unavailable. Pinned investigations cannot expire;
+collection deletion requires unpinning and removing bookmarks. Bundle export
+requires reviewing a redacted preview before download. Import requires preview
+and creates a private offline copy with origin-system provenance, including under
+a different selected system. It never offers active collection controls for that
+copy. All state remains page-local until explicitly saved to the owned resource.
+
 React/TypeScript/Vite sources compile to local static assets served by FastAPI on the same HTTPS origin. No runtime npm, CDN, cloud account, fonts or Internet access is needed. The current vertical slice includes authentication, system catalogue, revisioned topology editing, account management, appearance, historical investigation and live SFTP monitoring. Local fixture collection indexes real plain, ZIP and TAR.GZ events in MariaDB. Administrator SSH password storage, host-key approval and direct/single-jump connection tests are available through server details or Connections. Source access remains scoped to the system and configured roots. Log history labels the actual SSH or explicitly enabled local-demo transport.
 
 The top bar contains Systems, Administrator-only Accounts, Settings for both roles, and Administrator-only Admin, followed by the synthetic-demo label when enabled and the account menu. Personal appearance is changed only in Settings; deployment settings remain Administrator-only. Admin (`/admin`) contains system creation, metadata editing, archival and restoration.

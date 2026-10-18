@@ -1,5 +1,25 @@
 # 14 — MariaDB persistence, configuration and lifecycle
 
+Stage 06 adds `0010_investigations` (saved analysis and bookmarks) and
+`0011_investigation_bundles` (private previews/downloads, offline data and cursors),
+and `0012_offline_analysis` (revisioned personal analysis separate from the
+immutable imported event document).
+The saved-analysis/bookmark owner keys reference the scoped historical parent;
+bookmark anchor keys reference `(project_id,job_id,event_id)`. A nullable anchor
+reference permits deliberate unpinned cache expiry while retaining the original
+identity and independently pinned context snapshot. All mutation checks serialize
+on the owned historical parent and share its saved-analysis revision.
+
+Offline imports use separate tables. Foreign process/source/event IDs are text
+provenance inside validated documents and never reference destination topology.
+Download-to-preview and offline-cursor-to-investigation composite foreign keys
+include owner as well as project. Migration verification uses fresh disposable
+MariaDB schemas and compares all existing populated Stage 05 rows. On 18 October
+2026, the separately authorized local deployment upgraded the retained 8445
+installation from `0009_live` to `0012_offline_analysis` after consistent SQL/cache
+backups. All 37 old table counts and 36 non-Alembic checksums matched before
+startup. Source changes alone do not authorize another installation upgrade.
+
 ## Selected database architecture
 
 MariaDB replaces SQLite everywhere in the operational application: topology/config revisions, accounts/roles/preferences, encrypted SSH credential records, session verifiers, jobs, investigations, event/provenance indexes and operational audit. Raw collected bytes remain in a managed filesystem cache. This is not a database-per-user design.

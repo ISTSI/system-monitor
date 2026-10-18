@@ -249,7 +249,13 @@ def _events(
         }
 
 
-def _zip_preflight(handle: IO[bytes], budget: _Budget) -> None:
+def _zip_preflight(
+    handle: IO[bytes],
+    budget: _Budget,
+    *,
+    metadata_limit: int = _ZIP_METADATA_LIMIT,
+    allowed_names: frozenset[bytes] | None = None,
+) -> None:
     """Bound the central-directory allocation performed by ZipFile's constructor.
 
     EOCD counts are untrusted: also walk fixed-size central headers without allocating
@@ -275,7 +281,7 @@ def _zip_preflight(handle: IO[bytes], budget: _Budget) -> None:
         raise EngineError("MULTIVOLUME_ARCHIVE_UNSUPPORTED")
     if total_count > budget.limits.max_members:
         raise EngineError("MEMBER_COUNT_LIMIT")
-    if metadata_bytes > _ZIP_METADATA_LIMIT:
+    if metadata_bytes > metadata_limit:
         raise EngineError("ARCHIVE_METADATA_LIMIT")
     end = length - tail_size + position
     beginning = end - metadata_bytes
@@ -283,6 +289,7 @@ def _zip_preflight(handle: IO[bytes], budget: _Budget) -> None:
         raise EngineError("CORRUPT_ARCHIVE")
     handle.seek(beginning)
     actual_count = 0
+    seen_names: set[bytes] = set()
     while handle.tell() < end:
         budget.check()
         header = handle.read(46)
@@ -295,6 +302,13 @@ def _zip_preflight(handle: IO[bytes], budget: _Budget) -> None:
         following = handle.tell() + name_size + extra_size + comment_size
         if following > end:
             raise EngineError("CORRUPT_ARCHIVE")
+        if allowed_names is not None:
+            if name_size not in {len(name) for name in allowed_names}:
+                raise EngineError("UNSAFE_ARCHIVE_PATH")
+            name = handle.read(name_size)
+            if name not in allowed_names or name in seen_names:
+                raise EngineError("UNSAFE_ARCHIVE_PATH")
+            seen_names.add(name)
         handle.seek(following)
     if actual_count != total_count or handle.tell() != end:
         raise EngineError("CORRUPT_ARCHIVE")

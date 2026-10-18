@@ -12,7 +12,7 @@ separately control at the user's request. Browser coverage in
 `ssh.spec.ts` checks menu actions, themes, roles, manual new-tab navigation and
 same-context isolation. Actual results are recorded in `progress/STATUS.md`.
 
-Actual stage evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Authentication, appearance, scoped topology/configuration, independent browser workspaces, historical indexing and approved SSH collection have executable unit, MariaDB and browser coverage. Live following, full saved investigations, inventory import and the complete offline release remain later-stage gates. Passing a subset does not complete an entire acceptance target.
+Actual stage evidence and remaining gates are recorded in [the implementation status](../progress/STATUS.md) and [incremental slice plan](../progress/V3_SLICE_PLAN.md). Authentication, appearance, scoped topology/configuration, independent browser workspaces, historical indexing and approved SSH collection have executable unit, MariaDB and browser coverage. Live monitoring and full personal investigation tools now have executable coverage. Inventory import and the complete offline release remain later-stage gates. Passing a subset does not complete an entire acceptance target.
 
 The authorized temporary VM now supplies actual MariaDB evidence for part of R42/R44/R46/R48/R56: the initial migration, binary identities, owner/role/scope behavior, composite FK rejection, exact BIGINT values and named migration locks pass in `backend/tests/vm/test_vm_mariadb.py`. Those rollback-only checks also prove the supplied migration account is refused for serving. They do not replace restricted-runtime/API/browser or disposable-schema integration targets.
 
@@ -304,3 +304,27 @@ an exact 16 MiB/65,536-event archive. It requires first-DOM p95 at most 2 second
 at 1–5 physical appends/s, matching active-job/resource evidence, complete
 archive counts and stable Stop. Stage 06 investigation tooling and Stage 07
 Ansible reconciliation are not marked complete by these tests.
+
+
+## Stage 06 investigation implementation
+
+Stage 06 adds executable coverage below. Actual commands/counts, corrected
+failures and platform limits are recorded in `progress/STATUS.md` and
+`verification/stage-6/`; this table alone is not a passing-test report.
+
+| Requirements / acceptance | Implementation and executable evidence |
+|---|---|
+| R12 / AT51 | Existing directed dependency traversal now offers Inspect/Monitor highlighted neighbours. Browser tests verify directional selection and five configured downstream processes, with an explicit causality limitation. |
+| R28 / AT48 | Saved workspace process/time/filter/layout/notes state shares optimistic revisions with bookmarks. MariaDB tests reopen through a real backend restart with SSH forbidden and retain unavailable status after explicit expiry; browser tests reopen same-context deep links and restore filters/panes. |
+| R29 / AT49 | Exact parsed metadata equality distinguishes golden REQ-0042 from REQ-00420; literal search uses the shared casefold engine. Deterministic chronological traces expose exact integer deltas and physical-source time inversions. Tests cover punctuation, quoted and Unicode marker keys. |
+| R30-R31 / AT50 | Owned source-order bookmarks/annotations preserve event/name snapshots. Context includes unmatched/out-of-range lines independently of totals; separate context pins survive original cache expiry. Whole-investigation pins prevent expiry, and deletion cannot silently discard bookmarks. |
+| R32 / AT52 | Source details expose raw/index availability, checksums, captured ranges, retained parse counts and observed extrema with completeness limitations. Unavailable queries return null match counts and partial coverage. Existing SSH/parser/partial-capture regression cases remain applicable. |
+| R33/R35 / AT53-AT54 | Typed bundle projections, all-string literal redaction preview, regular-member streaming, actual-byte/count/deadline/ratio bounds, checksums and version checks. Tests preserve original cache hashes, reject corrupt/unsafe/future input before commit and prove import/replay does not connect to hosts. |
+| R33/R41/R48 / AT76/AT118 | Both roles perform private analysis and sanitized exchange. Every content route checks project/owner; Administrator has no private-content bypass. Foreign imported identities remain provenance in separate offline tables, with separately revisioned personal edits and immutable event documents. MariaDB rejects composite owner/project FK forgeries. |
+| R42/R44/R48 | Additive migrations through 0012 preserve all existing Stage 05 table rows, accounts, preferences, policy, project IDs and repeated scoped source/event IDs. Verification uses new disposable MariaDB schemas, never SQLite or the retained installation. |
+
+Bundle version 1.0 exchanges retained decoded event text and source identity/
+byte-range/checksum provenance. It does not provide an original binary-source
+archive or enable a raw source download from imported provenance. Redaction
+changes exported copies only; unchanged original cache bytes and the immutable
+imported event document remain separate from personal analysis.

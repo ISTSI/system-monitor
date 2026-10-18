@@ -30,6 +30,8 @@ from inspector.database import create_engine, local_state_lock, supervisor_guard
 from inspector.domain import ID_PATTERN, Principal, ProjectContext
 from inspector.errors import DomainError
 from inspector.history import NONTERMINAL, HistoryManager, build_history_router
+from inspector.investigation_bundles import build_bundle_router
+from inspector.investigations import build_investigation_router
 from inspector.live import LiveManager, build_live_router
 from inspector.security import issue_token, require_admin, token_hash
 from inspector.source_access import SourceAccess, build_source_access_router
@@ -327,7 +329,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             )
             history_query = bool(
                 re.fullmatch(
-                    r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/investigations/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/(?:query|events/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/context)",
+                    r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/(?:investigations|bundle-investigations)/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/(?:query|correlation|workspace|bookmarks(?:/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127})?|events/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/context)",
                     request.url.path,
                 )
             )
@@ -344,15 +346,22 @@ def create_app(config: Config | None = None) -> FastAPI:
                 if history_query or live_filter
                 else 16384
             )
-            chunks, size = [], 0
-            async for chunk in request.stream():
-                size += len(chunk)
-                if size > maximum_body:
-                    return error_response(
-                        DomainError("PAYLOAD_TOO_LARGE", "Request exceeds limit.", 413)
-                    )
-                chunks.append(chunk)
-            request._body = b"".join(chunks)
+            bundle_upload = request.method == "POST" and bool(
+                re.fullmatch(
+                    r"/api/v1/projects/[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}/bundles/import/preview",
+                    request.url.path,
+                )
+            )
+            if not bundle_upload:
+                chunks, size = [], 0
+                async for chunk in request.stream():
+                    size += len(chunk)
+                    if size > maximum_body:
+                        return error_response(
+                            DomainError("PAYLOAD_TOO_LARGE", "Request exceeds limit.", 413)
+                        )
+                    chunks.append(chunk)
+                request._body = b"".join(chunks)
             if request.url.path == "/api/v1/me/password" or request.url.path.startswith(
                 "/api/v1/admin/users"
             ):
@@ -704,6 +713,8 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.include_router(build_account_router(transaction, authenticated, protected_write))
     app.include_router(build_topology_router(transaction, authenticated, protected_write))
     app.include_router(build_history_router(transaction, authenticated, protected_write))
+    app.include_router(build_investigation_router(transaction, authenticated, protected_write))
+    app.include_router(build_bundle_router(transaction, authenticated, protected_write))
     app.include_router(build_live_router(transaction, authenticated, protected_write))
     app.include_router(build_ssh_access_router(transaction, authenticated, protected_write))
     app.include_router(build_source_access_router(transaction, authenticated, protected_write))

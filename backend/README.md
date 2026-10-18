@@ -1,12 +1,34 @@
 # System Inspector backend
 
-Stage 05 is installed at **https://localhost:8445**, using migration `0009_live`
+Stage 06 source adds owned saved workspaces, exact parsed-field and literal
+correlation traces, annotations/bookmarks, source-local context pins, provenance,
+explicit cache expiry, and previewed sanitized ZIP bundles. Both roles have the
+same personal tools. The additive schema is `0012_offline_analysis`, installed
+on the retained local 8445 application after separate deployment authorization.
+Do not run an older serving artifact against this schema. Stage 06 implementation
+verification used an isolated synthetic HTTPS/SFTP fixture on port 8448.
+
+Saved analysis has one optimistic revision across workspace and bookmark edits.
+Pinning the investigation protects its captured source cache. Pinning a bookmark
+retains an independent event-text/provenance context snapshot (32 MiB total per
+investigation); it does not preserve the entire original source file. Explicit
+expiry removes unpinned source bytes/index rows while keeping analysis and pinned
+context. Responses distinguish unavailable data from zero matching events.
+
+Bundle import streams a bounded ZIP to a temporary spool, validates the two
+regular members and checksums before staging, and commits separate private
+offline data after preview. It creates no active topology, source associations,
+credentials, trust or connection attempts. Foreign IDs remain origin provenance.
+Exports contain a typed topology projection and retained event data, and apply
+literal redaction to every string. Review the full preview: the redactor cannot
+identify unspecified sensitive values. Original cache files remain unchanged.
+
+Stage 06 is installed at **https://localhost:8445**, using migration `0012_offline_analysis`
 and the tested Python environment (including BSD-licensed `websockets` 16.1.1).
-The isolated installed artifact is `.state/stage5-install/backend`; the Compose
-override pins its separate runtime image. Existing data, configuration and vault
-were backed up and verified unchanged. The isolated Stage 05 test fixture on
-8447 is stopped; its commands are below. Do not point an old serving artifact at
-the new schema.
+The isolated installed artifact is `.state/stage6-install/backend`; the Compose
+override pins the tested runtime image. Existing data, configuration, cache and
+vault were backed up and verified unchanged. The isolated Stage 05/06 test fixtures
+on 8447/8448 are stopped; their commands are for synthetic verification only.
 
 Both roles can select configured processes and choose **Monitor selected** or
 open **Live monitor** in the logs workspace. Starting is explicit. Each page
@@ -43,8 +65,8 @@ offline through the historical viewer, with original source labels/provenance.
 Captured ranges may start after byte zero or have gaps; their cache contains
 only recorded ranges. These sources remain explicitly partial and cannot use
 the complete-source raw download action. Stopping/cancelling, restart and
-recording failures retain committed partial results. The Stage 06 investigation
-editing/correlation/bookmark/bundle features are a separate scope.
+recording failures retain committed partial results. The installed Stage 06 tools
+add personal analysis, correlation, bookmarks and bundle exchange to these captures.
 
 For a synthetic browser test installation, use the existing local MariaDB
 service and `python scripts/prepare_stage5_runner.py`, followed by
@@ -163,8 +185,8 @@ dedicated account permissions remain essential. Symlinks are rejected. A
 successful scan describes its candidates, not continuous or exactly-once history.
 
 The retained local app at **https://localhost:8445** now uses the existing
-Stage 03 accounts/configuration and database upgraded to `0009_live` on
-18 October. Its tested artifact at `.state/stage5-install/backend` is mounted
+Stage 03 accounts/configuration and database upgraded to `0012_offline_analysis` on
+18 October. Its tested artifact at `.state/stage6-install/backend` is mounted
 read-only into `runtime-stage3`; the image is pinned to
 `sha256:668bfc011a595c63ea4f88c29eea56c326828662dbba1cd20a18a4eacdfcd8a8`.
 It runs one worker with explicit `websockets`, a 16 KiB message limit and a
@@ -180,18 +202,21 @@ For a normal restart, use the existing local MariaDB base Compose file plus
 commands also operate SSH fixtures. Preserve the installed snapshot and its
 image; future source updates require a fresh tested artifact.
 
-The matching pre-upgrade schema `0008_security_setting` SQL dump, raw-cache
+The matching pre-upgrade schema `0009_live` SQL dump, raw-cache
 archive with byte/permission manifests, prior backend, exact deployment files
 and protected vault copy are retained under
-`.secrets/stage5-install/pre-0009-live/`. All previous Stage 04 artifacts and
+`.secrets/stage6-install/pre-0012-offline-analysis/`. All previous Stage 04/05 artifacts and
 backups remain available. Rollback after migration must restore a matching
 database/cache/application state. The deployment verified every old table before
 startup, all retained cache bytes/ownership/modes, both browser roles and the
-unchanged 8444 container. See `verification/stage-5/deployment-*.json` and
+8444 container and its assets as found at deployment preparation. See
+`verification/stage-6/deployment-*.json` and
 [STATUS.md](../progress/STATUS.md); no rollback drill was performed for this upgrade.
-`python scripts/verify_stage5_preservation.py --installed-stage5` performs the
+`python scripts/verify_stage6_preservation.py --installed-stage6` performs the
 read-only installed-image/TLS/retained-service check. Its default mode retains
-the earlier pre-deployment expectations.
+the earlier Stage 06 pre-deployment expectations. Port 8444 already served the
+latest shared frontend build before this deployment; that pre-existing asset
+change and the unchanged backend container are recorded separately in STATUS.md.
 
 `scripts/verify_stage4.py integration` runs the real MariaDB/SSH gate in a fresh
 disposable local schema; `upgrade` checks populated additive migration and

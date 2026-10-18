@@ -757,6 +757,385 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workspace */
+        get: operations["workspace_api_v1_projects__project_id__investigations__job_id__workspace_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Save Workspace */
+        patch: operations["save_workspace_api_v1_projects__project_id__investigations__job_id__workspace_patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bookmarks */
+        get: operations["bookmarks_api_v1_projects__project_id__investigations__job_id__bookmarks_get"];
+        put?: never;
+        /** Create Bookmark */
+        post: operations["create_bookmark_api_v1_projects__project_id__investigations__job_id__bookmarks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/bookmarks/{bookmark_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit Bookmark */
+        patch: operations["edit_bookmark_api_v1_projects__project_id__investigations__job_id__bookmarks__bookmark_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/bookmarks/{bookmark_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove Bookmark */
+        post: operations["remove_bookmark_api_v1_projects__project_id__investigations__job_id__bookmarks__bookmark_id__delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/correlation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Correlation */
+        post: operations["correlation_api_v1_projects__project_id__investigations__job_id__correlation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/expire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Expire */
+        post: operations["expire_api_v1_projects__project_id__investigations__job_id__expire_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/investigations/{job_id}/sources/{source_id}/provenance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Provenance */
+        get: operations["provenance_api_v1_projects__project_id__investigations__job_id__sources__source_id__provenance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundles/export/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Preview */
+        post: operations["export_preview_api_v1_projects__project_id__bundles_export_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundles/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Grant Export */
+        post: operations["grant_export_api_v1_projects__project_id__bundles_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundles/previews/{preview_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Preview */
+        post: operations["cancel_preview_api_v1_projects__project_id__bundles_previews__preview_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-downloads/{opaque_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: operations["download_api_v1_projects__project_id__bundle_downloads__opaque_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundles/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Preview */
+        post: operations["import_preview_api_v1_projects__project_id__bundles_import_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundles/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Commit */
+        post: operations["import_commit_api_v1_projects__project_id__bundles_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listing */
+        get: operations["listing_api_v1_projects__project_id__bundle_investigations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["read_api_v1_projects__project_id__bundle_investigations__investigation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Query */
+        post: operations["query_api_v1_projects__project_id__bundle_investigations__investigation_id__query_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/events/{event_id}/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Context */
+        post: operations["context_api_v1_projects__project_id__bundle_investigations__investigation_id__events__event_id__context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Workspace */
+        get: operations["read_workspace_api_v1_projects__project_id__bundle_investigations__investigation_id__workspace_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Save Workspace */
+        patch: operations["save_workspace_api_v1_projects__project_id__bundle_investigations__investigation_id__workspace_patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Bookmarks */
+        get: operations["read_bookmarks_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks_get"];
+        put?: never;
+        /** Create Bookmark */
+        post: operations["create_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/bookmarks/{bookmark_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Bookmark */
+        delete: operations["delete_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks__bookmark_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Bookmark */
+        patch: operations["update_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks__bookmark_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/bookmarks/{bookmark_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Bookmark */
+        post: operations["delete_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks__bookmark_id__delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/bundle-investigations/{investigation_id}/correlation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Correlation */
+        post: operations["correlation_api_v1_projects__project_id__bundle_investigations__investigation_id__correlation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/live-sessions": {
         parameters: {
             query?: never;
@@ -1127,6 +1506,85 @@ export interface components {
             /** Verified */
             verified: boolean;
         };
+        /** BookmarkCreate */
+        BookmarkCreate: {
+            /**
+             * Before
+             * @default 5
+             */
+            before: number;
+            /**
+             * After
+             * @default 5
+             */
+            after: number;
+            /** From */
+            from: string;
+            /** To */
+            to: string;
+            filter?: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters?: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /** Expected Revision */
+            expected_revision: number;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Annotation
+             * @default
+             */
+            annotation: string;
+            /**
+             * Pin Context
+             * @default true
+             */
+            pin_context: boolean;
+        };
+        /** BookmarkItem */
+        BookmarkItem: {
+            /** Bookmark Id */
+            bookmark_id: string;
+            /** Event Id */
+            event_id: string;
+            /** Annotation */
+            annotation: string;
+            /** Pin Context */
+            pin_context: boolean;
+            context: components["schemas"]["HistoricalContextResponse"] | null;
+            /** Process Name Snapshot */
+            process_name_snapshot: string;
+            /** Server Name Snapshot */
+            server_name_snapshot: string;
+            /** Created Us */
+            created_us: number;
+            /**
+             * Availability
+             * @enum {string}
+             */
+            availability: "retained" | "unavailable";
+        };
+        /** BookmarkResponse */
+        BookmarkResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Investigation Id */
+            investigation_id: string;
+            /** Revision */
+            revision: number;
+            /** Items */
+            items: components["schemas"]["BookmarkItem"][];
+        };
+        /** BookmarkUpdate */
+        BookmarkUpdate: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Annotation */
+            annotation: string;
+            /** Pin Context */
+            pin_context: boolean;
+        };
         /** BootstrapResponse */
         BootstrapResponse: {
             /** Branding */
@@ -1143,6 +1601,119 @@ export interface components {
              * @default false
              */
             historical_demo_enabled: boolean;
+        };
+        /** BundleBookmark */
+        BundleBookmark: {
+            /** Id */
+            id: string;
+            /** Event Id */
+            event_id: string;
+            /** Annotation */
+            annotation: string;
+            /** Pin Context */
+            pin_context: boolean;
+            context: components["schemas"]["HistoricalContextResponse"] | null;
+            /** Process Name Snapshot */
+            process_name_snapshot: string;
+            /** Server Name Snapshot */
+            server_name_snapshot: string;
+            /** Created At */
+            created_at: string;
+        };
+        /** BundleCancelResponse */
+        BundleCancelResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Preview Id */
+            preview_id: string;
+            /**
+             * Cancelled
+             * @constant
+             */
+            cancelled: true;
+        };
+        /** BundleDocument */
+        BundleDocument: {
+            /**
+             * Schema Version
+             * @constant
+             */
+            schema_version: "1.0";
+            origin: components["schemas"]["BundleOrigin"];
+            selection: components["schemas"]["BundleSelection"];
+            topology: components["schemas"]["TopologySnapshot"];
+            /** Sources */
+            sources: components["schemas"]["HistoricalCoverage"][];
+            /** Events */
+            events: components["schemas"]["HistoricalEvent"][];
+            /** Bookmarks */
+            bookmarks: components["schemas"]["BundleBookmark"][];
+            /** Coverage Status */
+            coverage_status: string;
+            /** Errors */
+            errors: string[];
+            redaction: components["schemas"]["Redaction"];
+        };
+        /** BundleDownloadResponse */
+        BundleDownloadResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Download Id */
+            download_id: string;
+            /** Url */
+            url: string;
+        };
+        /** BundleOrigin */
+        BundleOrigin: {
+            /** Project Id */
+            project_id: string;
+            /** Investigation Id */
+            investigation_id: string;
+            /** Config Revision */
+            config_revision: number;
+            /** Snapshot Revision */
+            snapshot_revision: number;
+        };
+        /** BundlePreviewResponse */
+        BundlePreviewResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Preview Id */
+            preview_id: string;
+            /** Expires At */
+            expires_at: string;
+            /** Digest */
+            digest: string;
+            document: components["schemas"]["BundleDocument"];
+            /** Warnings */
+            warnings: string[];
+        };
+        /** BundleSelection */
+        BundleSelection: {
+            /** Title */
+            title: string;
+            /** Process Ids */
+            process_ids: string[];
+            /** From */
+            from: string;
+            /** To */
+            to: string;
+            filter?: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters?: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /**
+             * Layout
+             * @default merged
+             * @enum {string}
+             */
+            layout: "merged" | "split";
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /** CatalogueEntry */
         CatalogueEntry: {
@@ -1198,6 +1769,77 @@ export interface components {
              * @default false
              */
             confirm_project_remap: boolean;
+        };
+        /** CorrelationInput */
+        CorrelationInput: {
+            /** Process Ids */
+            process_ids: string[];
+            /** From */
+            from: string;
+            /** To */
+            to: string;
+            filter?: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters?: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /**
+             * Limit
+             * @default 200
+             */
+            limit: number;
+            /** Cursor */
+            cursor?: string | null;
+            /**
+             * Lane
+             * @default events
+             * @enum {string}
+             */
+            lane: "events" | "diagnostic";
+            /** Correlation */
+            correlation?: null;
+            /**
+             * Mode
+             * @default exact
+             * @enum {string}
+             */
+            mode: "exact" | "literal";
+            /**
+             * Field
+             * @default request_id
+             */
+            field: string;
+            /** Value */
+            value: string;
+        };
+        /** CorrelationResponse */
+        CorrelationResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Items */
+            items: components["schemas"]["HistoricalEvent"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Matched Count */
+            matched_count: number | null;
+            /** Parse Issue Count */
+            parse_issue_count: number;
+            /** Source Snapshot Revision */
+            source_snapshot_revision: number;
+            /** Partial */
+            partial: boolean;
+            /** Coverage */
+            coverage: components["schemas"]["HistoricalCoverage"][];
+            /**
+             * Availability
+             * @default retained
+             * @enum {string}
+             */
+            availability: "retained" | "partial" | "unavailable";
+            /** Deltas */
+            deltas: components["schemas"]["TraceDelta"][];
+            /** Warning */
+            warning: string;
         };
         /** CreateAccountInput */
         CreateAccountInput: {
@@ -1293,6 +1935,34 @@ export interface components {
         };
         /** EmptyInput */
         EmptyInput: Record<string, never>;
+        /** ExpireResponse */
+        ExpireResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Investigation Id */
+            investigation_id: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Availability
+             * @constant
+             */
+            availability: "unavailable";
+            /** Cache Cleanup Pending */
+            cache_cleanup_pending: boolean;
+        };
+        /** ExportInput */
+        ExportInput: {
+            /** Investigation Id */
+            investigation_id: string;
+            /** Redact Terms */
+            redact_terms?: string[];
+            /**
+             * Replacement
+             * @default [REDACTED]
+             */
+            replacement: string;
+        };
         /** ExportResponse */
         ExportResponse: {
             /** Project Id */
@@ -1359,6 +2029,21 @@ export interface components {
             event_id: string;
             /** Items */
             items: components["schemas"]["HistoricalContextItem"][];
+        };
+        /** HistoricalCorrelation */
+        HistoricalCorrelation: {
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "exact" | "literal";
+            /**
+             * Field
+             * @default request_id
+             */
+            field: string;
+            /** Value */
+            value: string;
         };
         /** HistoricalCoverage */
         HistoricalCoverage: {
@@ -1569,6 +2254,7 @@ export interface components {
              * @enum {string}
              */
             lane: "events" | "diagnostic";
+            correlation?: components["schemas"]["HistoricalCorrelation"] | null;
         };
         /** HistoricalQueryResponse */
         HistoricalQueryResponse: {
@@ -1588,6 +2274,12 @@ export interface components {
             partial: boolean;
             /** Coverage */
             coverage: components["schemas"]["HistoricalCoverage"][];
+            /**
+             * Availability
+             * @default retained
+             * @enum {string}
+             */
+            availability: "retained" | "partial" | "unavailable";
         };
         /** HistoricalScopeInput */
         HistoricalScopeInput: {
@@ -1888,6 +2580,44 @@ export interface components {
             /** Expected Revision */
             expected_revision: number;
         };
+        /** OfflineListResponse */
+        OfflineListResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Items */
+            items: components["schemas"]["OfflineSummaryResponse"][];
+        };
+        /** OfflineResponse */
+        OfflineResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Investigation Id */
+            investigation_id: string;
+            /**
+             * Offline
+             * @constant
+             */
+            offline: true;
+            document: components["schemas"]["BundleDocument"];
+            /** Created At */
+            created_at: string;
+            job: components["schemas"]["HistoricalJobResponse"];
+        };
+        /** OfflineSummaryResponse */
+        OfflineSummaryResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Investigation Id */
+            investigation_id: string;
+            /**
+             * Offline
+             * @constant
+             */
+            offline: true;
+            /** Created At */
+            created_at: string;
+            job: components["schemas"]["HistoricalJobResponse"];
+        };
         /** PasswordChangedResponse */
         PasswordChangedResponse: {
             /**
@@ -1932,18 +2662,6 @@ export interface components {
              * @enum {string}
              */
             theme_mode: "default" | "light" | "dark" | "system";
-        };
-        /** PreviewInput */
-        PreviewInput: {
-            /** Expected Revision */
-            expected_revision: number;
-            /** Content */
-            content: string;
-            /**
-             * Format
-             * @enum {string}
-             */
-            format: "json" | "yaml";
         };
         /** PreviewResponse */
         PreviewResponse: {
@@ -2006,6 +2724,17 @@ export interface components {
             /** Subsystems */
             subsystems: components["schemas"]["DemoSubsystem"][];
         };
+        /** Redaction */
+        Redaction: {
+            /** Applied */
+            applied: boolean;
+            /** Term Count */
+            term_count: number;
+            /** Replacement */
+            replacement: string;
+            /** Warning */
+            warning: string;
+        };
         /** ResetPasswordInput */
         ResetPasswordInput: {
             /** Expected Auth Version */
@@ -2020,6 +2749,82 @@ export interface components {
              * @default true
              */
             must_change_password: boolean;
+        };
+        /** SavedWorkspaceInput */
+        SavedWorkspaceInput: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Title */
+            title: string;
+            /** Process Ids */
+            process_ids: string[];
+            /** From */
+            from: string;
+            /** To */
+            to: string;
+            filter?: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters?: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /**
+             * Layout
+             * @default merged
+             * @enum {string}
+             */
+            layout: "merged" | "split";
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /**
+             * Pinned
+             * @default false
+             */
+            pinned: boolean;
+        };
+        /** SavedWorkspaceResponse */
+        SavedWorkspaceResponse: {
+            /** Project Id */
+            project_id: string;
+            /** Investigation Id */
+            investigation_id: string;
+            /** Revision */
+            revision: number;
+            /** Saved */
+            saved: boolean;
+            /** Title */
+            title: string;
+            /** Process Ids */
+            process_ids: string[];
+            /** From */
+            from: string;
+            /** To */
+            to: string;
+            filter: components["schemas"]["HistoricalFilter"];
+            /** Per Process Filters */
+            per_process_filters: {
+                [key: string]: components["schemas"]["HistoricalFilter"];
+            };
+            /**
+             * Layout
+             * @enum {string}
+             */
+            layout: "merged" | "split";
+            /** Notes */
+            notes: string;
+            /** Pinned */
+            pinned: boolean;
+            /** Collection References */
+            collection_references: string[];
+            /**
+             * Availability
+             * @enum {string}
+             */
+            availability: "retained" | "partial" | "unavailable";
+            /** Source Snapshot Revision */
+            source_snapshot_revision: number;
         };
         /** SearchInput */
         SearchInput: {
@@ -2091,6 +2896,50 @@ export interface components {
             /** Additional Security Measures */
             additional_security_measures: boolean;
         };
+        /** SnapshotFlow */
+        SnapshotFlow: {
+            /** Id */
+            id: string;
+            /** Source Process Id */
+            source_process_id: string;
+            /** Target Process Id */
+            target_process_id: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Protocol
+             * @default
+             */
+            protocol: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+        };
+        /** SnapshotNode */
+        SnapshotNode: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Tags */
+            tags?: string[];
+            /** Subsystem Id */
+            subsystem_id?: string | null;
+            /** Server Id */
+            server_id?: string | null;
+            /** Pcs Resource Name */
+            pcs_resource_name?: string | null;
+        };
         /** SourceAccessResponse */
         SourceAccessResponse: {
             /** Project Id */
@@ -2129,6 +2978,47 @@ export interface components {
             revision: number;
             /** Expires Us */
             expires_us: string | null;
+        };
+        /** SourceDetails */
+        SourceDetails: {
+            /** Project Id */
+            project_id: string;
+            /** Investigation Id */
+            investigation_id: string;
+            /** Source Revision Id */
+            source_revision_id: string;
+            /** Process Id */
+            process_id: string;
+            /** Remote Path */
+            remote_path: string;
+            /** Kind */
+            kind: string;
+            /** Status */
+            status: string;
+            /** Error Code */
+            error_code: string | null;
+            /** Checksum */
+            checksum: string | null;
+            /** Downloaded Bytes */
+            downloaded_bytes: number;
+            /** Expanded Bytes */
+            expanded_bytes: number;
+            /** Retained Event Count */
+            retained_event_count: number;
+            /** Parse Issue Count */
+            parse_issue_count: number;
+            /** Observed From */
+            observed_from: string | null;
+            /** Observed To */
+            observed_to: string | null;
+            /** Captured Ranges */
+            captured_ranges: {
+                [key: string]: number;
+            }[];
+            /** Raw Bytes Available */
+            raw_bytes_available: boolean;
+            /** Limitations */
+            limitations: string[];
         };
         /** SourcePathResult */
         SourcePathResult: {
@@ -2213,6 +3103,27 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** TopologySnapshot */
+        TopologySnapshot: {
+            project: components["schemas"]["SnapshotNode"];
+            /** Subsystems */
+            subsystems: components["schemas"]["SnapshotNode"][];
+            /** Servers */
+            servers: components["schemas"]["SnapshotNode"][];
+            /** Processes */
+            processes: components["schemas"]["SnapshotNode"][];
+            /** Flows */
+            flows: components["schemas"]["SnapshotFlow"][];
+        };
+        /** TraceDelta */
+        TraceDelta: {
+            /** Event Id */
+            event_id: string;
+            /** Delta Us */
+            delta_us: number | null;
+            /** Source Time Inversion */
+            source_time_inversion: boolean;
+        };
         /** TrustInput */
         TrustInput: {
             /** Expected Config Revision */
@@ -2286,10 +3197,32 @@ export interface components {
             /** Expected Revision */
             expected_revision: number;
         };
+        /** PreviewInput */
+        inspector__investigation_bundles__PreviewInput: {
+            /** Preview Id */
+            preview_id: string;
+        };
+        /** RevisionInput */
+        inspector__investigations__RevisionInput: {
+            /** Expected Revision */
+            expected_revision: number;
+        };
         /** RevisionInput */
         inspector__ssh_access__RevisionInput: {
             /** Expected Config Revision */
             expected_config_revision: number;
+        };
+        /** PreviewInput */
+        inspector__topology__PreviewInput: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Content */
+            content: string;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "json" | "yaml";
         };
         /** RevisionInput */
         inspector__topology__RevisionInput: {
@@ -3395,7 +4328,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PreviewInput"];
+                "application/json": components["schemas"]["inspector__topology__PreviewInput"];
             };
         };
         responses: {
@@ -3849,6 +4782,948 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    workspace_api_v1_projects__project_id__investigations__job_id__workspace_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedWorkspaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_workspace_api_v1_projects__project_id__investigations__job_id__workspace_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedWorkspaceInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedWorkspaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bookmarks_api_v1_projects__project_id__investigations__job_id__bookmarks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_bookmark_api_v1_projects__project_id__investigations__job_id__bookmarks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookmarkCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_bookmark_api_v1_projects__project_id__investigations__job_id__bookmarks__bookmark_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+                bookmark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookmarkUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_bookmark_api_v1_projects__project_id__investigations__job_id__bookmarks__bookmark_id__delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+                bookmark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__investigations__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correlation_api_v1_projects__project_id__investigations__job_id__correlation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrelationInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrelationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    expire_api_v1_projects__project_id__investigations__job_id__expire_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__investigations__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExpireResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    provenance_api_v1_projects__project_id__investigations__job_id__sources__source_id__provenance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                job_id: string;
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceDetails"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_preview_api_v1_projects__project_id__bundles_export_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundlePreviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    grant_export_api_v1_projects__project_id__bundles_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__investigation_bundles__PreviewInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundleDownloadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_preview_api_v1_projects__project_id__bundles_previews__preview_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                preview_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundleCancelResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_api_v1_projects__project_id__bundle_downloads__opaque_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                opaque_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_preview_api_v1_projects__project_id__bundles_import_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/zip": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundlePreviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_commit_api_v1_projects__project_id__bundles_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__investigation_bundles__PreviewInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfflineResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listing_api_v1_projects__project_id__bundle_investigations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfflineListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_api_v1_projects__project_id__bundle_investigations__investigation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfflineResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    query_api_v1_projects__project_id__bundle_investigations__investigation_id__query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HistoricalQueryInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoricalQueryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    context_api_v1_projects__project_id__bundle_investigations__investigation_id__events__event_id__context_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HistoricalContextInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoricalContextResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_workspace_api_v1_projects__project_id__bundle_investigations__investigation_id__workspace_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedWorkspaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_workspace_api_v1_projects__project_id__bundle_investigations__investigation_id__workspace_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedWorkspaceInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedWorkspaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_bookmarks_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookmarkCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks__bookmark_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+                bookmark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__investigations__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks__bookmark_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+                bookmark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookmarkUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bookmark_api_v1_projects__project_id__bundle_investigations__investigation_id__bookmarks__bookmark_id__delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+                bookmark_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["inspector__investigations__RevisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correlation_api_v1_projects__project_id__bundle_investigations__investigation_id__correlation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                investigation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrelationInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrelationResponse"];
                 };
             };
             /** @description Validation Error */

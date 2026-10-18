@@ -157,6 +157,7 @@ _READ_ACTIONS = frozenset(
         "workspace.create",
         "collection.create",
         "live.create",
+        "bundle.import",
     }
 )
 _ADMIN_ACTIONS = frozenset(
@@ -187,6 +188,10 @@ _OWN_ACTIONS = frozenset(
         "collection.read",
         "collection.cancel",
         "investigation.read",
+        "investigation.write",
+        "investigation.pin",
+        "bookmark.write",
+        "bundle.export",
         "investigation.delete",
         "download.read",
         "live.read",

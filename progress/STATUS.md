@@ -1646,3 +1646,268 @@ preservation, installed-browser and transport checks instead. This remains a
 local Linux-container installation, not Ubuntu/Rocky or offline-release
 qualification. There is no deployment blocker. **Stop at Stage 05; next scope
 is `prompts/06_INVESTIGATION_TOOLS.md`, only after separate authorization.**
+
+
+## 18 October 2026 - Stage 06 investigation workflow complete
+
+Authorization: "Proceed with stage 6." Completed only
+`prompts/06_INVESTIGATION_TOOLS.md`. Existing HTTPS 8444/8445 backend containers,
+images, accounts, configuration, vault and cache were preserved. The earlier
+asset-preservation measurement below preceded the final frontend build: a later
+deployment preflight found that 8444's shared frontend mount had advanced to that
+build. See the separate deployment correction below. New disposable
+MariaDB schemas and the synthetic HTTPS/SFTP fixture on 8448 were used; that
+fixture and its SSH server are stopped. The retained 8445 application remains
+Stage 05 at `0009_live`. No production host, real target credentials, remote
+repository push or installation upgrade was used.
+
+Implemented behavior:
+
+- Both roles save/reopen private investigation titles, notes, process/time/filter
+  selection and pane layout. Workspace/bookmark mutations share one optimistic
+  revision and cannot overwrite a stale tab. Reopen/replay works after a real
+  backend restart with SSH forbidden. Existing source/event IDs remain unchanged.
+- Exact parsed-field correlation distinguishes golden **REQ-0042 (17 events)**
+  from **REQ-00420**; literal search includes the longer identifier. Trace order
+  and integer microsecond deltas are deterministic, with physical-source time
+  inversions and explicit clock/causality limits. Real MariaDB tests cover dotted,
+  quoted, Unicode and literal backslash-u metadata keys.
+- Bookmarks/annotations retain original identity/name snapshots and source-order
+  unmatched/out-of-range context, independently of match totals. Whole-capture
+  pins block expiry; context pins preserve bounded independent event-text/
+  provenance snapshots. Explicit unpinned expiry removes original source cache
+  and indexed events while keeping notes/pinned context and precise unavailable
+  status. Deletion cannot silently remove pinned investigations or bookmarks.
+- Source details expose raw/index availability, observed extrema, retained parse
+  counts, checksums, captured ranges and completeness limitations. Configured
+  upstream/downstream neighbours can enter historical/live selection, with an
+  explicit warning that possible flows do not prove observed causality.
+- Bundle version 1.0 exchanges a typed logical topology/event/context/notes
+  snapshot in two ZIP members with actual byte lengths and SHA-256 checksums.
+  All-string literal redaction reaches metadata keys, labels, filenames, notes,
+  context and topology text. Credentials, trust, approvals and active connection
+  profiles are excluded by typed projections. Full owner/project/login-bound
+  preview and explicit review precede download/import; cancellation and revoked/
+  expired staging cleanup preserve the four-usable-preview quota.
+- Upload admission, ZIP central-directory preflight, actual expanded bytes,
+  member/name/type/CRC/hash/version/identity validation, line length, JSON depth/
+  node limits and bounded workers reject unsafe input before commit. Redaction
+  caches literal match positions and checks exact output bytes/nodes/deadline
+  before writes, preventing suffix-rescan or replacement-expansion exhaustion.
+  Technical identities which cannot be reopened through scoped routes are rejected.
+- Foreign imports create separate owned offline rows in the selected project,
+  without active topology/source associations or connection attempts. Original
+  imported event documents stay immutable; separately revisioned analysis permits
+  notes, bookmarks, filtering/layout, traces and re-export. No Administrator
+  private-content bypass exists. Composite MariaDB FKs enforce parent owner/scope.
+- UI operations reject stale response completions after navigation. Tests hold a
+  bookmark response while selecting another investigation and prove the new
+  resource's identity, draft and revision remain unchanged. All assets remain
+  local, both reference themes are preserved, and no dependency was added.
+
+Changed files:
+
+- New backend `investigations.py`, `investigation_bundles.py`, persistence
+  `investigation_models.py` / `bundle_models.py`, and frozen additive migrations
+  `0010_investigations`, `0011_investigation_bundles`, `0012_offline_analysis`.
+- Existing HTTP/security/database/history wiring, migration metadata imports and
+  a backward-compatible ZIP preflight extension in `log_engine/reader.py`.
+- Generated `backend/openapi.json`, frontend API types, both new bundle schemas;
+  React `InvestigationTools`, `EventBookmark`, `BundleTransfer`, typed aliases,
+  historical workspace, neighbour actions and semantic CSS.
+- New unit/MariaDB/capacity/upgrade/browser tests; existing security and retention
+  rollback test fixtures updated without weakening their original assertions.
+- Isolated `prepare_stage6_runner.py`, `stage6_local.py`, `stage6_sftp_fixture.py`,
+  `verify_stage6.py`, `verify_stage6_build.py`, `verify_stage6_preservation.py`;
+  README/API/MariaDB/traceability/decision/slice-plan/status documentation.
+  Ignored synthetic secrets/state/Compose files and verification evidence remain
+  local. Original source fixtures, event IDs, images and dependency locks remain
+  unchanged.
+
+Commands actually run (repository root unless specified; Python is
+`backend/.venv/Scripts/python.exe`):
+
+| Command/check | Recorded result |
+|---|---|
+| `python scripts/verify_stage6.py checks` | Final **all 12 checks pass**; exact subprocess argv/cwd/exit codes in `verification/stage-6/checks/commands.json`. Final unit suite **629 passed, 4 skipped, 5 documented transport deprecations in 25.09 s**. Earlier runs and corrected failures are described below. |
+| Checks helper: `python -m unittest discover -s tests/package -q`, package/schema/deployment validators | **128 tests, 9 platform skips**; 20 schemas, 102 valid and 36 rejected negative instances; 44 static deployment checks. These are package checks, not runtime acceptance substitutes. |
+| Checks helper: backend Ruff, format, mypy; frontend `lint`, `typecheck`, `api:check` | PASS; **138 Python files formatted**, **33 runtime source files typed**. Generated OpenAPI/TypeScript types match current models. |
+| Checks helper: `python scripts/build_stage1.py` | PASS: **200-module Vite build**, wheel and sdist. Existing >500 kB chunk advisory remains non-fatal. No installation/release is inferred. |
+| `python scripts/verify_stage6.py integration` (fresh suffix recorded in command artifact) | **155 passed in 383.07 s** on Linux Python 3.13.16 / real MariaDB 11.8.9, including 136 prior regression cases and 19 Stage 06 cases. Direct/jump read-only SFTP, live/WS/auth/security/retention regression cases pass. `s6_9ebf3e77.log` and `-command.json`. |
+| `python scripts/verify_stage6.py investigations` | Final expanded scope **21 passed in 75.82 s**, no skips/failures, including all 10 core, 10 bundle and one 12 MiB capacity case. `s6_45fc4f1b.log` / command artifact. Covers owner/project/session guessing, both roles, actual FK INSERT/UPDATE rejection, upload admission, quota/cancel lifecycle, revisions, offline edits/re-export and original cache/document immutability. |
+| `python scripts/verify_stage6.py investigations --match <recorded four-case selection>` | **4 passed in 18.75 s** after bounded redaction/Unicode changes: capacity, logout during blocked worker, corrupted/unsafe/future/surrogate input, source-context pin/expiry and actual process/parser rename. `s6_e745e232.log` / command artifact. |
+| `python scripts/verify_stage6.py investigations --match 'both_roles_redacted_exchange or corrupt_unsafe_or_future_bundle'` | Final technical-ID validation **3 passed in 12.98 s**, 18 deselected; both-role foreign offline exchange and rejection paths. `s6_155c5761.log` / command artifact. |
+| `python scripts/verify_stage6.py upgrade` | PASS: populated `0009_live` -> `0012_offline_analysis`, **every existing row in 36 old tables preserved**, including two accounts, systems, preferences, policy and deliberately repeated scoped event/source/workspace IDs. `s6_upgrade_5c865fb7.log` / command artifact. |
+| `python scripts/frontend.py e2e investigation.spec.ts` with protected synthetic accounts and explicit `INSPECTOR_E2E_URL=https://localhost:8448` | Final **4 passed, 0 skipped/flaky/unexpected in 35.552 s**. Both roles, same-context deep links, exact/literal five-process trace, note/context, preview cancellation/redaction/download, foreign A->B offline import/edit/re-export, expiry, actual five-neighbour Monitor/Stop and held response isolation. `investigation-browser-final-coverage.json`, exact argv in that report. |
+| Manual UI inspection | PASS: saved workspace, source provenance/context, redacted preview, foreign imported analysis and expired-source pinned context. Both roles/themes at 1920x1080 and 1280x720; **18 screenshots** and source hashes in `frontend-ui-review.json`. Root independently viewed five representative screenshots; no blocking clipping/overlap. Browser asserts no horizontal overflow, page errors or external requests. |
+| `python scripts/prepare_stage6_runner.py`; guarded `stage6_local.py` fixture phases | Built a separate Stage 06 image from cached locked layers; original runner tag retained. Only new synthetic schemas and 8448/SFTP services provisioned/migrated/started/configured/restarted/stopped. `runner-build.json`, generated fixture state and migration/command records retain details. |
+| `python scripts/verify_stage6_preservation.py --baseline`, then without that flag | PASS at the recorded measurement: certificate/hostname-verified readiness **200** on 8444/8445; original container IDs, images, start times, restart counts and served assets unchanged against baseline and prior deployment evidence. This measurement preceded the final frontend build; see the later 8444 asset correction below. Zero authenticated/state-changing requests to retained apps. Original runner preserved; Stage 06 and earlier Stage 05 fixtures exited. `retained-baseline.json`, `retained-installations.json`. |
+| `python scripts/verify_stage6_build.py` | PASS: **54 packaged files** match current source, browser-tested source hashes and exact JS/CSS assets match. `final-artifact-correspondence.json`; wheel SHA-256 `421e69e7d64f4a2b4f00fb3195938e4e374d47e7df4e87afad28422f00732fe6`. |
+| `git diff --check` | PASS; existing LF/CRLF conversion notices are non-fatal. |
+
+The final measured offline exchange contains **12,582,912 raw text bytes**, 96
+128-KiB physical records, **12,671,407 uploaded ZIP bytes** and **12,671,412
+redacted downloaded ZIP bytes**. Equal-length replacement preserves the actual
+12 MiB export workload. Import took **2.202 s**, the complete test exchange
+**6.433 s**, with process peak RSS **358,592,512 bytes** and **zero SSH attempts**.
+`capacity-exchange.json` records this final run. This is the real ASGI/MariaDB
+server-plus-test-client process measurement, not a production/browser memory
+qualification or a new concurrent-live capacity claim. Earlier larger RSS samples
+remain in their separate full/focused logs.
+
+Corrected failures and limits are retained rather than treated as passes:
+
+- Initial unit rollback fixture lacked the new pin lookup; its original rollback/
+  restore assertions still pass after adding the required test-double methods.
+- Real MariaDB caught a reserved unquoted cursor column; the corrected frozen
+  migration is verified on fresh schemas, including populated upgrades.
+- The first investigation router accidentally used a different transaction
+  dependency scope from authentication, producing a second session/lock timeout.
+  It now shares `scope="function"`; actual logout-during-guard and worker tests
+  prove that locks are released and stale logins cannot commit private changes.
+- MariaDB metadata paths require SQLAlchemy's escaped key representation; Unicode,
+  punctuation, quote and literal escape identity tests now pass.
+- Early test/API verb mismatches, accessible labels, download-prefix validation,
+  generated nullable types, preview quota lifecycle, stale bookmark completions
+  and post-expiry progress refresh were corrected. Earlier reports/logs under
+  `verification/stage-6/` retain their failures. Invalid fixture field names and
+  a naturally shortened redacted capacity output were corrected in fixtures;
+  source validation and the 12 MiB workload were preserved, not relaxed.
+- Windows unit skips cover POSIX permission bits, two privileged symlink cases
+  and renaming an ordinary pinned Windows handle. Real Linux integration covers
+  actual retention/SSH behavior. GNU Make is absent (`Get-Command make` found no
+  command), so the documented underlying commands ran directly.
+- This stage exchanges decoded retained event text with original identity/range/
+  checksum provenance, not a binary-source archive for imported raw downloads.
+  Context pins retain bounded event snapshots; they do not retain entire source
+  files after explicit expiry. No redactor can identify unspecified sensitive
+  values, and observed timestamps do not establish continuous coverage/causality.
+- Ubuntu/Rocky installation, native OS window-manager checks, policy-maximum
+  bundle sizes, full proxy/browser memory, long-duration soak and complete
+  offline image save/load/cold-start/release qualification remain later gates.
+  No full release or installation claim is made by this local container result.
+
+**Stage 06 is complete within the recorded local synthetic baseline. Stop at
+this review gate. Next: `prompts/07_INVENTORY_AND_UI.md`, only after separate
+user authorization.** There is no current Stage 06 blocker and no retained
+installation was upgraded by this work.
+
+
+## 18 October 2026 - Stage 06 deployed to the retained local application
+
+Authorization: "Deploy stage 6." Upgraded only **https://localhost:8445**
+(`runtime-stage3`, database `inspector_test_s3_web_317d3a3c4a`) from `0009_live`
+to **`0012_offline_analysis`**. The serving backend is the isolated tested artifact
+at `.state/stage6-install/backend`, mounted read-only. No Stage 07 work,
+production/target-host connection, repository push or external deployment occurred.
+
+Installed wheel SHA-256:
+`421e69e7d64f4a2b4f00fb3195938e4e374d47e7df4e87afad28422f00732fe6`.
+The immutable runtime image is
+`sha256:668bfc011a595c63ea4f88c29eea56c326828662dbba1cd20a18a4eacdfcd8a8`,
+the same cached dependency image used by Stage 05 and the Stage 06 tests. No
+dependency download, image pull or frontend rebuild was needed for deployment.
+All **55 packaged runtime/migration/frontend files** match the wheel, all **33
+runtime source modules** match the final source correspondence report, and the
+three actual served frontend assets match the tested build.
+
+Before stopping 8445, an independent audit established zero active historical
+collections, live sessions or subscriptions. Only that service was stopped.
+Consistent recovery material is retained privately under
+`.secrets/stage6-install/pre-0012-offline-analysis/`: SQL dump, cache archive,
+byte/hash/ownership manifests, exact Compose/application files, protected vault
+copy, previous installed backend and a complete recovery-point marker. The
+compressed SQL dump is **194,573,904 bytes**, SHA-256
+`f82832c8d38f00b7717ac50ddd18d3af7c5261bc466e54842e19bd4a3d93c763`;
+the cache archive SHA-256 is
+`54843615c24bb079ae05708c86ee0fd5f5e509589138e243878499882e15819a`.
+The SQL dump intentionally contains no database creation/selection statements.
+Both archives and the protected vault copy were verified before migration.
+Prior Stage 04/05 snapshots and backups remain available. The matching written
+recovery procedure is `.cache/stage6-rollback.txt`; no rollback/restore drill was
+performed or claimed.
+
+Migration applied the three additive revisions and created exactly seven empty
+tables. **All 37 pre-existing table counts and all 36 non-Alembic checksums
+matched before startup.** The prior disposable upgrade report's "36 old tables"
+explicitly excluded `alembic_version`; there is no unexplained table difference.
+After startup, **27 stable old table counts/checksums** still matched; the other
+tables hold deliberate startup/session/workspace/job/cursor/audit state. All
+**897 original cache files (230,864,349 bytes)** and **957 ownership/mode entries**
+matched the protected snapshot under Linux UID 10001. Existing account,
+preference, system, topology, credential/trust, security policy, configuration
+and vault data were preserved. No collection or monitor was restarted.
+
+Commands actually run (Python is `backend/.venv/Scripts/python.exe`, repository
+root; Docker operations used the authorized local Docker Desktop access):
+
+| Command/check | Recorded result |
+|---|---|
+| `python .cache/install_stage6.py prepare` | PASS after granting the local Docker access required by the sandbox. Initial default-sandbox invocation failed safely before preparation (`SetupError`, Docker pipe access); the approved retry selected the exact wheel/image, copied an isolated artifact and recorded the current 8444 baseline. `deployment-prepared.json`. |
+| `python scripts/audit_stage6_deployment.py pre` | PASS: verified TLS readiness, restricted runtime/DML grants, no active collection/live work, actual unauthenticated WebSocket **403**, existing service identities and pre-existing 8444 asset drift. `deployment-audit-pre.json`. |
+| `python .cache/install_stage6.py backup`, then `seal` | PASS: only 8445 stopped; complete SQL/cache/application recovery point and independently rechecked archive/vault hashes. `deployment-backup.json`, `deployment-backup-verified.json`. |
+| `python .cache/install_stage6.py migrate` | PASS: `0009_live` -> `0012_offline_analysis`; all 37 old counts and 36 non-Alembic checksums unchanged; seven new tables empty; configuration/vault unchanged. `deployment-migration.json`. |
+| `python .cache/install_stage6.py start`, then `verify` | PASS: only `up --detach --no-deps runtime-stage3`; certificate/hostname-verified readiness **200**, installed file/module/served-asset hashes, retained stable table/cache/permission checks and 8444 preservation. `deployment-installation.json`. |
+| `python scripts/audit_stage6_deployment.py post` | PASS: 55 wheel members/33 runtime modules, schema, service restrictions, TLS and WebSocket boundaries verified independently with the actual runtime DML credentials. `deployment-audit-post.json`. |
+| `python scripts/verify_stage6_preservation.py --installed-stage6` | PASS: both local HTTPS services ready; authorized 8445 artifact verified; 8444 container/image/start/restart/assets preserved against deployment preparation; original runner tag retained; Stage 05/06 browser/SFTP fixtures stopped. New `deployment-preservation.json` preserves the earlier pre-deployment reports. |
+| `.toolchains/node-v24.22.0-win-x64/node.exe --check .cache/verify_stage6_install.mjs`, then the same executable without `--check` | Syntax PASS; final browser **PASS in 10.468 s**: both roles, actual served assets, independent pages in one context, five-process exact/literal correlation, source provenance/context, redacted download and offline import, personal save/restore/bookmark create/delete and re-export preview/cancel. Four fresh workspaces detached; zero external/forbidden/WebSocket requests or page errors. `deployment-browser.json`, exact argv/helper hash in `deployment-browser-notes.json`. |
+| `python scripts/audit_stage6_deployment.py post-browser` | PASS: **53 historical jobs, 2 terminal live sessions and 47 target-action audit rows** unchanged from pre-deployment; zero active jobs/live sessions/subscriptions. TLS readiness 200, unauthenticated WebSocket 403, runtime/file boundaries and both containers preserved. Separate `deployment-audit-post-browser.json` retains the initial post audit. |
+| Independent installed UI review | PASS: eight screenshots cover both roles/themes at 1440x1000. Root viewed the Administrator light offline analysis and Inspector dark redacted preview; controls, provenance, warnings and trace are readable with no blocking clipping. `deployment-screenshots/`. Theme rendering used page-local DOM overrides; saved preferences were verified unchanged. |
+| `python -m ruff check --config backend/pyproject.toml scripts/audit_stage6_deployment.py scripts/verify_stage6_preservation.py`; corresponding `ruff format --check --config backend/pyproject.toml` | PASS, both files formatted. An earlier check without the repository's backend config used the tool's 88-column default and reported both files would reformat; the established 100-column repository config passes. |
+| `git diff --check` | PASS; existing LF/CRLF notices are non-fatal. |
+
+The first three browser attempts failed in Chromium/Playwright response-body
+retrieval, before any offline import commit or analysis mutation. Their reports
+remain as `deployment-browser-attempt-1.json` through `-3.json`. The endpoint
+returned **200 application/json**, and independent validation accepted the actual
+downloaded ZIP (38 events, 21 sources). The corrected operator check captures a
+receipt from an in-page fetch clone when DevTools reports
+`CHROMIUM_RESPONSE_BODY_UNAVAILABLE`; the actual UI still parses the response and
+performs preview/commit. No product or installed artifact changed. Three earlier
+unparsed import previews remain bound to those test logins until normal expiry;
+their IDs were unavailable, so no unrelated preview was cancelled. Earlier smoke
+workspaces were detached, and no global logout was performed. The final attempt
+cancelled its four remaining previews. Two HTTP 404s in that attempt are the
+UI's ordinary-investigation lookup before its offline fallback, not failed imports.
+
+Personal editing was limited to two newly imported, explicitly labelled private
+offline smoke artifacts in `stage3-fixture-a`:
+
+| Owner role | Label | Investigation ID |
+|---|---|---|
+| Administrator | `[Synthetic deployment smoke Stage 06] administrator` | `95368ba3-3526-4fb7-8f09-d6ca32e291a1` |
+| Inspector | `[Synthetic deployment smoke Stage 06] inspector` | `ac9252ec-50ff-48ad-9657-14ef2e00786a` |
+
+Their immutable imported documents and separate personal analysis remain. Notes
+were restored to their labelled smoke baseline and created bookmarks removed.
+Existing retained captures were read/query/export-only: their workspace,
+bookmark and query hashes matched before/after, as did preferences, catalogue,
+topology and existing live state. No configured-path check, SSH request,
+collection, live start, shared settings write or preference write was issued.
+
+**8444 preservation correction:** deployment preflight found that its backend
+container/image/start time were unchanged, but its shared `frontend/dist` mount
+already served the final Stage 06 build. Its earlier coding-baseline index hash
+was `e746de41035ef97a72e38279767b7cfa5cfb9409c7afcb06dba0b4828117bbfc`;
+the as-found deployment hash was
+`d1ebf9d3c2e894c140a5e47179e632d915bc2ff4edb42c276e61ae529b0a8803`.
+The earlier preservation report preceded that final shared build and cannot
+prove unchanged assets throughout all Stage 06 coding. That report is retained
+unchanged; the earlier prose above now states its temporal limit. This deployment
+neither rebuilt nor restored 8444: its exact as-found assets, container ID, image,
+start time, restart count and verified readiness were preserved. This does not
+claim that 8444's backend was upgraded to Stage 06.
+
+Changed deployment/support files: `README.md`, `backend/README.md`,
+`docs/14_MARIADB.md`, `progress/V3_SLICE_PLAN.md`, this status entry, new
+`scripts/audit_stage6_deployment.py` and the explicit installed mode in
+`scripts/verify_stage6_preservation.py`; ignored operator scripts, isolated
+snapshot, existing local Compose override, protected backup and deployment
+evidence. No backend/frontend product implementation changed for deployment.
+The exact installed artifact already passed the Stage 06 unit/MariaDB/SFTP and
+browser suites recorded above; those broad suites were not rerun for installation.
+Actual migration, preservation, transport, security and installed-browser checks
+ran instead. Ubuntu/Rocky and offline-release qualification remain later gates.
+
+**Stage 06 is installed locally on 8445. Stop at the Stage 06 gate; next scope is
+`prompts/07_INVENTORY_AND_UI.md`, only after separate authorization.**

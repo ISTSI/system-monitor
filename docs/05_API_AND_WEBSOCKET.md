@@ -1,5 +1,58 @@
 # 05 — HTTP API and live protocol
 
+## Stage 06 investigation API
+
+The Stage 06 routes below are under `/api/v1/projects/{project_id}`. Every
+content operation checks the current owner and route project; Administrator
+has no private-content bypass. Generated OpenAPI and TypeScript types contain
+the complete request/response shapes.
+
+| Method/path | Behavior |
+|---|---|
+| `GET /investigations/{id}/workspace` | Saved state or unsaved defaults at revision 0, collection reference and retained/partial/unavailable status |
+| `PATCH /investigations/{id}/workspace` | Expected revision, title, processes, UTC bounds, filters, pane layout, notes and investigation pin |
+| `POST /investigations/{id}/correlation` | Historical query plus exact/literal mode, field and value; chronological events, page-relative integer deltas and source-time inversion flags |
+| `GET/POST /investigations/{id}/bookmarks` | List/create owned bookmark with annotation, context request, context pin and expected analysis revision |
+| `PATCH /investigations/{id}/bookmarks/{bookmark_id}` | Revision-checked annotation and context pin |
+| `POST /investigations/{id}/bookmarks/{bookmark_id}/delete` | Revision-checked bookmark removal |
+| `GET /investigations/{id}/sources/{source_id}/provenance` | Raw/index availability, parse counts, observed extrema, captured ranges and limitations |
+| `POST /investigations/{id}/expire` | Explicitly expire terminal, unpinned source bytes/index while retaining saved state and pinned context |
+| `POST /bundles/export/preview` | Investigation ID and literal redaction terms/replacement; full sanitized preview |
+| `POST /bundles/export` | Preview ID only; create an expiring download grant |
+| `GET /bundle-downloads/{token}` | Revalidated sanitized ZIP download |
+| `POST /bundles/import/preview` | Stream a bounded `application/zip`, validate all members/checksums, stage a preview |
+| `POST /bundles/import` | Preview ID only; commit new private offline data |
+| `GET /bundle-investigations[/{id}]` | Compact owned offline list or full detail with origin provenance |
+| `GET/PATCH /bundle-investigations/{id}/workspace` | Revisioned private analysis separate from immutable imported events |
+| `GET/POST/PATCH/DELETE /bundle-investigations/{id}/bookmarks[/{bookmark_id}]` | Private annotations/context pins with expected analysis revision |
+| `POST /bundle-investigations/{id}/correlation` | Exact/literal chronological offline trace |
+| `POST /bundles/previews/{preview_id}/cancel` | Discard own session-bound staged preview and its download grants |
+| `POST /bundle-investigations/{id}/query` | Retained offline UTC/literal query with scoped cursor |
+| `POST /bundle-investigations/{id}/events/{event_id}/context` | Source-local offline context, separate from match totals |
+
+Saved workspace and bookmark changes share one optimistic parent revision.
+Wrong-project/owner references are 404; stale edits are 409. Titles allow 200
+characters, notes/annotations 10,000. Each investigation allows 1,000 bookmarks
+and 32 MiB of pinned context. An unpinned bookmark has nullable context; a new
+context can be pinned only from retained events. Full-investigation pins protect
+the source cache. Context pins preserve event text/provenance independently of
+original source-file bytes. Deletion requires unpinning/removing bookmarks.
+
+Historical query input also accepts optional `correlation: {mode,field,value}`.
+Exact mode compares a complete parsed value case-sensitively; literal mode uses
+the shared Unicode-casefold predicate. Field names are bounded to 64 characters
+and quoted as JSON-path keys. Values are 1–512 characters. Unavailable scans
+return `availability: unavailable`, `matched_count: null` and `partial: true`.
+Observed trace deltas refer to adjacent events on the returned page and do not
+establish latency or causality.
+
+Bundle version 1.0 has exactly `manifest.json` and `investigation.json`. The
+manifest records actual UTF-8 byte length and SHA-256. Typed projections exclude
+active connections, approvals, credentials and trust. Foreign source/event IDs
+remain provenance in private offline tables, without active entity associations
+in the selected destination project. Previews and downloads bind project, owner,
+login/auth version, content revision and expiry. Import starts no connection.
+
 Prefix all routes with `/api/v1`. Use same-origin HTTPS with server-side cookie sessions. Validation errors include field paths and a stable machine code; never expose stack traces, passwords or full connection strings. Generate OpenAPI from Pydantic and generate frontend types; do not maintain incompatible handwritten duplicates. JSON Schemas in `contracts/` define shared payload semantics.
 
 ## Route inventory and access
@@ -222,3 +275,12 @@ A System selector is not an authorization check. Resolve every nested object in 
 Do not leave unscoped `/collections`, `/jobs`, `/investigations`, `/live-sessions`, `/connections`, `/parsers`, `/bundles` or `/downloads` compatibility endpoints that select a project from a session/default. Version upgrades must update callers/generated clients and reject unsupported protocol versions safely. Global `/credentials`, account/settings and registry routes stay global by design, but using a credential for SSH additionally requires a project binding.
 
 WebSocket server envelope example is `contracts/live-frame.example.json`. Each event must have the same `project_id` as the envelope; validate the payload through the existing event schema and authoritative session selection. Envelope shape validation alone does not enforce that relational rule. The client checks project, workspace, session, filter version and sequence before appending any frame; stale old-project frames must never appear after navigation. See document 16 for detach/resume and no-automatic-collection semantics.
+
+
+Stage 06 imports reserve one of at most two upload slots (or the explicitly
+lower archive-worker ceiling) before receiving data. Busy admission returns
+429 before reading the upload. ZIP central-directory preflight bounds the
+actual member count and 64 KiB metadata allocation before constructing ZipInfo
+objects, and rejects NUL-altered names. Four usable previews per account is the
+staging ceiling; expired or revoked-login previews release quota. Closing or
+replacing a preview can explicitly cancel only that page's own staging object.
