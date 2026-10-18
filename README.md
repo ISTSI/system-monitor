@@ -26,6 +26,14 @@ matching backend/frontend, and passed actual installed-browser and preservation
 checks. Refresh existing pages to load it. See the dated deployment entry in
 [STATUS.md](progress/STATUS.md).
 
+The timestamp/events-table UI follow-up is also installed on **8445** following
+the separate **“Deploy”** authorization on 18 October 2026. Refresh to load UTC
+timestamps in `YYYY-MM-DD HH:mm:ss` format, compact rows with context eyes,
+optional columns and full-screen results. It uses a read-only frontend overlay;
+the existing language backend, schema `0014_languages`, accounts, settings and
+cached investigations are preserved. Previous frontend assets remain available
+and the exact Compose rollback is retained under `.secrets/events-table-install`.
+
 **Package version 3.0 · 17 October 2026**
 
 A complete revised specification, reference-asset, configuration/deployment-template and synthetic-test package—not an implemented application, migration run or installer. No production credentials, populated database, dependencies or prebuilt images are included. The specified Linux-hosted web app works without runtime Internet access and reaches approved Linux hosts/jump hosts over LAN/VPN; Windows browsers are clients.

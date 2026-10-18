@@ -32,6 +32,15 @@ line without its parsed timestamp prefix; **Context** retains the original.
 Both roles can delete their own finished collection with **Delete collection**
 and the confirmation dialog. Deletion removes that collection's retained data.
 
+Timestamp metadata throughout the UI displays `YYYY-MM-DD HH:mm:ss` in UTC.
+Source log text, original parser evidence and exact API microseconds are
+preserved. Historical results use compact monospace rows; the eye immediately
+before the timestamp opens source context. **Columns** hides/shows UTC time,
+host and process independently; **Show all columns** restores them. Choices
+apply across that page's merged/split results. **Full screen** maximizes results
+within the browser, with **Exit full screen** or Escape to return. Presentation
+changes retain scroll/results and stay independent in other browser pages.
+
 Choose **Monitor** or **Monitor selected** from a topology selection, or open
 **Live monitor** and choose configured processes. The viewer measures its pane
 height for recent matching history. Merged and separate process panes share

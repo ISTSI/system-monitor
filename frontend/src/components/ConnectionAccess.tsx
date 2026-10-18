@@ -2,6 +2,7 @@ import { useI18n } from '../i18n';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { message, request, write } from '../api/client';
 import type { components } from '../api/schema';
+import { formatUtcMicroseconds } from '../utcDateTime';
 import type { Config, Connection } from '../topology';
 import { ErrorNotice, Modal } from './Common';
 
@@ -148,7 +149,7 @@ export default function ConnectionAccess({ config, connection, onClose, onJump }
         <h3>{sourceAccess.manual_confirmation_required ? t("Approve target and log roots") : t("Configured target and log roots")}</h3>
         {sourceAccess.manual_confirmation_required ? <p>{t("Review the configured target and roots for")} <strong>{config.project.name}</strong>{t(". Approval applies only to this system and saved configuration. Changing credentials, trust, routing or source definitions requires a new approval.")}</p> : <p>{t("Additional security measures are disabled. Saved changes to paths and parsers apply automatically. SSH host keys still require explicit verification.")}</p>}
         <p className="source-approval-state" data-testid="source-approval-status">{sourceAccess.manual_confirmation_required ? sourceAccess.approval.approved ? t("Approved for remote collection.") : t("Remote collection is blocked until this target and its roots are approved.") : sourceAccess.approval.approved ? t("Ready for remote collection. Manual source confirmation is disabled.") : t("Remote collection requires stored credentials and explicitly verified SSH host keys.")}</p>
-        {sourceAccess.approval.approved && sourceAccess.approval.expires_us && <p>{t("Approval expires")} {new Date(Number(BigInt(sourceAccess.approval.expires_us) / 1000n)).toISOString()} UTC.</p>}
+        {sourceAccess.approval.approved && sourceAccess.approval.expires_us && <p>{t("Approval expires")} {formatUtcMicroseconds(sourceAccess.approval.expires_us)} UTC.</p>}
         <dl className="source-approval-details"><dt>{t("Target")}</dt><dd><code>{connection.host}:{connection.port}</code>{jump && <span> {t("via")} {jump.name}</span>}</dd><dt>{t("Configured log roots")}</dt><dd>{sourceAccess.roots.length ? <ul>{sourceAccess.roots.map(root => <li key={root}><code>{root}</code></li>)}</ul> : t("No log roots configured.")}</dd><dt>{t("Configured sources")}</dt><dd>{sourceAccess.process_ids.length ? <ul>{sourceAccess.process_ids.map(id => { const process = config.processes.find(item => item.id === id); return <li key={id}>{process?.name ?? id}<code>{process?.log_source?.active_path ?? id}</code></li>; })}</ul> : t("This connection has no configured log sources.")}</dd></dl>
         {sourceAccess.roots.length > 0 && sourceAccess.process_ids.length > 0 && <>
           {sourceAccess.manual_confirmation_required && !sourceAccess.approval.approved && <label className="checkbox-label"><input type="checkbox" checked={rootsVerified} disabled={!!busy} onChange={event => setRootsVerified(event.target.checked)} />{t("I verified this target and these configured log roots and authorize read-only collection for this system.")}</label>}

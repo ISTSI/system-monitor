@@ -2,6 +2,7 @@ import { useI18n } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import { message, write } from '../api/client';
 import type { components } from '../api/schema';
+import { formatUtcTimestamp } from '../utcDateTime';
 import type { Config, Parser } from '../topology';
 import { ErrorNotice } from './Common';
 import './parser-test.css';
@@ -41,7 +42,7 @@ export default function ParserTestPanel({ config, draftVersion, getParser }: { c
     <button type="button" disabled={busy || !sample} onClick={() => { void testSample(); }}>{busy ? t("Testing parser…") : t("Test parser sample")}</button>
     {error && <ErrorNotice>{t(error)}</ErrorNotice>}
     {result && <div role="status"><p><strong>{result.valid_count} {t("valid timestamps ·")} {result.error_count} {t("parse errors")}</strong> · {config.project.name} {t("· revision")} {result.revision}</p>
-      <div className="parser-results" tabIndex={0} role="region" aria-label={t("Parser sample results")}><table><thead><tr><th scope="col">{t("Line / original text")}</th><th scope="col">{t("Original timestamp")}</th><th scope="col">{t("UTC / exact microseconds")}</th><th scope="col">{t("Extracted fields / errors")}</th></tr></thead><tbody>{result.lines.map(line => <tr key={line.line_number}><td><span>{t("Line")} {line.line_number}</span><pre>{line.original_line}</pre></td><td><code>{line.timestamp_original ?? t("Not extracted")}</code></td><td><code>{line.timestamp_utc ?? t("Unknown timestamp")}</code>{line.timestamp_us !== null && <small>{line.timestamp_us} {t("µs since epoch")}</small>}</td><td>{line.error && <p className="history-warning">{line.error}</p>}{Object.entries(line.metadata).map(([key, value]) => <div key={key}><strong>{key}</strong>: <code>{value}</code></div>)}{!Object.keys(line.metadata).length && <span>{t("No configured fields found.")}</span>}</td></tr>)}</tbody></table></div>
+      <div className="parser-results" tabIndex={0} role="region" aria-label={t("Parser sample results")}><table><thead><tr><th scope="col">{t("Line / original text")}</th><th scope="col">{t("Original timestamp")}</th><th scope="col">{t("UTC / exact microseconds")}</th><th scope="col">{t("Extracted fields / errors")}</th></tr></thead><tbody>{result.lines.map(line => <tr key={line.line_number}><td><span>{t("Line")} {line.line_number}</span><pre>{line.original_line}</pre></td><td><code>{line.timestamp_original ?? t("Not extracted")}</code></td><td><code>{line.timestamp_utc ? formatUtcTimestamp(line.timestamp_utc) : t("Unknown timestamp")}</code>{line.timestamp_us !== null && <small>{line.timestamp_us} {t("µs since epoch")}</small>}</td><td>{line.error && <p className="history-warning">{line.error}</p>}{Object.entries(line.metadata).map(([key, value]) => <div key={key}><strong>{key}</strong>: <code>{value}</code></div>)}{!Object.keys(line.metadata).length && <span>{t("No configured fields found.")}</span>}</td></tr>)}</tbody></table></div>
       <p className="field-help">{t("Only configured literal correlation markers are extracted. A level appears when a marker for it is configured. Unknown timestamps remain in the diagnostic lane.")}</p>
     </div>}
   </section>;

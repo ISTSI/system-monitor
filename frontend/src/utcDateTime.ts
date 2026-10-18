@@ -9,9 +9,21 @@ export function utc(value: string): string {
   return `${seconds}.${(parts[3] ?? '').padEnd(6, '0')}Z`;
 }
 
-export function utcInput(value: string): string {
+// Presentation only: keep the full timestamp on the event/query for ordering,
+// filtering and provenance. Never use the browser's timezone or round seconds.
+export function formatUtcTimestamp(value: string): string {
   return value.replace(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})(?:\.\d{1,6})?Z$/, '$1 $2');
 }
+
+export function formatUtcMicroseconds(value: string): string {
+  const microseconds = BigInt(value);
+  // BigInt division truncates towards zero; floor negative instants so a
+  // fractional second before the epoch still displays the preceding second.
+  const milliseconds = microseconds / 1000n - (microseconds < 0n && microseconds % 1000n !== 0n ? 1n : 0n);
+  return formatUtcTimestamp(new Date(Number(milliseconds)).toISOString());
+}
+
+export const utcInput = formatUtcTimestamp;
 
 export function defaultTimes() {
   const end = new Date(); end.setUTCMilliseconds(0);

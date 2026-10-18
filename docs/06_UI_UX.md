@@ -83,6 +83,24 @@ collections after confirming the system and collection identity; remove retained
 events, captured files and download grants. Active collections must finish or be
 cancelled first. Other collections and page workspaces remain independent.
 
+All displayed timestamp metadata uses `YYYY-MM-DD HH:mm:ss` in UTC, including
+historical/live rows, applied intervals, correlation traces, parser-normalized
+times, observed coverage and preview/approval expiry. Exact API timestamps,
+stored microseconds and the original source text remain unchanged; original
+timestamp evidence and downloadable documents retain their source format.
+
+Historical results use compact, unwrapped monospace rows with minimal padding
+and horizontal scrolling. A text-height eye before each timestamp opens source
+context; it remains available when timestamp metadata is hidden. **Columns**
+toggles UTC time, process and host independently, with **Show all columns** to
+restore them; log content stays visible. The same choices apply to split panes
+in that page. **Full screen** in the top-right maximizes results within the
+browser; **Exit full screen** or Escape restores the inline viewer. Preserve
+rows, filters and scroll when changing presentation. Native modal focus stays
+inside the maximized viewer; opening context and closing it returns to the row.
+Column/full-screen choices belong to the page and never update another window
+or trigger collection/refiltering.
+
 The trace view is a time-ordered table with process, timestamp, correlation field, message and observed delta. It is not a fabricated animation claiming an unobserved transfer occurred. Dependency highlighting on the diagram can accompany a trace without presenting it as proof.
 
 ## Live viewer

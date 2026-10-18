@@ -2493,3 +2493,138 @@ cold offline lifecycle and Stage 08 qualification remain separate work.
 
 **The language migration and matching application are deployed and verified on
 8445. Stage 08 remains the next separately authorized scope.**
+
+## 18 October 2026 — Compact event table and consistent UTC presentation
+
+Authorization: user requested `%Y-%m-%d %H:%M:%S` timestamps, full-screen
+historical results, a small context eye, compact terminal-like rows and column
+management. Implemented in source; no deployment or migration was performed.
+
+Changed files and behaviour:
+
+- `frontend/src/utcDateTime.ts` centralizes second-precision UTC display.
+  Historical/live rows, applied bounds, trace metadata, parser-normalized
+  results, observed coverage and bundle/inventory/approval expiry use it. Exact
+  API/storage microseconds, original timestamp evidence, raw/context text and
+  downloadable document data are preserved.
+- `HistoricalViewer.tsx`, `Common.tsx` and `styles.css` implement 20-pixel
+  unwrapped monospace rows with minimal padding and a 12-pixel context eye.
+  Columns toggles UTC time, process and host independently; Show all columns
+  restores them. Log content/context remain available when metadata is hidden.
+  Choices apply to all merged/split results in that page only.
+- Full screen maximizes the existing results DOM within the browser using a
+  native modal dialog; Exit/Escape restores inline results, focus and scroll.
+  Context opens above it and returns to the eye. Query/context failures stay
+  visible in the active modal. Presentation changes trigger no query/capture.
+- Other updated consumers: `BundleTransfer.tsx`, `ConnectionAccess.tsx`,
+  `InventoryImport.tsx`, `InvestigationTools.tsx`, `LiveViewer.tsx` and
+  `ParserTestPanel.tsx`. New controls have offline Polish translations in
+  `investigation.pl.ts`. Updated `frontend/README.md`, `docs/06_UI_UX.md` and
+  `docs/12_TRACEABILITY.md` (R17/R18/R31/R34/R49).
+- Added `frontend/tests/utc-date-time.test.mjs` and
+  `frontend/e2e/events_table.spec.ts`. Browser tests use actual isolated Stage 07
+  MariaDB/SFTP fixtures on 8449. One explicit next-query HTTP 503 mock checks
+  full-screen error feedback. Final tests restore the synthetic account's theme
+  present at test start and log out.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY scripts/frontend.py test` | PASS: generated API consistency and **17/17** Node tests, including UTC truncation without rounding, exact-bound preservation, timezone independence and negative epoch microseconds. |
+| `PY scripts/frontend.py lint` | PASS: all frontend sources/tests, zero warnings. |
+| `PY scripts/frontend.py typecheck` | PASS; build also typechecks. |
+| `PY scripts/frontend.py build` | PASS: 214 modules, bundled local assets. Existing Vite chunk-size advisory only. Rebuilt after review fixes for coverage formatting and modal error visibility. |
+| `PY scripts/stage7_local.py up` | Initial sandbox failure; read-only Docker check confirmed named-pipe Access denied. The isolated start passed with reviewed escalation. No installed 8444/8445 service was targeted. |
+| `PY scripts/frontend.py e2e events_table.spec.ts` | **PASS: 2/2 in 11.0 s**, no skips. Environment: `INSPECTOR_E2E_URL=https://localhost:8449`, protected `.secrets/stage7-browser/accounts.json`, report name `events-table-browser-final`. |
+| UI inspection | Viewed actual dark 1280 full screen, light 640 full screen, Columns with all optional columns hidden, and full-screen query error. Eight captures: `verification/stage-7/screenshots/events-table-*.png`. |
+| `PY scripts/stage7_local.py stop` | PASS with reviewed escalation; stopped both isolated fixture services, preserving their data. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+The browser cases verify raw context preservation, eye/row sizing, each optional
+column and restore, no query/capture from presentation controls, nested-dialog
+Escape/focus, retained scroll, both themes at 1280×720 / 1920×1080 / 640×720,
+visible failed-query feedback, five split panes and same-context same-system
+page independence. Browser attempt 1 failed before login because the sandbox
+could not read generated accounts (`EPERM`); reviewed escalation resolved it.
+Attempt 2 passed **2/2 in 11.2 s**. Final run added cleanup, restore-button and
+error assertions without weakening earlier checks. Reports remain
+`verification/stage-7/events-table-browser-attempt-1.json`,
+`events-table-browser-attempt-2.json` and `events-table-browser-final.json`.
+
+No real credentials or production target were used; non-origin browser requests
+were blocked. Backend source, dependencies, schema and installed applications
+are unchanged. Full backend/release suites were not rerun for this frontend-only
+follow-up. No remaining blocker for this UI request. Next numbered scope remains
+`prompts/08_OFFLINE_RELEASE.md`, separately authorized.
+
+## 18 October 2026 — Events-table UI deployed locally
+
+Authorization: user requested **“Deploy.”** The timestamp/compact-events-table
+update above is installed and verified at **https://localhost:8445**. Refresh
+existing pages to load it. Backend and schema remain **`0014_languages`**; no
+migration, dependency change, image rebuild/pull or target connection occurred.
+This deployment does not advance Stage 08.
+
+The immutable frontend is `.state/events-table-install/frontend`, mounted
+read-only at `/workspace/backend/src/inspector/web`. Its new JS/CSS are
+`index-py9wcUsc.js` and `index-6JMvSv8j.css`. An isolated rebuild matched the
+browser-verified `frontend/dist` byte for byte. The three older JS generations
+and earlier CSS remain available for open pages. The original language
+backend, wheel, scripts and bundled frontend remain unchanged. Only the
+8445 `runtime-stage3` service was stopped/recreated with `--no-deps --pull never`;
+the other installed application on 8444 retains its container/image/start time,
+restart count and served assets.
+
+Preflight confirmed zero active history/live work or subscriptions. Both
+post-install and post-browser checks preserve all **44 stable table counts and
+checksums**, including users/settings/preferences and schema, all **897 cached
+files / 230,864,349 bytes**, cache ownership/mode metadata, backend/scripts,
+configuration and vault. Operational totals remain **53 history jobs, three
+terminal live sessions and 48 target-action audit rows**, with no active capture.
+Runtime remains UID/GID 10001, one ASGI worker, read-only root, no capabilities,
+DML-only database grants and no migration/root secret or Docker socket mount.
+Verified TLS/readiness and actual current/older frontend asset hashes pass;
+unauthenticated WebSocket access still returns 403.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY -m py_compile .cache/deploy_events_table.py`; `NODE --check .cache/verify_events_table_install.mjs` | PASS. Helpers independently reviewed; no product source changed during deployment. |
+| `PY .cache/deploy_events_table.py build` | PASS: isolated rebuild, exact tested-asset equality, immutable manifest and older-asset retention. Existing Vite chunk-size/outside-project-output advisories only; the new directory was not emptied. `verification/events-table/deployment-build.json`. |
+| `PY .cache/deploy_events_table.py prepare` | PASS: runtime/scope preservation, no active work, previous Compose/private checksum snapshot, candidate with exactly one new read-only mount. `deployment-prepared.json`. |
+| `PY .cache/deploy_events_table.py deploy` | PASS: only 8445 recreated, matching current/older assets and original backend/data/cache/security; 8444 preserved. `deployment-installed.json`. |
+| `NODE .cache/verify_events_table_install.mjs` | **PASS, 4.682 s**: actual installed assets with no substitution, existing synthetic Inspector/20 cached events, UTC seconds despite Los Angeles browser timezone, 20-pixel rows/12-pixel eyes/zero vertical cell padding, column hiding/restore, raw source context, full-screen geometry, nested context/Escape/focus, both rendered themes at 1280×720 and 640×540 and independent same-context same-system windows. `deployment-browser.json`, five screenshot hashes. |
+| `PY .cache/deploy_events_table.py verify` | PASS: repeated all preservation/security/asset/8444 checks after browser verification. `deployment-verified.json`. |
+| Installed UI inspection | Viewed actual Polish dark full-screen results and the open Columns menu with all optional metadata hidden. Screenshots: `verification/events-table/deployment-screenshots/20261018T113029157Z/`. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Docker/protected-file deployment and browser commands used reviewed escalation
+because the sandbox restricts the local named pipe and generated credentials.
+No credential values were printed. The first installed-browser helper failed
+at its process-count assertion: it counted both the historical controls and the
+hidden mounted live viewer. Its report is preserved as
+`deployment-browser-attempt-1.json`. Scoping the helper to historical controls
+retains the exact five-control assertion and avoids touching live controls; the
+next run passed. No application requirement/test was weakened or runtime code
+changed. The first attempt detached its one new workspace; the passing attempt
+detached both of its new workspaces. Browser checks performed no logout,
+preference/shared-setting change, capture, live connection or import. Theme
+screenshots used only DOM rendering overrides. Stored preferences, catalogue,
+topology, investigations, notes and bookmarks matched before/after digests.
+Twenty retained rows do not exercise large vertical overflow in full screen;
+the earlier isolated 37-row source browser tests provide that scroll evidence.
+
+Rollback is prepared at `.state/events-table-install/ROLLBACK.txt`: restore the
+exact `.secrets/events-table-install/previous-compose.yaml` and recreate only
+`runtime-stage3` to remove the overlay. No SQL restore/migration is needed for
+this frontend rollback. Original artifacts and the earlier separate schema
+recovery remain retained. Automatic rollback was prepared, **not exercised**;
+deployment required no recovery. Full backend/source suites were already passed
+for the unchanged backend and tested frontend; this turn ran deployment-specific
+checks. Native Ubuntu/Rocky/offline-release qualification remains Stage 08,
+separately authorized.

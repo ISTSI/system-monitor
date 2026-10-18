@@ -1,12 +1,15 @@
 import { useI18n } from '../i18n';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 
-export function Icon({ kind = 'system', className = '' }: { kind?: 'system' | 'server' | 'process' | 'arrow'; className?: string }) {
+export function Icon({ kind = 'system', className = '' }: { kind?: 'system' | 'server' | 'process' | 'arrow' | 'eye' | 'expand' | 'collapse'; className?: string }) {
   return <svg aria-hidden="true" className={`icon ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
     {kind === 'system' && <><path d="m12 2 9 5v10l-9 5-9-5V7Z" /><path d="m12 7 5 3v5l-5 3-5-3v-5Z" /><path d="m3 7 9 5 9-5M12 12v10" /></>}
     {kind === 'server' && <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M4 9h16M4 15h16M8 6h.01M8 12h.01M8 18h.01M12 6h5M12 12h5M12 18h5" /></>}
     {kind === 'process' && <><rect x="6" y="6" width="12" height="12" rx="3" /><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" /><circle cx="12" cy="12" r="2" /></>}
     {kind === 'arrow' && <path d="M4 12h16m-6-6 6 6-6 6" />}
+    {kind === 'eye' && <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>}
+    {kind === 'expand' && <path d="M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6" />}
+    {kind === 'collapse' && <path d="M3 9h6V3m6 0v6h6M9 21v-6H3m18 0h-6v6" />}
   </svg>;
 }
 

@@ -2,6 +2,27 @@
 
 All 56 requirements map to application acceptance targets. The requirement table is not a test-result report; implemented evidence and remaining limits appear below it.
 
+The 18 October 2026 user-requested events-table follow-up extends R17/R18/R34
+UTC presentation, R31 context access and R49 independent page presentation.
+`frontend/tests/utc-date-time.test.mjs` verifies second-precision metadata without
+rounding, local-time conversion or changes to exact bounds. The two real-fixture
+cases in `frontend/e2e/events_table.spec.ts` verify compact rows, text-height
+context eyes, optional columns, maximization/escape/focus/scroll, both themes and
+same-account same-system page isolation. Exact commands/results are recorded
+in `progress/STATUS.md`; browser evidence is under `verification/stage-7/`.
+Original source evidence remains unmodified. This follow-up requires no schema
+change and does not advance the Stage 08 release gate.
+
+The subsequent explicit **“Deploy”** authorization installed that frontend on
+local **8445**, preserving the existing `0014_languages` backend and data through
+a read-only web-assets overlay. Installed-browser verification loads actual
+served assets, uses retained synthetic events, and checks UTC formatting,
+density, context, columns, both themes and same-context window independence.
+It creates/detaches only its own page workspaces and never starts collection or
+changes stored preferences. Deployment receipts, preserved first smoke-helper
+failure and rollback details are recorded in `verification/events-table/` and
+`progress/STATUS.md`. Stage 08 remains separate.
+
 The 18 October 2026 user-authorized language follow-up extends R34/R38/R41
 presentation and personal preferences, R39 shared-setting permissions and
 R42/R44 persistence. English/Polish dictionaries are bundled offline; shared

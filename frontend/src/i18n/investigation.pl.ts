@@ -405,6 +405,12 @@ const investigationPolish: Record<string, string> = {
   'invalid_timestamp': 'nieprawidłowy znacznik czasu',
   'incomplete_final_line': 'niekompletny ostatni wiersz',
   'Highlight limit reached; original text and filter results are unchanged.': 'Osiągnięto limit wyróżniania; oryginalny tekst i wyniki filtrowania pozostają bez zmian.',
+  'Event results': 'Wyniki zdarzeń',
+  'Columns': 'Kolumny',
+  'Visible columns': 'Widoczne kolumny',
+  'Show all columns': 'Pokaż wszystkie kolumny',
+  'Full screen': 'Pełny ekran',
+  'Exit full screen': 'Zamknij pełny ekran',
 };
 
 export default investigationPolish;
