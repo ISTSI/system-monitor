@@ -59,6 +59,12 @@ See `docs/10_ANSIBLE_IMPORT.md` for inventory-specific mapping and `docs/07_SECU
 
 ## Additional version 2 entities
 
+The language follow-up adds `ApplicationSetting.default_language` (`en` or `pl`,
+initially `en`) and `UserPreference.language` (`default`, `en` or `pl`, initially
+`default`). They share the existing settings/preference revision boundaries;
+partial writes preserve omitted fields. Language is independent of system and
+workspace selection and is excluded from topology/investigation interchange.
+
 `User`: immutable ID, normalized unique username, display name, Argon2 password hash, role (`administrator` or `inspector`), enabled state, force-password-change flag, authentication version, created/updated times. `UserPreference`: user ID, revision, theme mode (`default`, `light`, `dark`, `system`), personal viewport/pane settings; never shared topology. `ApplicationSetting`: revisioned global appearance/defaults and permitted runtime policy, changed only by an Administrator. `AuthSession`: user ID, verifier hash, auth version, expiry/revocation. `AuditEvent`: actor ID/role snapshot, action, safe target IDs and result; no secrets/raw log/filter values.
 
 The persisted `ApplicationSetting.additional_security_measures` boolean defaults

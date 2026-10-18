@@ -4,11 +4,30 @@ Stage 07 source adds the Administrator **Import Ansible inventory files** wizard
 safe static INI/extensionless-hosts/YAML/canonical-JSON parsing, ZIP companion
 variables, project-scoped source identities and revision-bound atomic
 reconciliation. It also adds parser-draft diagnostics using the real collection
-parser. The current source expects additive MariaDB revision `0013_inventory`.
+parser. That Stage 07 artifact expects additive MariaDB revision `0013_inventory`.
 Following isolated synthetic verification and separate deployment authorization
-on 18 October 2026, the exact tested artifact is installed at
-**https://localhost:8445**. Production release and offline installation remain
-Stage 08 work.
+on 18 October 2026, the original Stage 07 artifact was installed at
+**https://localhost:8445**; the subsequent language deployment below replaces it.
+Production release and offline installation remain Stage 08 work.
+
+The subsequent language follow-up is deployed at **https://localhost:8445**,
+with **`0014_languages`** and its matching frozen frontend/backend. It adds
+English/Polish application default and personal preferences in MariaDB;
+existing settings, revisions and themes are
+preserved. Optional `bootstrap_settings.default_language: en` (or `pl`)
+initializes fresh settings only. Use Settings for the shared default and user
+menu → Preferences for personal Language / Application default. Migrate with
+serving stopped and separate migration credentials as described below. The
+8445 deployment applied the migration with serving stopped after a consistent
+SQL/cache backup. Existing settings, accounts and retained data are preserved;
+actual installed English/Polish controls and role restrictions pass. Recovery
+material remains protected under `.secrets/language-install/pre-0014-languages/`;
+see `verification/language-support/deployment-*.json` and `progress/STATUS.md`.
+
+Local synthetic verification: `python scripts/verify_languages.py integration`
+and `python scripts/verify_languages.py upgrade` provision fresh disposable
+MariaDB schemas. Browser checks use only the isolated Stage 07 fixture on 8449
+with fresh built assets; receipts are in `verification/language-support/`.
 
 The subsequent authorized Preferences/Settings UI update on the same local
 8445 application uses `.state/preferences-install/frontend` as a read-only

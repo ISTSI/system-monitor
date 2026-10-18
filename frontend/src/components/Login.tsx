@@ -1,9 +1,11 @@
+import { useI18n } from '../i18n';
 import { useState, type FormEvent } from 'react';
 import { clearCsrf, message, write } from '../api/client';
 import type { Bootstrap } from '../api/types';
 import { ErrorNotice, Icon } from './Common';
 
 export default function Login({ bootstrap, onLogin, notice }: { bootstrap: Bootstrap; onLogin: () => Promise<void>; notice?: string }) {
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -18,5 +20,5 @@ export default function Login({ bootstrap, onLogin, notice }: { bootstrap: Boots
       await onLogin();
     } catch (cause) { setError(message(cause)); } finally { setBusy(false); }
   }
-  return <main className="login-layout"><section className="login-intro"><div className="brand-mark"><Icon /></div><p className="eyebrow">LOCAL KNOWLEDGE · CLEAR CONTEXT</p><h1>{bootstrap.branding}</h1><p className="lead">Understand your systems.<br />Keep every investigation in context.</p><div className="intro-facts"><span>Multiple systems, one place</span><span>Independent browser workspaces</span><span>Offline at runtime</span></div><p className="muted">A read-only investigation tool for documented Linux systems.</p></section><section className="login-card"><p className="eyebrow">YOUR WORKSPACE</p><h2>Sign in</h2><p className="muted">Use your local application account.</p>{notice && <p className="notice" role="status">{notice}</p>}{error && <ErrorNotice>{error}</ErrorNotice>}<form onSubmit={(event) => { void submit(event); }}><label>Username<input name="username" autoComplete="username" required maxLength={128} autoFocus /></label><label>Password<input type="password" name="password" autoComplete="current-password" required maxLength={1024} /></label><button className="primary full-width" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}<Icon kind="arrow" /></button></form><p className="login-help">Accounts are provisioned by your Administrator. There is no public registration.</p></section><footer className="login-footer"><span>{bootstrap.branding}</span><span>Local accounts · Secure sessions</span></footer></main>;
+  return <main className="login-layout"><section className="login-intro"><div className="brand-mark"><Icon /></div><p className="eyebrow">{t("LOCAL KNOWLEDGE · CLEAR CONTEXT")}</p><h1>{bootstrap.branding}</h1><p className="lead">{t("Understand your systems.")}<br />{t("Keep every investigation in context.")}</p><div className="intro-facts"><span>{t("Multiple systems, one place")}</span><span>{t("Independent browser workspaces")}</span><span>{t("Offline at runtime")}</span></div><p className="muted">{t("A read-only investigation tool for documented Linux systems.")}</p></section><section className="login-card"><p className="eyebrow">{t("YOUR WORKSPACE")}</p><h2>{t("Sign in")}</h2><p className="muted">{t("Use your local application account.")}</p>{notice && <p className="notice" role="status">{t(notice)}</p>}{error && <ErrorNotice>{error}</ErrorNotice>}<form onSubmit={(event) => { void submit(event); }}><label>{t("Username")}<input name="username" autoComplete="username" required maxLength={128} autoFocus /></label><label>{t("Password")}<input type="password" name="password" autoComplete="current-password" required maxLength={1024} /></label><button className="primary full-width" disabled={busy}>{busy ? t("Signing in…") : t("Sign in")}<Icon kind="arrow" /></button></form><p className="login-help">{t("Accounts are provisioned by your Administrator. There is no public registration.")}</p></section><footer className="login-footer"><span>{bootstrap.branding}</span><span>{t("Local accounts · Secure sessions")}</span></footer></main>;
 }

@@ -87,12 +87,18 @@ class UserPreference(Base):
         ForeignKeyConstraint(["user_id"], ["users.id"], name="fk_user_preferences_user"),
         CheckConstraint("revision >= 1", name="revision"),
         CheckConstraint("theme_mode IN ('default', 'light', 'dark', 'system')", name="theme_mode"),
+        CheckConstraint("language IN ('default', 'en', 'pl')", name="language"),
         TABLE_OPTIONS,
     )
 
     user_id: Mapped[str] = mapped_column(identifier())
     revision: Mapped[int] = mapped_column(Integer)
     theme_mode: Mapped[str] = mapped_column(VARCHAR(16, charset="ascii", collation="ascii_bin"))
+    language: Mapped[str] = mapped_column(
+        VARCHAR(16, charset="ascii", collation="ascii_bin"),
+        default="default",
+        server_default=text("'default'"),
+    )
 
 
 class ApplicationSetting(Base):
@@ -104,6 +110,7 @@ class ApplicationSetting(Base):
         CheckConstraint(
             "default_theme_mode IN ('light', 'dark', 'system')", name="default_theme_mode"
         ),
+        CheckConstraint("default_language IN ('en', 'pl')", name="default_language"),
         CheckConstraint(
             "additional_security_measures IN (0, 1)", name="additional_security_measures"
         ),
@@ -115,6 +122,11 @@ class ApplicationSetting(Base):
     branding: Mapped[str] = mapped_column(binary_text(128))
     default_theme_mode: Mapped[str] = mapped_column(
         VARCHAR(16, charset="ascii", collation="ascii_bin")
+    )
+    default_language: Mapped[str] = mapped_column(
+        VARCHAR(16, charset="ascii", collation="ascii_bin"),
+        default="en",
+        server_default=text("'en'"),
     )
     additional_security_measures: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default=text("1")

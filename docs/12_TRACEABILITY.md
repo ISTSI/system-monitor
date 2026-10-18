@@ -2,6 +2,22 @@
 
 All 56 requirements map to application acceptance targets. The requirement table is not a test-result report; implemented evidence and remaining limits appear below it.
 
+The 18 October 2026 user-authorized language follow-up extends R34/R38/R41
+presentation and personal preferences, R39 shared-setting permissions and
+R42/R44 persistence. English/Polish dictionaries are bundled offline; shared
+`default_language` and personal `language` use existing revisioned MariaDB
+boundaries. Unit translation-key/placeholder checks, real MariaDB API/security
+tests, populated migration preservation and same-context browser tests cover the
+change. Browser checks include independent same-system pages, saved choices,
+new-account inheritance, signed-out default broadcasts, conflict/retry, themes
+and retained split-pane scrolling. Evidence and exact limits are recorded in
+`progress/STATUS.md` and `verification/language-support/`. The separately
+authorized “Install the migration, deploy” operation is now installed on 8445 at
+`0014_languages`. Actual served-asset/browser verification passes for both roles,
+languages and themes with preference restoration, no workspace/target actions,
+and unchanged shared settings/data/cache. The old 8444 app is unchanged. This
+does not complete Stage 08.
+
 The user-authorized compact navigation update (17 October 2026) retains R05/R10/R11
 editing through the System menu, moves Undo/Redo beside Documented topology, and
 originally placed personal R38 appearance in Settings for both roles. The

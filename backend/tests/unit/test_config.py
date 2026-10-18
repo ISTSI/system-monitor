@@ -33,6 +33,18 @@ def test_valid_schema2_config_and_lower_custom_workspace_ceiling():
     assert data["limits"]["max_live_processes_global"] == 10
 
 
+def test_initial_language_defaults_to_english_and_accepts_polish():
+    document = sample()
+    document["bootstrap_settings"].pop("default_language", None)
+    assert parse(document).default_language == "en"
+    document["bootstrap_settings"]["default_language"] = "pl"
+    assert parse(document).default_language == "pl"
+    for invalid in (None, "PL", "default", "de", 1, True):
+        document["bootstrap_settings"]["default_language"] = invalid
+        with pytest.raises(ConfigurationError, match="default_language"):
+            parse(document)
+
+
 def test_local_history_demo_requires_explicit_server_opt_in_and_preserves_caps():
     config = parse(sample())
     assert config.local_history_demo is False

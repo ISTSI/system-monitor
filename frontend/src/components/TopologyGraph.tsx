@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { ReactFlow, Background, Controls, MiniMap, Handle, MarkerType, NodeResizer, Position, applyNodeChanges, type Connection as GraphConnection, type Node, type NodeChange, type NodeProps, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -8,14 +9,15 @@ type NodeData = { name: string; kind: EntityKind; description: string; editable:
 type DiagramNode = Node<NodeData>;
 
 function TopologyNode({ data, selected }: NodeProps<DiagramNode>) {
+  const { t } = useI18n();
   const process = data.kind === 'process';
   return <div className={`diagram-node ${data.kind}-card ${selected ? 'selected' : ''} ${data.collapsed ? 'collapsed' : ''}`}>
     <NodeResizer isVisible={selected && data.editable && !data.collapsed} minWidth={data.minWidth} minHeight={data.minHeight} onResizeEnd={(_event, parameters) => data.onResize(parameters)} />
     {process ? <>
       <Handle type="target" position={Position.Left} isConnectable={data.editable} />
-      <button className={`process-card ${selected ? 'selected' : ''}`} aria-label={`Select process ${data.name}`} aria-pressed={selected} onClick={event => { event.stopPropagation(); data.onSelect(event.ctrlKey || event.metaKey || event.shiftKey); }}><Icon kind="process" /><span><strong>{data.name}</strong><small>{data.description || 'Configured process'}</small></span><span className="access-state">Not checked</span></button>
+      <button className={`process-card ${selected ? 'selected' : ''}`} aria-label={t("Select process {name}", { name: data.name })} aria-pressed={selected} onClick={event => { event.stopPropagation(); data.onSelect(event.ctrlKey || event.metaKey || event.shiftKey); }}><Icon kind="process" /><span><strong>{data.name}</strong><small>{data.description || t("Configured process")}</small></span><span className="access-state">{t("Not checked")}</span></button>
       <Handle type="source" position={Position.Right} isConnectable={data.editable} />
-    </> : <header className="node-header"><button className="node-label nodrag" onClick={event => { event.stopPropagation(); data.onSelect(event.ctrlKey || event.metaKey || event.shiftKey); }} aria-label={`Select ${data.kind} ${data.name}`}><Icon kind={data.kind === 'server' ? 'server' : 'system'} /><strong>{data.name}</strong></button><button className="nodrag collapse-button" aria-label={`${data.collapsed ? 'Expand' : 'Collapse'} ${data.name}`} aria-expanded={!data.collapsed} onClick={event => { event.stopPropagation(); data.onCollapse(); }}>{data.collapsed ? '+' : '−'}</button></header>}
+    </> : <header className="node-header"><button className="node-label nodrag" onClick={event => { event.stopPropagation(); data.onSelect(event.ctrlKey || event.metaKey || event.shiftKey); }} aria-label={data.kind === 'server' ? t('Select server {name}', { name: data.name }) : t('Select subsystem {name}', { name: data.name })}><Icon kind={data.kind === 'server' ? 'server' : 'system'} /><strong>{data.name}</strong></button><button className="nodrag collapse-button" aria-label={data.collapsed ? t('Expand {name}', { name: data.name }) : t('Collapse {name}', { name: data.name })} aria-expanded={!data.collapsed} onClick={event => { event.stopPropagation(); data.onCollapse(); }}>{data.collapsed ? '+' : '−'}</button></header>}
   </div>;
 }
 
@@ -26,6 +28,7 @@ export default function TopologyGraph({ config, view, editable, selection, selec
   onSelect: (selection: Selection, additive?: boolean) => void; onMultiSelect: (ids: string[]) => void;
   onGeometry: (id: string, geometry: Partial<Geometry>, moved?: { id: string; position: { x: number; y: number } }[]) => void; onCollapse: (id: string) => void; onConnect: (source: string, target: string) => void;
 }) {
+  const { t } = useI18n();
   const instance = useRef<ReactFlowInstance<DiagramNode> | null>(null);
   const [nodes, setNodes] = useState<DiagramNode[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
@@ -102,8 +105,8 @@ export default function TopologyGraph({ config, view, editable, selection, selec
     if (changes.some(change => change.type === 'select')) onMultiSelect(next.filter(node => node.selected).map(node => node.id));
   }, [nodes, onMultiSelect]);
 
-  return <div className="graph-shell"><div className="graph-navigation"><button onClick={() => { void instance.current?.fitView({ padding: .15, duration: 150 }); }}>Fit diagram</button><button disabled={!selectedIds.length} onClick={() => { void instance.current?.fitView({ nodes: selectedIds.map(id => ({ id })), padding: .35, maxZoom: 1.3, duration: 150 }); }}>Fit selection</button><span>Shift + drag to select · Ctrl + scroll to zoom</span></div><div className="reactflow-canvas" aria-label="Interactive topology diagram">
-    <ReactFlow<DiagramNode> nodes={nodes} edges={edges} nodeTypes={nodeTypes} onInit={value => { instance.current = value; }} onNodesChange={changeNodes} onNodeClick={nodeClick} onNodeDragStop={(_event, node, moved) => { if (editable) onGeometry(node.id, { x: node.position.x, y: node.position.y }, moved); }} onEdgeClick={(_event, edge) => onSelect({ kind: 'flow', id: edge.id })} onConnect={connect} nodesDraggable={editable && !saving} nodesConnectable={editable && !saving} edgesReconnectable={false} deleteKeyCode={null} selectionKeyCode="Shift" multiSelectionKeyCode={['Meta', 'Control']} selectionOnDrag fitView fitViewOptions={{ padding: .12 }} minZoom={.15} maxZoom={2} colorMode={theme} proOptions={{ hideAttribution: false }}>
+  return <div className="graph-shell"><div className="graph-navigation"><button onClick={() => { void instance.current?.fitView({ padding: .15, duration: 150 }); }}>{t("Fit diagram")}</button><button disabled={!selectedIds.length} onClick={() => { void instance.current?.fitView({ nodes: selectedIds.map(id => ({ id })), padding: .35, maxZoom: 1.3, duration: 150 }); }}>{t("Fit selection")}</button><span>{t("Shift + drag to select · Ctrl + scroll to zoom")}</span></div><div className="reactflow-canvas" aria-label={t("Interactive topology diagram")}>
+    <ReactFlow<DiagramNode> nodes={nodes} edges={edges} nodeTypes={nodeTypes} onInit={value => { instance.current = value; }} onNodesChange={changeNodes} onNodeClick={nodeClick} onNodeDragStop={(_event, node, moved) => { if (editable) onGeometry(node.id, { x: node.position.x, y: node.position.y }, moved); }} onEdgeClick={(_event, edge) => onSelect({ kind: 'flow', id: edge.id })} onConnect={connect} nodesDraggable={editable && !saving} nodesConnectable={editable && !saving} edgesReconnectable={false} deleteKeyCode={null} selectionKeyCode="Shift" multiSelectionKeyCode={['Meta', 'Control']} selectionOnDrag fitView fitViewOptions={{ padding: .12 }} minZoom={.15} maxZoom={2} colorMode={theme} ariaLabelConfig={{ 'controls.ariaLabel': t('Diagram controls'), 'controls.zoomIn.ariaLabel': t('Zoom in'), 'controls.zoomOut.ariaLabel': t('Zoom out'), 'controls.fitView.ariaLabel': t('Fit diagram'), 'controls.interactive.ariaLabel': t('Toggle diagram interaction'), 'minimap.ariaLabel': t('Diagram minimap'), 'handle.ariaLabel': t('Connection handle'), 'node.a11yDescription.default': t('Press Enter or Space to select a node. Use the arrow keys to move it. Escape cancels movement.'), 'node.a11yDescription.keyboardDisabled': t('Press Enter or Space to select a node.'), 'edge.a11yDescription.default': t('Press Enter or Space to select a flow.'), 'node.a11yDescription.ariaLiveMessage': ({ direction, x, y }) => t('Moved selected node {direction}. New position, x: {x}, y: {y}', { direction: t(direction), x, y }) }} proOptions={{ hideAttribution: false }}>
       <Background color="var(--si-border)" gap={20} /><Controls showInteractive={false} /><MiniMap pannable zoomable maskColor="color-mix(in srgb, var(--si-canvas) 65%, transparent)" nodeColor={node => node.data.kind === 'process' ? 'var(--si-accent)' : 'var(--si-header)'} />
     </ReactFlow>
   </div></div>;

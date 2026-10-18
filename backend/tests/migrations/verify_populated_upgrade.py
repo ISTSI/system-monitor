@@ -41,7 +41,6 @@ from inspector.persistence.models import (
     TopologySnapshot,
     TopologyState,
     User,
-    UserPreference,
     Workspace,
 )
 from inspector.security import verify_password
@@ -159,7 +158,18 @@ async def original_state(session: AsyncSession) -> dict:
     )
     return {
         "users": await table_snapshot(session, User, User.id),
-        "preferences": await table_snapshot(session, UserPreference, UserPreference.user_id),
+        "preferences": copy.deepcopy(
+            [
+                dict(row)
+                for row in (
+                    await session.execute(
+                        text(
+                            "SELECT user_id, revision, theme_mode FROM user_preferences ORDER BY user_id"
+                        )
+                    )
+                ).mappings()
+            ]
+        ),
         "settings": copy.deepcopy([dict(row) for row in settings.mappings()]),
         "projects": await table_snapshot(session, Project, Project.id),
         "revisions": await table_snapshot(
@@ -193,11 +203,15 @@ async def seed_stage_one(config: Config) -> tuple[dict, dict[str, str]]:
                 password,
             )
             passwords[inspector.id] = password
-            session.add_all(
+            await session.execute(
+                text(
+                    "INSERT INTO user_preferences (user_id, revision, theme_mode) "
+                    "VALUES (:user_id, :revision, :theme_mode)"
+                ),
                 [
-                    UserPreference(user_id=admin.id, revision=5, theme_mode="light"),
-                    UserPreference(user_id=inspector.id, revision=9, theme_mode="system"),
-                ]
+                    {"user_id": admin.id, "revision": 5, "theme_mode": "light"},
+                    {"user_id": inspector.id, "revision": 9, "theme_mode": "system"},
+                ],
             )
             await session.execute(
                 text(
@@ -272,6 +286,10 @@ async def verify_upgraded(config: Config, before: dict, passwords: dict[str, str
             assert await session.scalar(select(func.count()).select_from(TopologyState)) == 0
             settings = await session.get(ApplicationSetting, 1)
             assert settings is not None and settings.additional_security_measures is True
+            assert settings.default_language == "en"
+            assert set(await session.scalars(text("SELECT language FROM user_preferences"))) == {
+                "default"
+            }
         with tempfile.TemporaryDirectory(prefix="si-s2-upgrade-") as state_dir:
             app = create_app(replace(config, state_dir=state_dir))
             async with app.router.lifespan_context(app):

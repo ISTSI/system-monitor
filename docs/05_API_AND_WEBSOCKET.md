@@ -318,9 +318,9 @@ It is Administrator-only policy for every system, not a personal preference,
 project-import field or public bootstrap value. Record changes in the settings
 audit; stale revisions return 409.
 
-## Appearance payloads
+## Personal preference payloads
 
-`GET /me/preferences` follows `contracts/user-preference.schema.json` and returns `revision` plus `theme_mode`. `PATCH /me/preferences` follows `contracts/user-preference-update.schema.json`, accepts only `expected_revision` plus `theme_mode`, and returns the updated response object. Unknown fields are rejected, not ignored; a stale precondition produces 409. The account ID comes only from the authenticated session. Global default changes use the separate Administrator settings route.
+`GET /me/preferences` follows `contracts/user-preference.schema.json` and returns `revision`, `theme_mode` and `language` (`default`, `en`, `pl`). `PATCH /me/preferences` follows `contracts/user-preference-update.schema.json`, requires `expected_revision` plus at least one of `theme_mode` or `language`, preserves omitted fields, rejects null/empty changes, and returns the updated response object. Unknown fields are rejected, not ignored; a stale precondition produces 409. The account ID comes only from the authenticated session. Global default changes use the separate Administrator settings route, including partial `default_language` (`en`, `pl`) updates with expected revision. Public `/ui/bootstrap` returns the safe shared `default_language` alongside branding/theme; it exposes no personal preference, topology or security policy.
 
 
 ## Version 3 system catalogue, workspace and import additions

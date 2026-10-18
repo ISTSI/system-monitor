@@ -245,3 +245,13 @@ entry in STATUS.md and `verification/stage-7/preferences-deployment-*.json`.
 Stage 07 is implemented and deployed locally. Stop at its gate. The next separate scope is
 `prompts/08_OFFLINE_RELEASE.md`; cold offline image lifecycle, Ubuntu/Rocky
 installation and release hardening are not implied by local source/build tests.
+
+The separately authorized language follow-up adds bundled English/Polish UI,
+Administrator default language and personal account language selection. The
+matching frozen backend/frontend are now installed on 8445 with
+`0014_languages`, following the separate user deployment authorization.
+Language verification uses disposable MariaDB schemas and the
+isolated browser fixture on 8449, including independent windows and retained-log
+scroll preservation. See STATUS.md for commands and results. This follow-up does
+not complete Stage 08. Installation-specific backup, migration, browser and
+data/cache preservation checks are recorded in the later STATUS.md entry.

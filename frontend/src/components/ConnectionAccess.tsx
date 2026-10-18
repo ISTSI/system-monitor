@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { message, request, write } from '../api/client';
 import type { components } from '../api/schema';
@@ -12,6 +13,7 @@ type PathTest = components['schemas']['SourcePathTestResponse'];
 export default function ConnectionAccess({ config, connection, onClose, onJump }: {
   config: Config; connection: Connection; onClose: () => void; onJump: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const [access, setAccess] = useState<Access | null>(null);
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [verified, setVerified] = useState(false);
@@ -110,52 +112,52 @@ export default function ConnectionAccess({ config, connection, onClose, onJump }
   }
 
   const jump = config.connections?.find(item => item.id === connection.jump_connection_id);
-  return <Modal title="SSH password & connection test" onClose={() => { if (!busy) onClose(); }}>
-    <p className="target-system">Target system: <strong>{config.project.name}</strong><code>{config.project.id}</code></p>
-    <div className="connection-target"><strong>{connection.name}</strong><code>{connection.username}@{connection.host} · port {connection.port}</code></div>
-    {jump && <p className="notice">Via jump host {jump.name}. Configure its password and approve its key first.<button disabled={!!busy} onClick={() => onJump(jump.id)}>Configure jump host</button></p>}
-    {error && <ErrorNotice retry={() => { void load(); }}>{error}</ErrorNotice>}
-    {notice && <p className="notice success" role="status">{notice}</p>}
-    {!access ? !error && <p role="status">Loading saved connection access…</p> : <div className="connection-access">
-      <section aria-label="SSH password storage">
-        <h3>SSH password</h3>
-        <p>Stored encrypted in the server database. Its encryption key is held separately on the server. Passwords are excluded from configuration exports and are never displayed again.</p>
-        <p data-testid="ssh-password-status">{access.credential.configured ? 'A password is stored for this credential reference.' : 'No password is stored for this credential reference.'} <code>{connection.credential_ref}</code></p>
-        {(config.connections?.filter(item => item.credential_ref === connection.credential_ref).length ?? 0) > 1 && <p>Replacing this password affects every connection using this reference in this system.</p>}
-        {!access.vault_available && <p className="notice error">SSH password storage is unavailable. The deployment administrator must configure the server vault key.</p>}
+  return <Modal title={t("SSH password & connection test")} onClose={() => { if (!busy) onClose(); }}>
+    <p className="target-system">{t("Target system:")} <strong>{config.project.name}</strong><code>{config.project.id}</code></p>
+    <div className="connection-target"><strong>{connection.name}</strong><code>{connection.username}@{connection.host} {t("· port")} {connection.port}</code></div>
+    {jump && <p className="notice">{t("Via jump host")} {jump.name}{t(". Configure its password and approve its key first.")}<button disabled={!!busy} onClick={() => onJump(jump.id)}>{t("Configure jump host")}</button></p>}
+    {error && <ErrorNotice retry={() => { void load(); }}>{t(error)}</ErrorNotice>}
+    {notice && <p className="notice success" role="status">{t(notice)}</p>}
+    {!access ? !error && <p role="status">{t("Loading saved connection access…")}</p> : <div className="connection-access">
+      <section aria-label={t("SSH password storage")}>
+        <h3>{t("SSH password")}</h3>
+        <p>{t("Stored encrypted in the server database. Its encryption key is held separately on the server. Passwords are excluded from configuration exports and are never displayed again.")}</p>
+        <p data-testid="ssh-password-status">{access.credential.configured ? t("A password is stored for this credential reference.") : t("No password is stored for this credential reference.")} <code>{connection.credential_ref}</code></p>
+        {(config.connections?.filter(item => item.credential_ref === connection.credential_ref).length ?? 0) > 1 && <p>{t("Replacing this password affects every connection using this reference in this system.")}</p>}
+        {!access.vault_available && <p className="notice error">{t("SSH password storage is unavailable. The deployment administrator must configure the server vault key.")}</p>}
         <form onSubmit={event => { void savePassword(event); }}>
-          <label>{access.credential.configured ? 'Replacement SSH password' : 'SSH password'}<input type="password" name="ssh_password" autoComplete="new-password" required maxLength={1024} disabled={!!busy || !access.vault_available} /></label>
-          <button className="primary" disabled={!!busy || !access.vault_available}>{busy === 'password' ? 'Saving password…' : 'Save SSH password'}</button>
+          <label>{access.credential.configured ? t("Replacement SSH password") : t("SSH password")}<input type="password" name="ssh_password" autoComplete="new-password" required maxLength={1024} disabled={!!busy || !access.vault_available} /></label>
+          <button className="primary" disabled={!!busy || !access.vault_available}>{busy === 'password' ? t("Saving password…") : t("Save SSH password")}</button>
         </form>
       </section>
-      <section aria-label="SSH host key">
-        <h3>Host-key verification</h3>
-        <p>Inspect the server key, compare its fingerprint with a trusted source, then approve it. Inspection sends no password to the target.</p>
-        <p>{access.host_key.approved ? 'Approved key' : 'No key approved for this saved connection'}</p>
+      <section aria-label={t("SSH host key")}>
+        <h3>{t("Host-key verification")}</h3>
+        <p>{t("Inspect the server key, compare its fingerprint with a trusted source, then approve it. Inspection sends no password to the target.")}</p>
+        <p>{access.host_key.approved ? t("Approved key") : t("No key approved for this saved connection")}</p>
         {access.host_key.approved && <code className="ssh-fingerprint">{access.host_key.algorithm} {access.host_key.fingerprint}</code>}
-        <div className="connection-actions"><button disabled={!!busy} onClick={() => { void action('inspect'); }}>{busy === 'inspect' ? 'Inspecting host key…' : 'Inspect host key'}</button>{access.host_key.approved && <button disabled={!!busy} onClick={() => { void action('revoke'); }}>Revoke host-key approval</button>}</div>
-        {inspection && <div className="host-key-preview"><strong>Observed key · {inspection.algorithm}</strong><code className="ssh-fingerprint">{inspection.fingerprint}</code><label className="checkbox-label"><input type="checkbox" checked={verified} disabled={!!busy} onChange={event => setVerified(event.target.checked)} />I verified this fingerprint against an independent trusted source and approve connection tests to this target.</label><button disabled={!verified || !!busy} onClick={() => { void action('approve'); }}>{busy === 'approve' ? 'Approving…' : 'Approve host key'}</button></div>}
+        <div className="connection-actions"><button disabled={!!busy} onClick={() => { void action('inspect'); }}>{busy === 'inspect' ? t("Inspecting host key…") : t("Inspect host key")}</button>{access.host_key.approved && <button disabled={!!busy} onClick={() => { void action('revoke'); }}>{t("Revoke host-key approval")}</button>}</div>
+        {inspection && <div className="host-key-preview"><strong>{t("Observed key ·")} {inspection.algorithm}</strong><code className="ssh-fingerprint">{inspection.fingerprint}</code><label className="checkbox-label"><input type="checkbox" checked={verified} disabled={!!busy} onChange={event => setVerified(event.target.checked)} />{t("I verified this fingerprint against an independent trusted source and approve connection tests to this target.")}</label><button disabled={!verified || !!busy} onClick={() => { void action('approve'); }}>{busy === 'approve' ? t("Approving…") : t("Approve host key")}</button></div>}
       </section>
-      <section aria-label="SSH connection test">
-        <h3>Test saved connection</h3>
-        <p>The application server connects to the saved host and checks SSH authentication and SFTP availability.</p>
-        <button className="primary" disabled={!!busy || !access.vault_available || !access.credential.configured || !access.host_key.approved} onClick={() => { void action('test'); }}>{busy === 'test' ? 'Testing connection…' : 'Test connection'}</button>
-        {(!access.credential.configured || !access.host_key.approved) && <p className="field-help">Save an SSH password and approve the host key to enable the test.</p>}
+      <section aria-label={t("SSH connection test")}>
+        <h3>{t("Test saved connection")}</h3>
+        <p>{t("The application server connects to the saved host and checks SSH authentication and SFTP availability.")}</p>
+        <button className="primary" disabled={!!busy || !access.vault_available || !access.credential.configured || !access.host_key.approved} onClick={() => { void action('test'); }}>{busy === 'test' ? t("Testing connection…") : t("Test connection")}</button>
+        {(!access.credential.configured || !access.host_key.approved) && <p className="field-help">{t("Save an SSH password and approve the host key to enable the test.")}</p>}
       </section>
-      {sourceAccess && <section aria-label="Configured source approval">
-        <h3>{sourceAccess.manual_confirmation_required ? 'Approve target and log roots' : 'Configured target and log roots'}</h3>
-        {sourceAccess.manual_confirmation_required ? <p>Review the configured target and roots for <strong>{config.project.name}</strong>. Approval applies only to this system and saved configuration. Changing credentials, trust, routing or source definitions requires a new approval.</p> : <p>Additional security measures are disabled. Saved changes to paths and parsers apply automatically. SSH host keys still require explicit verification.</p>}
-        <p className="source-approval-state" data-testid="source-approval-status">{sourceAccess.manual_confirmation_required ? sourceAccess.approval.approved ? 'Approved for remote collection.' : 'Remote collection is blocked until this target and its roots are approved.' : sourceAccess.approval.approved ? 'Ready for remote collection. Manual source confirmation is disabled.' : 'Remote collection requires stored credentials and explicitly verified SSH host keys.'}</p>
-        {sourceAccess.approval.approved && sourceAccess.approval.expires_us && <p>Approval expires {new Date(Number(BigInt(sourceAccess.approval.expires_us) / 1000n)).toISOString()} UTC.</p>}
-        <dl className="source-approval-details"><dt>Target</dt><dd><code>{connection.host}:{connection.port}</code>{jump && <span> via {jump.name}</span>}</dd><dt>Configured log roots</dt><dd>{sourceAccess.roots.length ? <ul>{sourceAccess.roots.map(root => <li key={root}><code>{root}</code></li>)}</ul> : 'No log roots configured.'}</dd><dt>Configured sources</dt><dd>{sourceAccess.process_ids.length ? <ul>{sourceAccess.process_ids.map(id => { const process = config.processes.find(item => item.id === id); return <li key={id}>{process?.name ?? id}<code>{process?.log_source?.active_path ?? id}</code></li>; })}</ul> : 'This connection has no configured log sources.'}</dd></dl>
+      {sourceAccess && <section aria-label={t("Configured source approval")}>
+        <h3>{sourceAccess.manual_confirmation_required ? t("Approve target and log roots") : t("Configured target and log roots")}</h3>
+        {sourceAccess.manual_confirmation_required ? <p>{t("Review the configured target and roots for")} <strong>{config.project.name}</strong>{t(". Approval applies only to this system and saved configuration. Changing credentials, trust, routing or source definitions requires a new approval.")}</p> : <p>{t("Additional security measures are disabled. Saved changes to paths and parsers apply automatically. SSH host keys still require explicit verification.")}</p>}
+        <p className="source-approval-state" data-testid="source-approval-status">{sourceAccess.manual_confirmation_required ? sourceAccess.approval.approved ? t("Approved for remote collection.") : t("Remote collection is blocked until this target and its roots are approved.") : sourceAccess.approval.approved ? t("Ready for remote collection. Manual source confirmation is disabled.") : t("Remote collection requires stored credentials and explicitly verified SSH host keys.")}</p>
+        {sourceAccess.approval.approved && sourceAccess.approval.expires_us && <p>{t("Approval expires")} {new Date(Number(BigInt(sourceAccess.approval.expires_us) / 1000n)).toISOString()} UTC.</p>}
+        <dl className="source-approval-details"><dt>{t("Target")}</dt><dd><code>{connection.host}:{connection.port}</code>{jump && <span> {t("via")} {jump.name}</span>}</dd><dt>{t("Configured log roots")}</dt><dd>{sourceAccess.roots.length ? <ul>{sourceAccess.roots.map(root => <li key={root}><code>{root}</code></li>)}</ul> : t("No log roots configured.")}</dd><dt>{t("Configured sources")}</dt><dd>{sourceAccess.process_ids.length ? <ul>{sourceAccess.process_ids.map(id => { const process = config.processes.find(item => item.id === id); return <li key={id}>{process?.name ?? id}<code>{process?.log_source?.active_path ?? id}</code></li>; })}</ul> : t("This connection has no configured log sources.")}</dd></dl>
         {sourceAccess.roots.length > 0 && sourceAccess.process_ids.length > 0 && <>
-          {sourceAccess.manual_confirmation_required && !sourceAccess.approval.approved && <label className="checkbox-label"><input type="checkbox" checked={rootsVerified} disabled={!!busy} onChange={event => setRootsVerified(event.target.checked)} />I verified this target and these configured log roots and authorize read-only collection for this system.</label>}
-          <div className="connection-actions">{sourceAccess.manual_confirmation_required && (sourceAccess.approval.approved ? <button disabled={!!busy} onClick={() => { void sourceAction('revoke'); }}>Revoke source approval</button> : <button disabled={!!busy || !rootsVerified || !access.credential.configured || !access.host_key.approved} onClick={() => { void sourceAction('approve'); }}>{busy === 'source-approve' ? 'Approving sources…' : 'Approve target and log roots'}</button>)}<button className="primary" disabled={!!busy || !sourceAccess.approval.approved} onClick={() => { void sourceAction('test'); }}>{busy === 'source-test' ? 'Checking configured paths…' : 'Test configured log paths'}</button></div>
-          {(!access.credential.configured || !access.host_key.approved) && <p className="field-help">Save the password and approve the host key before testing configured log paths.</p>}
+          {sourceAccess.manual_confirmation_required && !sourceAccess.approval.approved && <label className="checkbox-label"><input type="checkbox" checked={rootsVerified} disabled={!!busy} onChange={event => setRootsVerified(event.target.checked)} />{t("I verified this target and these configured log roots and authorize read-only collection for this system.")}</label>}
+          <div className="connection-actions">{sourceAccess.manual_confirmation_required && (sourceAccess.approval.approved ? <button disabled={!!busy} onClick={() => { void sourceAction('revoke'); }}>{t("Revoke source approval")}</button> : <button disabled={!!busy || !rootsVerified || !access.credential.configured || !access.host_key.approved} onClick={() => { void sourceAction('approve'); }}>{busy === 'source-approve' ? t("Approving sources…") : t("Approve target and log roots")}</button>)}<button className="primary" disabled={!!busy || !sourceAccess.approval.approved} onClick={() => { void sourceAction('test'); }}>{busy === 'source-test' ? t("Checking configured paths…") : t("Test configured log paths")}</button></div>
+          {(!access.credential.configured || !access.host_key.approved) && <p className="field-help">{t("Save the password and approve the host key before testing configured log paths.")}</p>}
         </>}
-        {pathTest && <div className="source-path-results" role="status"><strong>Configured path checks · {config.project.name}</strong>{pathTest.processes.map(result => <div key={result.process_id}><strong>{config.processes.find(item => item.id === result.process_id)?.name ?? result.process_id}</strong><span>{result.accessible ? 'Accessible' : 'Access failed'} · {result.candidate_count} candidates · {result.estimated_bytes} estimated bytes</span>{result.warning && <p className={result.accessible ? 'field-help' : 'history-warning'}>{result.warning}</p>}</div>)}</div>}
+        {pathTest && <div className="source-path-results" role="status"><strong>{t("Configured path checks ·")} {config.project.name}</strong>{pathTest.processes.map(result => <div key={result.process_id}><strong>{config.processes.find(item => item.id === result.process_id)?.name ?? result.process_id}</strong><span>{result.accessible ? t("Accessible") : t("Access failed")} · {result.candidate_count} {t("candidates ·")} {result.estimated_bytes} {t("estimated bytes")}</span>{result.warning && <p className={result.accessible ? 'field-help' : 'history-warning'}>{result.warning}</p>}</div>)}</div>}
       </section>}
     </div>}
-    <div className="form-actions"><button disabled={!!busy} onClick={onClose}>Close</button></div>
+    <div className="form-actions"><button disabled={!!busy} onClick={onClose}>{t("Close")}</button></div>
   </Modal>;
 }

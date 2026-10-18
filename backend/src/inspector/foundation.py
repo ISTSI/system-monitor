@@ -1,8 +1,8 @@
 """Persisted appearance/settings and safe, explicitly synthetic viewer data."""
 
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +19,7 @@ from inspector.persistence.models import (
 from inspector.security import authorize, require_admin
 
 Theme = Literal["light", "dark", "system"]
+Language = Literal["en", "pl"]
 
 
 class StrictModel(BaseModel):
@@ -28,30 +29,53 @@ class StrictModel(BaseModel):
 class PreferenceResponse(StrictModel):
     revision: int = Field(ge=1)
     theme_mode: Literal["default", "light", "dark", "system"]
+    language: Literal["default", "en", "pl"]
 
 
-class PreferenceInput(StrictModel):
-    expected_revision: int = Field(ge=1)
-    theme_mode: Literal["default", "light", "dark", "system"]
+def _partial_update_schema(schema: dict[str, Any]) -> None:
+    # expected_revision plus at least one allowlisted change. Defaults are
+    # implementation placeholders: an omitted field always preserves storage.
+    schema["minProperties"] = 2
+    for field in schema.get("properties", {}).values():
+        field.pop("default", None)
+
+
+class PartialUpdate(StrictModel):
+    model_config = ConfigDict(json_schema_extra=_partial_update_schema)
+    expected_revision: int = Field(ge=1, strict=True)
+
+    @model_validator(mode="after")
+    def require_change(self) -> Self:
+        if not self.model_fields_set - {"expected_revision"}:
+            raise ValueError("At least one setting must be supplied.")
+        return self
+
+
+class PreferenceInput(PartialUpdate):
+    # Omission preserves the saved value; explicit null is invalid.
+    theme_mode: Literal["default", "light", "dark", "system"] = "default"
+    language: Literal["default", "en", "pl"] = "default"
 
 
 class SettingsResponse(StrictModel):
     revision: int = Field(ge=1)
     branding: str = Field(min_length=1, max_length=128)
     default_theme_mode: Theme
+    default_language: Language
     additional_security_measures: bool
 
 
-class SettingsInput(StrictModel):
-    expected_revision: int = Field(ge=1)
-    branding: str = Field(min_length=1, max_length=128, pattern=r"\S")
-    default_theme_mode: Theme
+class SettingsInput(PartialUpdate):
+    branding: str = Field(default="System Inspector", min_length=1, max_length=128, pattern=r"\S")
+    default_theme_mode: Theme = "dark"
+    default_language: Language = "en"
     additional_security_measures: bool = Field(default=True, strict=True)
 
 
 class BootstrapResponse(StrictModel):
     branding: str
     default_theme_mode: Theme
+    default_language: Language
     demo_mode: bool
     historical_demo_enabled: bool = False
 
@@ -98,6 +122,7 @@ async def initialize_settings(session: AsyncSession, config: Config) -> Applicat
             revision=1,
             branding="System Inspector",
             default_theme_mode=config.default_theme_mode,
+            default_language=config.default_language,
             additional_security_measures=True,
         )
         session.add(settings)
@@ -117,6 +142,7 @@ def settings_response(settings: ApplicationSetting) -> dict:
         "revision": settings.revision,
         "branding": settings.branding,
         "default_theme_mode": settings.default_theme_mode,
+        "default_language": settings.default_language,
         "additional_security_measures": settings.additional_security_measures,
     }
 
@@ -127,6 +153,7 @@ async def bootstrap(session: AsyncSession) -> dict:
     return {
         "branding": settings.branding,
         "default_theme_mode": settings.default_theme_mode,
+        "default_language": settings.default_language,
         "demo_mode": bool(await session.scalar(select(func.count()).select_from(DemoSnapshot))),
     }
 
@@ -136,9 +163,9 @@ async def preferences(session: AsyncSession, actor: Principal) -> dict:
     authorize(actor, "preference.read", owner_user_id=actor.user_id)
     value = await session.get(UserPreference, actor.user_id)
     return (
-        {"revision": value.revision, "theme_mode": value.theme_mode}
+        {"revision": value.revision, "theme_mode": value.theme_mode, "language": value.language}
         if value
-        else {"revision": 1, "theme_mode": "default"}
+        else {"revision": 1, "theme_mode": "default", "language": "default"}
     )
 
 
@@ -151,12 +178,17 @@ async def update_preferences(
     revision = value.revision if value else 1
     if revision != payload.expected_revision:
         raise DomainError(
-            "REVISION_CONFLICT", "Appearance changed in another window; reload and retry.", 409
+            "REVISION_CONFLICT", "Preferences changed in another window; reload and retry.", 409
         )
     if value is None:
-        value = UserPreference(user_id=actor.user_id, revision=revision, theme_mode="default")
+        value = UserPreference(
+            user_id=actor.user_id, revision=revision, theme_mode="default", language="default"
+        )
         session.add(value)
-    value.theme_mode = payload.theme_mode
+    if "theme_mode" in payload.model_fields_set:
+        value.theme_mode = payload.theme_mode
+    if "language" in payload.model_fields_set:
+        value.language = payload.language
     value.revision += 1
     from inspector.auth import _audit
 
@@ -164,7 +196,7 @@ async def update_preferences(
         session, "preference.write", services.utc_now_us(), principal=actor, target_id=actor.user_id
     )
     await session.flush()
-    return {"revision": value.revision, "theme_mode": value.theme_mode}
+    return {"revision": value.revision, "theme_mode": value.theme_mode, "language": value.language}
 
 
 async def get_settings(session: AsyncSession, actor: Principal) -> dict:
@@ -178,13 +210,19 @@ async def update_settings(session: AsyncSession, actor: Principal, payload: Sett
 
     actor = await services.current_actor(session, actor)
     require_admin(actor)
-    if not payload.branding.strip() or any(ord(c) < 32 or ord(c) == 127 for c in payload.branding):
+    if "branding" in payload.model_fields_set and (
+        not payload.branding.strip() or any(ord(c) < 32 or ord(c) == 127 for c in payload.branding)
+    ):
         raise DomainError("INVALID_REQUEST", "Invalid product name.", 422)
     value = await settings_value(session)
     if value.revision != payload.expected_revision:
         raise DomainError("REVISION_CONFLICT", "Settings changed; reload and retry.", 409)
-    value.branding = payload.branding.strip()
-    value.default_theme_mode = payload.default_theme_mode
+    if "branding" in payload.model_fields_set:
+        value.branding = payload.branding.strip()
+    if "default_theme_mode" in payload.model_fields_set:
+        value.default_theme_mode = payload.default_theme_mode
+    if "default_language" in payload.model_fields_set:
+        value.default_language = payload.default_language
     if "additional_security_measures" in payload.model_fields_set:
         value.additional_security_measures = payload.additional_security_measures
     value.revision += 1

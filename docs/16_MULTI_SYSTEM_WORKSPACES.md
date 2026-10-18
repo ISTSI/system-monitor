@@ -33,11 +33,15 @@ Selecting B in window A changes only A. Before navigation, explain whether A's a
 
 ## State boundaries
 
+The language follow-up is another deliberate account-wide preference alongside
+theme. Changing language may update other windows' UI text, but never their
+selected system, workspace, queries, scroll anchors or live control leases.
+
 | Scope | State |
 |---|---|
 | Deployment/global | MariaDB endpoint, encryption material, user accounts/roles, security ceilings, default appearance |
 | System | Topology, source definitions/parsers, connection/jump definitions, target/root/trust approvals, import mappings, named layouts, revision |
-| User | Authentication, personal theme preference, own saved analysis data (with project scope) |
+| User | Authentication, personal theme and language preferences, own saved analysis data (with project scope) |
 | Workspace/page | Active project URL, selected processes, active query/filter, viewport/panes/scroll, live control leases and unsaved drafts |
 | User + system + resource | Saved investigations/bookmarks, import previews, jobs, export/download grants and source access |
 

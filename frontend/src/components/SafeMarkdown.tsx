@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import type { ReactNode } from 'react';
 
 function inline(text: string): ReactNode[] {
@@ -12,6 +13,7 @@ function inline(text: string): ReactNode[] {
 }
 
 export default function SafeMarkdown({ text }: { text: string }) {
+  const { t } = useI18n();
   const lines = text.replace(/\r\n/g, '\n').split('\n');
   const blocks: ReactNode[] = [];
   for (let index = 0; index < lines.length; index++) {
@@ -30,5 +32,5 @@ export default function SafeMarkdown({ text }: { text: string }) {
     } else if (line.startsWith('> ')) blocks.push(<blockquote key={index}>{inline(line.slice(2))}</blockquote>);
     else if (line.trim()) blocks.push(<p key={index}>{inline(line)}</p>);
   }
-  return <div className="safe-markdown">{blocks.length ? blocks : <p className="muted">No documentation supplied.</p>}</div>;
+  return <div className="safe-markdown">{blocks.length ? blocks : <p className="muted">{t("No documentation supplied.")}</p>}</div>;
 }

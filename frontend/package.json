@@ -9,7 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "test": "npm run api:check && node --experimental-strip-types --test tests/log-highlight.test.mjs",
+    "test": "npm run api:check && node --experimental-strip-types --test tests/*.test.mjs",
     "e2e": "playwright test",
     "api:generate": "openapi-typescript ../backend/openapi.json -o src/api/schema.d.ts",
     "api:check": "node scripts/check-api-types.mjs",

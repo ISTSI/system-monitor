@@ -1,8 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Own appearance preference update request",
+  "title": "Own appearance and language preference partial update request",
   "type": "object",
   "properties": {
+    "language": {
+      "enum": ["default", "en", "pl"]
+    },
     "theme_mode": {
       "enum": [
         "default",
@@ -16,9 +19,10 @@
       "minimum": 1
     }
   },
-  "required": [
-    "expected_revision",
-    "theme_mode"
+  "required": ["expected_revision"],
+  "anyOf": [
+    {"required": ["theme_mode"]},
+    {"required": ["language"]}
   ],
   "additionalProperties": false
 }

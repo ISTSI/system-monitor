@@ -1,11 +1,16 @@
 # Implementation status — version 3
 
-**Current: Stage 07 is complete and installed locally at https://localhost:8445 (`0013_inventory`).** The separately authorized upgrade used the exact tested artifact, a consistent protected recovery backup and separate migration credentials. Existing accounts, settings, topology, investigations and cache bytes were preserved; the 8444 installation is unchanged. Installed browser checks and independent preservation/security audits pass. Stage 01 on 8443 and the isolated 8449 fixture remain stopped. Stage 08 has not started. Exact results and limitations are recorded below; earlier blockers remain as dated history.
+**Current: Stage 07 plus the language follow-up is installed locally at https://localhost:8445 (`0014_languages`).** The separately authorized upgrade used the exact tested artifact, a consistent protected recovery backup and separate migration credentials. Existing accounts, settings, topology, investigations and cache bytes were preserved; the 8444 installation is unchanged. Installed browser checks and independent preservation/security audits pass. Stage 01 on 8443 and the isolated 8449 fixture remain stopped. Stage 08 has not started. Exact results and limitations are recorded below; earlier blockers remain as dated history.
 
 The UTC controls and **Additional security measures** follow-ups are now
-installed on 8445, now at schema `0013_inventory`. The checkbox defaults to
+installed on 8445, now at schema `0014_languages`. The checkbox defaults to
 checked; installation preserved the existing data and security policy. See the
 dated installation entry below.
+
+The separately authorized **English/Polish language follow-up is installed and
+verified on 8445**, including shared default and personal selection, at
+`0014_languages`. Its source verification and subsequent backed-up deployment
+are recorded in the dated entries at the end of this document.
 
 **Starting point: specification package only.** The dated entries preserve the inspection and implementation history.
 
@@ -2301,3 +2306,190 @@ Updated documentation: README, backend setup, MariaDB/traceability docs, slice
 plan and this status. Ignored operator helpers and immutable overlay/recovery/
 verification files retain the deployment details. **The Preferences/Settings
 follow-up is deployed; Stage 08 remains the next separately authorized scope.**
+
+## 18 October 2026 — English/Polish application and personal language
+
+User authorization: “Add support to Polish language. Add default language to
+settings and individual selection to profile.” This is a separate source
+follow-up to Stage 07, with no installation or Stage 08 authorization.
+
+Administrators now choose **Settings → Application default language** (English
+or Polski). Both roles choose **user menu → Preferences → Language** (English,
+Polski or Application default). English remains the initial shared default.
+The signed-out screen, genuinely new accounts and accounts following the default
+use the shared choice. Explicit personal choices remain independent. Language
+and appearance persist separately in MariaDB with revision checks, strict
+partial updates, CSRF/RBAC enforcement and visible conflict/retry. Concurrent
+personal controls are serialized, including authentication-boundary handling.
+
+Bundled Polish catalogues cover navigation, accounts, preferences/settings,
+topology/editing, imports, SSH/access, parser diagnostics, historical/live viewers,
+investigation tools, UTC controls and common error messages. Document language
+and accessible labels update at runtime. Names, IDs, UTC values, Markdown,
+uploaded documentation and original log text remain data. Account broadcasts
+update language without replacing page workspaces or changing independent search,
+selection, queries or controls. Review found that split historical panes rebuilt
+filtered arrays on rerender; memoized process arrays now preserve scroll anchors
+when language changes. A browser regression verifies the retained query, original
+row text and scroll position with no new query, workspace or capture request.
+
+Additive migration **`0014_languages`** adds checked ASCII `default_language` and
+personal `language` columns with `en` / `default` backfills. It preserves existing
+preferences, settings, revisions and all other data. Optional deployment
+`bootstrap_settings.default_language` initializes only a new settings row.
+The populated MariaDB upgrade preserves all 48 original tables/rows and checks
+constraints, downgrade and reupgrade. The serving application still receives no
+migration credentials; future installation requires stopped serving plus matched
+backend/frontend and migration.
+
+Changed files:
+
+- Backend: `config.py`, `database.py`, `foundation.py`, persistence models and
+  bundled deployment schema; new `migrations/versions/0014_languages.py`;
+  OpenAPI, preference/deployment contracts and examples.
+- Frontend: `src/i18n/` translator/provider and four Polish catalogues;
+  `App.tsx`, generated API schema, and the existing account/catalogue/common,
+  topology/configuration/access/import/parser, history/live/investigation,
+  UTC/log/Markdown components. No dependency or lockfile change was needed.
+- Tests: new `frontend/tests/i18n.test.mjs`, `e2e/language.spec.ts`, updated
+  preference conflict assertion and npm test command; new backend language
+  unit/API/migration tests, existing config/API tests and original-schema
+  migration fixtures; new `scripts/verify_languages.py`.
+- Documentation: README/backend setup, requirements, domain/API/UI, roles,
+  MariaDB/workspaces, traceability, slice plan and this status.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY -m pytest backend/tests/unit -q -rs` (also captured as `verification/language-support/backend-unit.log`) | **817 passed / 4 skipped**, 30.56 s. Skips: two Windows symlink privilege cases, Windows rename of a pinned synthetic file, and Linux-only POSIX permissions. |
+| `PY -m pytest backend/tests/unit/test_language_contract.py -q` | **16 passed** after final OpenAPI metadata refinement. |
+| `PY scripts/verify_languages.py integration` | **13 passed**, 26.34 s, real disposable MariaDB/API/security tests including ownership, partial updates, invalid/null/empty/mass assignment, CSRF, shared-default permissions, fresh initialization/restart and unchanged workspace scope. Final receipt `verification/language-support/lang_3c8dfa-command.json` and `.log`; earlier passing run retained. |
+| `PY scripts/verify_languages.py upgrade` | PASS: populated `0013_inventory` → `0014_languages`; **48 original tables and rows preserved**, language constraints, downgrade/reupgrade. `lang_upgrade_5fc4d6-command.json` / `.log`. |
+| `PY -m ruff check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts`; corresponding `ruff format --check` | PASS; 169 files already formatted. |
+| From `backend/`: `.venv/Scripts/python.exe -m mypy src` | PASS: 37 source files. |
+| `PY tools/validate_schemas.py`; `PY tools/validate_deployment_examples.py` | PASS: 102 positive/36 negative schema validations; 44 deployment checks. |
+| `PY -m inspector.cli openapi --output backend/openapi.json` with `INSPECTOR_CONFIG_FILE=examples/deployment-policy.example.yaml`; `PY scripts/frontend.py api:generate` | PASS; generated types match the final OpenAPI. |
+| `PY scripts/frontend.py lint`; `PY scripts/frontend.py typecheck` | Final PASS across frontend/e2e. Interim automated-translation typing mistakes were corrected before final build/browser verification. |
+| `PY scripts/frontend.py test` | **14 passed**: API type consistency, language resolution, safe interpolation/whitespace/fallback, bundled key/placeholder coverage and existing literal/log-rendering behavior. |
+| `PY scripts/frontend.py build --outDir C:/_Projects/system-monitor/.state/language-build/frontend --emptyOutDir` | PASS: isolated production build, final JS `index-DoJrT-Rf.js`. Existing Vite chunk-size warning remains; installed assets were not changed. |
+| `PY scripts/frontend.py e2e language.spec.ts preferences.spec.ts inventory.spec.ts` | **22/22 passed**, 196.54 s. Real synthetic 8449 backend/MariaDB and fresh local assets; both roles/themes at 1280×720 and 1920×1080; same-context independent windows, persistence, new-account/default inheritance, mounted signed-out broadcasts, real conflict/retry, split-log scrolling, appearance regressions and all 13 inventory cases. Report: `verification/stage-7/language-browser-final.json`. Real login limits returned 429 twice; each existing helper waited 60 seconds for one bounded retry. No limit was relaxed. |
+| `PY tools/validate_package.py`; `PY -m unittest discover -s tests/package -q` (later `-v` to record skip reasons) | Package validator PASS; **128 tests run / 9 skipped**, no failures. All nine skips require POSIX secret-file permissions/shell behavior unavailable on Windows. Package checks do not prove release qualification. |
+| Rendered UI inspection | Viewed Polish dark 1280 Preferences, light 1920 Preferences, shared Settings, signed-out login and scrolled split history. Readable translations, original log rows and accessible controls. Screenshots: `verification/language-support/screenshots/`. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Original failed attempts remain explicit. The first browser run could not read
+the protected synthetic account fixture under the sandbox (EPERM); the authorized
+local test run used escalation without exposing credentials. Its second run
+passed 7/8, with a test capturing the temporary “Unavailable” workspace placeholder;
+it now waits for an actual server-issued UUID. The third run passed 8/9; the new
+scroll test unnecessarily required a collection of 40 events despite needing eight
+rows in one process. Correcting candidate selection retained that row requirement;
+the focused real-data test then passed, followed by the complete **22/22** run.
+Reports `language-browser-attempt-1/2/3.json` and
+`language-history-attempt-1.json` are retained under `verification/stage-7/`.
+These test fixes did not relax product contracts.
+
+The existing synthetic 8449 schema alone was migrated and started using
+`scripts/stage7_local.py migrate`, `up` and `stop-sftp`; after verification,
+`scripts/stage7_local.py stop` passed and stopped both fixture services. Docker's
+local named pipe initially returned sandbox Access denied, then the authorized
+isolated commands succeeded with escalation. Browser tests restored existing
+personal/shared settings and disabled newly generated test accounts. Inventory
+tests use their established synthetic fixture systems. The browser language
+checks start no collection/SSH/live session and the scroll check uses retained
+synthetic data. The separate backend security integration still uses its local
+test SFTP server. No production target, installed service, real credential,
+repository push or deployment was involved.
+
+**English/Polish support is implemented and verified in source. It is not
+installed on 8445.** Active-live language switching and native Ubuntu/Rocky/offline
+release qualification were not run as part of this follow-up. Retained-log state
+and workspace preservation were checked as described above; static live UI
+translations were compiled and typechecked. The next numbered scope remains
+`prompts/08_OFFLINE_RELEASE.md`, separately authorized.
+
+## 18 October 2026 — Language migration and application deployed locally
+
+Authorization: user requested **“Install the migration, deploy.”** The matching
+English/Polish frontend and backend are now installed at
+**https://localhost:8445**, using **`0014_languages`**. Refresh existing pages to
+load the new frontend. Administrators set the shared language in Settings; both
+roles set their own language in user menu → Preferences. The shared default
+remains English; personal languages initially follow Application default.
+Existing appearance, security policy and other shared settings were preserved.
+
+The frozen package was rebuilt independently, comparing all five new frontend
+files byte for byte with the **22/22 browser-verified** source build. The new
+wheel SHA-256 is
+`84cc9889199138d76b6e3d63bc4ccf062e4ebe3fe95b64f8ba21adda8662387e`.
+All 68 extracted wheel members, migration copies and bundled assets were checked;
+the backend resides at `.state/language-install/backend`, with unchanged copied
+startup scripts in `.state/language-install/scripts`. The original Stage 07
+backend/wheel and Preferences overlay remain intact. Both earlier hashed JS
+files are bundled for already-open pages; the new JS is `index-DoJrT-Rf.js`.
+The old overlay mount was removed so it cannot hide the new language frontend.
+No dependency, runner image, package/image download or external service changed.
+
+Preflight checked verified TLS/readiness, strict runtime grants/security, old
+artifacts, exact target database, zero active capture/live/subscription work and
+the other 8444 application's container/image/start/restart/assets. Only
+`runtime-stage3` was stopped. The protected, consistent pre-migration backup is
+under `.secrets/language-install/pre-0014-languages/`: complete SQL, raw cache,
+current Compose/configuration, vault key and verified copies of the old
+backend/scripts/overlay. The SQL dump is **194,624,576 compressed bytes /
+1,314,541,450 uncompressed bytes**, with no database-selection statements.
+The cache holds **897 files / 230,864,349 bytes**, with 957 archive ownership/mode
+entries including the root. Both gzip/archive integrity and checksums passed.
+
+The one-shot migration ran with separate migration credentials and serving
+stopped. It preserved all **49 table counts**, **46 unchanged-table checksums**,
+and all original columns of the shared settings row and two personal preference
+rows. It created only the two intended language columns and their checked
+English/default backfills. After startup and browser smoke, **41 stable table
+counts/checksums** still match; settings/preference values also match through
+explicit old-column checks. The two synthetic smoke accounts each gained exactly
+three preference revisions for English → Polish → original-default validation;
+their original language and theme values were restored. All original cache bytes
+and 956 descendant ownership/mode entries, original scripts, configuration and
+vault matched after startup and smoke.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual result |
+|---|---|
+| `PY .cache/build_languages.py` | PASS: isolated rebuild at `.state/language-deploy-check/frontend`, exact tested-asset match, frozen wheel/extraction and migration/script/lock verification. `verification/language-support/deployment-package.json`. Existing Vite chunk-size warning only. |
+| `PY -m py_compile .cache/deploy_languages.py`; `NODE --check .cache/verify_languages_install.mjs` | PASS. Initial unqualified `node --check` was unavailable on PATH; the recorded pinned executable passed. |
+| `PY .cache/deploy_languages.py preflight` | PASS: reviewed target scope, safe runtime, old/new package and candidate Compose, protected rollback context, no active work and preserved 8444 baseline. `deployment-preflight.json`. |
+| `PY .cache/deploy_languages.py backup` | PASS: stopped only 8445, verified consistent SQL/cache and complete matched recovery point. `deployment-backup.json`. |
+| `PY .cache/deploy_languages.py migrate` | PASS: **`0013_inventory` → `0014_languages`**, counts/checksums/projections/defaults/constraints preserved or added exactly as intended. `deployment-migration.json`. |
+| `PY .cache/deploy_languages.py start` | PASS: only `runtime-stage3` recreated, matching frozen backend/frontend without old overlay; verified TLS/readiness, grants, assets, modules, data/cache and unchanged 8444. `deployment-installed.json`. |
+| `NODE .cache/verify_languages_install.mjs` | **PASS, 7.573 s**: actual served asset hashes with no substitution, both roles/languages/themes, same-context duplicate broadcasts/reload, Administrator shared language select, Inspector absence/403 and restored preference values. Exactly **two logins / six personal-language PATCHes**; zero emergency restores, external requests, page errors, workspaces, target actions or WebSockets. `deployment-browser.json` plus twelve screenshot hashes. |
+| `PY .cache/deploy_languages.py finish` | PASS: post-smoke data/cache/configuration/vault and original-artifact preservation, exact allowed synthetic preference revisions, safe runtime/modules/assets and untouched 8444. `deployment-verified.json`. |
+| Installed UI inspection | Root viewed Administrator Polish dark Settings with `0014_languages` diagnostics and Inspector Polish light Preferences; independent agent also viewed English and dark/light personal screens. Readable controls, diacritics and focus. Captures: `verification/language-support/deployment-screenshots/20261018T102644018Z/`. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+The pinned runtime image is unchanged. It remains UID/GID 10001, one restricted
+ASGI worker, read-only root, all capabilities dropped and DML-only database
+grants; no root/migration credential or Docker socket is mounted. Operational
+counts remain **53 history jobs, three terminal live sessions and 48 target-action
+audit rows**, with zero active capture/live subscriptions. Browser smoke changed
+only the generated accounts' own language preference temporarily; shared settings,
+catalogue and stored theme values stayed unchanged. No logout/revocation,
+workspace/collection/live start, SSH, import, production-target operation,
+repository push or other installed application change was performed.
+
+Rollback preparation is documented in `.state/language-install/ROLLBACK.txt` and
+retains the matched pre-0014 database/cache/configuration/vault/backend/overlay.
+A restore must revoke restored web sessions before exposure. Old code must not
+run against `0014_languages`. Rollback/full restore was prepared, **not exercised**;
+the deployment required no recovery. Source unit/API/MariaDB/browser suites had
+already passed for this exact artifact and were not rerun wholesale for this
+installation; the deployment-specific checks above ran here. No implementation
+feature or dependency changed during deployment. Native Ubuntu/Rocky installation,
+cold offline lifecycle and Stage 08 qualification remain separate work.
+
+**The language migration and matching application are deployed and verified on
+8445. Stage 08 remains the next separately authorized scope.**

@@ -2,18 +2,29 @@
 
 The application includes the real backend, MariaDB migrations, local accounts, persistent appearance, independent system workspaces and the Stage 02 topology/configuration implementation. Administrators edit nested diagrams, documentation, flows and named views, with revision checks, undo/redo and explicit configuration import previews. Inspectors navigate a safe read-only projection. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Stage 03 adds the historical parser, safe archives, MariaDB event index and virtualised query/context viewer. Stage 04 adds encrypted passwords, explicit host-key and source/root approval, configured path checks, and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds supervised live SFTP capture, scoped WebSockets, independent per-page controls, retained literal refiltering, split/merged panes and explicit recording. Stage 06 adds saved personal analysis, exact correlation traces, annotations, pinned context and previewed sanitized offline bundle exchange. Stage 07 adds the safe static Ansible file/ZIP setup wizard, system-scoped preview/reconciliation and parser draft diagnostics. Its verification is recorded in the status document; release qualification remains Stage 08. The original package description below is retained as the handoff baseline.
 
-Stage 07 is installed locally at **https://localhost:8445**, with schema
-`0013_inventory`, following the separate deployment authorization on 18 October
+Stage 07 with the language follow-up is installed locally at
+**https://localhost:8445**, with schema `0014_languages`, following the separate
+deployment authorization on 18 October
 2026. The backed-up upgrade preserved existing accounts, systems, security
 settings and cached investigations. Inventory import/reimport and parser-draft
 diagnostics are available alongside the Stage 06 investigation tools. See the
 dated deployment entry in [STATUS.md](progress/STATUS.md). This local upgrade
 does not complete Stage 08 offline-release qualification.
 
-The separately authorized Preferences/Settings follow-up is also installed on
-8445. Personal appearance is under the logged-in user menu → Preferences;
-Settings is Administrator-only. Its read-only frontend overlay preserves the
-original backend, database schema and previous assets for rollback.
+Personal appearance and language are under the logged-in user menu →
+Preferences; Settings is Administrator-only. The earlier Preferences frontend
+overlay is now included in the matching language package. Its original backend,
+overlay and pre-migration recovery material remain available for rollback.
+
+The language follow-up is deployed on 8445: English and Polish are bundled
+offline. Administrators choose **Settings → Application default language**;
+each user chooses **user menu → Preferences → Language**, including Application
+default. Preferences persist in MariaDB and apply across that account's windows
+without resetting investigations. The signed-out screen follows the shared
+default. The authorized deployment applied `0014_languages`, installed the
+matching backend/frontend, and passed actual installed-browser and preservation
+checks. Refresh existing pages to load it. See the dated deployment entry in
+[STATUS.md](progress/STATUS.md).
 
 **Package version 3.0 · 17 October 2026**
 
@@ -51,7 +62,7 @@ Original functionality remains: subsystem → physical server → process diagra
 
 ## Themes, roles and database remain unchanged in purpose
 
-The two original references remain byte-for-byte unchanged: [Light — Cool Slate](assets/themes/light-cool-slate.png) and [Dark — Graphite Dusk](assets/themes/dark-graphite-dusk.png), with shared [tokens](assets/themes/tokens.json) and [CSS](assets/themes/tokens.css). Theme changes cannot reset live sessions. Working branding is configurable System Inspector, English UI; mockup green badges are not health telemetry.
+The two original references remain byte-for-byte unchanged: [Light — Cool Slate](assets/themes/light-cool-slate.png) and [Dark — Graphite Dusk](assets/themes/dark-graphite-dusk.png), with shared [tokens](assets/themes/tokens.json) and [CSS](assets/themes/tokens.css). Theme changes cannot reset live sessions. Working branding is configurable System Inspector; English is the initial UI language. Mockup green badges are not health telemetry.
 
 Both roles change their own theme through the logged-in user menu → Preferences.
 Administrator-only Settings contains the shared default for new accounts, the

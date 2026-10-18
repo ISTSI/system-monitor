@@ -98,7 +98,12 @@ async def test_actual_login_csrf_cookie_flags_and_unauthenticated_bootstrap(foun
     async with foundation.client() as client:
         public = await client.get("/api/v1/ui/bootstrap")
         assert public.status_code == 200
-        assert set(public.json()) == {"branding", "default_theme_mode", "demo_mode"}
+        assert set(public.json()) == {
+            "branding",
+            "default_theme_mode",
+            "default_language",
+            "demo_mode",
+        }
         assert public.json()["demo_mode"] is True
         assert (await client.get("/api/v1/auth/session")).status_code == 401
         payload = {"username": foundation.alice.username, "password": foundation.alice.password}
@@ -154,7 +159,7 @@ async def test_personal_appearance_revisions_and_mass_assignment(foundation):
     async with foundation.client(foundation.alice) as alice:
         async with foundation.client(foundation.bob) as bob:
             original = (await alice.get("/api/v1/me/preferences")).json()
-            assert original == {"revision": 1, "theme_mode": "default"}
+            assert original == {"revision": 1, "theme_mode": "default", "language": "default"}
             for injected in (
                 {"role": "administrator"},
                 {"owner_user_id": foundation.bob.principal.user_id},
@@ -172,6 +177,7 @@ async def test_personal_appearance_revisions_and_mass_assignment(foundation):
             assert changed.status_code == 200 and changed.json() == {
                 "revision": 2,
                 "theme_mode": "dark",
+                "language": "default",
             }
             assert (
                 await alice.patch(
@@ -182,6 +188,7 @@ async def test_personal_appearance_revisions_and_mass_assignment(foundation):
             assert (await bob.get("/api/v1/me/preferences")).json() == {
                 "revision": 1,
                 "theme_mode": "default",
+                "language": "default",
             }
             for mode in ("light", "system", "default"):
                 current = (await alice.get("/api/v1/me/preferences")).json()
@@ -578,6 +585,7 @@ async def test_cold_app_restart_preserves_users_preferences_systems_and_demo(dat
                 assert (await client.get("/api/v1/me/preferences")).json() == {
                     "revision": 2,
                     "theme_mode": "dark",
+                    "language": "default",
                 }
                 assert (await client.get("/api/v1/ui/bootstrap")).json() == default_before
                 viewer = await client.get(f"/api/v1/projects/{project_id}")

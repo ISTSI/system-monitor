@@ -154,7 +154,7 @@ test('Preferences reports real revision conflicts and retries without losing the
     const rejected = page.waitForResponse(response => response.url().endsWith('/api/v1/me/preferences') && response.request().method() === 'PATCH');
     await dialog.getByLabel('Appearance', { exact: true }).selectOption('dark');
     expect((await rejected).status()).toBe(409);
-    await expect(dialog.getByRole('alert')).toContainText('Appearance changed in another window');
+    await expect(dialog.getByRole('alert')).toContainText('Preferences changed in another window');
     await expect(dialog.getByLabel('Appearance', { exact: true })).toHaveValue(original.theme_mode);
     const retried = page.waitForResponse(response => response.url().endsWith('/api/v1/me/preferences') && response.request().method() === 'PATCH');
     await dialog.getByRole('button', { name: 'Retry', exact: true }).click();

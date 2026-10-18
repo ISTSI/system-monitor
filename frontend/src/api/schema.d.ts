@@ -1731,6 +1731,11 @@ export interface components {
              * @enum {string}
              */
             default_theme_mode: "light" | "dark" | "system";
+            /**
+             * Default Language
+             * @enum {string}
+             */
+            default_language: "en" | "pl";
             /** Demo Mode */
             demo_mode: boolean;
             /**
@@ -2915,7 +2920,12 @@ export interface components {
              * Theme Mode
              * @enum {string}
              */
-            theme_mode: "default" | "light" | "dark" | "system";
+            theme_mode?: "default" | "light" | "dark" | "system";
+            /**
+             * Language
+             * @enum {string}
+             */
+            language?: "default" | "en" | "pl";
         };
         /** PreferenceResponse */
         PreferenceResponse: {
@@ -2926,6 +2936,11 @@ export interface components {
              * @enum {string}
              */
             theme_mode: "default" | "light" | "dark" | "system";
+            /**
+             * Language
+             * @enum {string}
+             */
+            language: "default" | "en" | "pl";
         };
         /** ProjectInput */
         ProjectInput: {
@@ -3107,17 +3122,19 @@ export interface components {
             /** Expected Revision */
             expected_revision: number;
             /** Branding */
-            branding: string;
+            branding?: string;
             /**
              * Default Theme Mode
              * @enum {string}
              */
-            default_theme_mode: "light" | "dark" | "system";
+            default_theme_mode?: "light" | "dark" | "system";
             /**
-             * Additional Security Measures
-             * @default true
+             * Default Language
+             * @enum {string}
              */
-            additional_security_measures: boolean;
+            default_language?: "en" | "pl";
+            /** Additional Security Measures */
+            additional_security_measures?: boolean;
         };
         /** SettingsResponse */
         SettingsResponse: {
@@ -3130,6 +3147,11 @@ export interface components {
              * @enum {string}
              */
             default_theme_mode: "light" | "dark" | "system";
+            /**
+             * Default Language
+             * @enum {string}
+             */
+            default_language: "en" | "pl";
             /** Additional Security Measures */
             additional_security_measures: boolean;
         };

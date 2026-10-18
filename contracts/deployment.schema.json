@@ -302,6 +302,10 @@
     "bootstrap_settings": {
       "type": "object",
       "properties": {
+        "default_language": {
+          "enum": ["en", "pl"],
+          "default": "en"
+        },
         "default_theme_mode": {
           "enum": [
             "light",

@@ -5570,6 +5570,14 @@
             ],
             "title": "Default Theme Mode"
           },
+          "default_language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "pl"
+            ],
+            "title": "Default Language"
+          },
           "demo_mode": {
             "type": "boolean",
             "title": "Demo Mode"
@@ -5585,6 +5593,7 @@
         "required": [
           "branding",
           "default_theme_mode",
+          "default_language",
           "demo_mode"
         ],
         "title": "BootstrapResponse"
@@ -8766,13 +8775,22 @@
               "system"
             ],
             "title": "Theme Mode"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "default",
+              "en",
+              "pl"
+            ],
+            "title": "Language"
           }
         },
         "additionalProperties": false,
         "type": "object",
+        "minProperties": 2,
         "required": [
-          "expected_revision",
-          "theme_mode"
+          "expected_revision"
         ],
         "title": "PreferenceInput"
       },
@@ -8792,13 +8810,23 @@
               "system"
             ],
             "title": "Theme Mode"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "default",
+              "en",
+              "pl"
+            ],
+            "title": "Language"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "revision",
-          "theme_mode"
+          "theme_mode",
+          "language"
         ],
         "title": "PreferenceResponse"
       },
@@ -9271,18 +9299,24 @@
             ],
             "title": "Default Theme Mode"
           },
+          "default_language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "pl"
+            ],
+            "title": "Default Language"
+          },
           "additional_security_measures": {
             "type": "boolean",
-            "title": "Additional Security Measures",
-            "default": true
+            "title": "Additional Security Measures"
           }
         },
         "additionalProperties": false,
         "type": "object",
+        "minProperties": 2,
         "required": [
-          "expected_revision",
-          "branding",
-          "default_theme_mode"
+          "expected_revision"
         ],
         "title": "SettingsInput"
       },
@@ -9308,6 +9342,14 @@
             ],
             "title": "Default Theme Mode"
           },
+          "default_language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "pl"
+            ],
+            "title": "Default Language"
+          },
           "additional_security_measures": {
             "type": "boolean",
             "title": "Additional Security Measures"
@@ -9319,6 +9361,7 @@
           "revision",
           "branding",
           "default_theme_mode",
+          "default_language",
           "additional_security_measures"
         ],
         "title": "SettingsResponse"

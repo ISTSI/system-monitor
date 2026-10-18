@@ -1,5 +1,26 @@
 # 14 — MariaDB persistence, configuration and lifecycle
 
+The authorized local language deployment on 18 October 2026 applied
+**`0014_languages`** after
+`0013_inventory`. It adds checked ASCII language columns to shared settings
+(`default_language`, default `en`) and personal preferences (`language`, default
+`default`). Existing rows, revisions and themes remain unchanged.
+`bootstrap_settings.default_language` optionally initializes a new settings row;
+restart does not overwrite an existing saved choice. Populated synthetic
+upgrade/downgrade/reupgrade checks preserve all 48 pre-existing tables and test
+actual MariaDB constraints. The installed 8445 app now uses `0014_languages`
+and the matching frozen backend/frontend. User authorization was “Install the
+migration, deploy.” Serving was stopped before the consistent SQL/cache backup
+and migration using separate credentials. All 49 table counts, 46 unchanged
+table checksums and the old columns of both changed tables matched after DDL.
+Startup/browser checks preserve 41 stable tables, original setting/preference
+values and all 897 cache files (230,864,349 bytes). Only the two synthetic smoke
+accounts gained three personal-preference revisions each; language values were
+restored. The original backend/frontend overlay, SQL/cache/configuration and
+vault recovery are retained; restoring SQL must revoke restored web sessions
+before exposure. This deployment did not exercise full restore or Stage 08.
+Receipts are `verification/language-support/deployment-*.json`.
+
 Stage 07 source requires additive revision `0013_inventory`, following
 `0012_offline_analysis`. It creates `inventory_sources`, `inventory_uploads`,
 `inventory_previews`, `inventory_host_mappings` and `inventory_process_mappings`.

@@ -1,8 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Own appearance preference response",
+  "title": "Own appearance and language preference response",
   "type": "object",
   "properties": {
+    "language": {
+      "enum": ["default", "en", "pl"]
+    },
     "revision": {
       "type": "integer",
       "minimum": 1
@@ -18,7 +21,8 @@
   },
   "required": [
     "revision",
-    "theme_mode"
+    "theme_mode",
+    "language"
   ],
   "additionalProperties": false
 }

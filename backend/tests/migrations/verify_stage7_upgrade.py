@@ -15,7 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from verify_populated_upgrade import migrate, require_empty_mariadb
 
-from inspector import auth, foundation, services, topology
+from inspector import auth, services, topology
 from inspector.config import parse_config
 from inspector.database import SCHEMA_REVISION, check_schema, create_engine
 from inspector.domain import Principal
@@ -26,7 +26,6 @@ from inspector.persistence.models import (
     HistoryJob,
     HistorySource,
     TopologyState,
-    UserPreference,
     Workspace,
 )
 
@@ -80,20 +79,23 @@ async def snapshot(session, tables=None):
     for name in tables:
         if not re.fullmatch(r"[a-z][a-z0-9_]+", name):
             raise RuntimeError("Unexpected table identity.")
-        rows = (await session.execute(text(f"SELECT * FROM `{name}`"))).mappings().all()
+        # Compare the full legacy shape; additive language columns are asserted separately.
+        columns = {
+            "application_settings": "id, revision, branding, default_theme_mode, additional_security_measures",
+            "user_preferences": "user_id, revision, theme_mode",
+        }.get(name, "*")
+        rows = (await session.execute(text(f"SELECT {columns} FROM `{name}`"))).mappings().all()
         result[name] = copy.deepcopy(
             sorted([dict(row) for row in rows], key=lambda row: repr(sorted(row.items())))
         )
     return result
 
 
-async def seed(config):
+async def seed(config, revision=STAGE_SIX):
     engine = create_engine(config.database)
     try:
         async with async_sessionmaker(engine, expire_on_commit=False).begin() as session:
-            assert (
-                await session.scalar(text("SELECT version_num FROM alembic_version")) == STAGE_SIX
-            )
+            assert await session.scalar(text("SELECT version_num FROM alembic_version")) == revision
             administrator = await auth.bootstrap_admin(
                 session,
                 "upgrade-administrator",
@@ -108,11 +110,21 @@ async def seed(config):
                 "Synthetic retained inspector",
                 secrets.token_urlsafe(32),
             )
-            await foundation.initialize_settings(session, config)
             await session.execute(
-                text("UPDATE application_settings SET additional_security_measures=0")
+                text(
+                    "INSERT INTO application_settings "
+                    "(id, revision, branding, default_theme_mode, additional_security_measures) "
+                    "VALUES (1, 1, 'System Inspector', :theme, 0)"
+                ),
+                {"theme": config.default_theme_mode},
             )
-            session.add(UserPreference(user_id=inspector.id, revision=4, theme_mode="light"))
+            await session.execute(
+                text(
+                    "INSERT INTO user_preferences (user_id, revision, theme_mode) "
+                    "VALUES (:user_id, 4, 'light')"
+                ),
+                {"user_id": inspector.id},
+            )
             now = time.time_ns() // 1000
             for project_id in ("retained-a", "retained-b"):
                 project = await services.create_project(
@@ -270,6 +282,11 @@ async def verify(config, before):
             assert await snapshot(session, before) == before
             assert await session.scalar(text("SELECT COUNT(*) FROM history_events")) == 2
             assert await session.scalar(text("SELECT COUNT(*) FROM users")) == 2
+            assert (
+                await session.scalar(text("SELECT default_language FROM application_settings"))
+                == "en"
+            )
+            assert await session.scalar(text("SELECT language FROM user_preferences")) == "default"
     finally:
         await engine.dispose()
 
