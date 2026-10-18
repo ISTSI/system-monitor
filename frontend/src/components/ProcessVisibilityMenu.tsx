@@ -61,14 +61,14 @@ export default function ProcessVisibilityMenu({ processOptions, visibleProcessId
       event.currentTarget.querySelector('summary')?.focus({ preventScroll: true });
     }
   }}>
-    <summary aria-label={t('Show process')}>{t('Show process')} <span aria-hidden="true">({visibleCount}/{processOptions.length})</span></summary>
+    <summary title={t("Choose which processes appear in the log results.")} aria-label={t('Show process')}>{t('Show process')} <span aria-hidden="true">({visibleCount}/{processOptions.length})</span></summary>
     <fieldset><legend>{t('Visible processes')}</legend>
       {processOptions.length > 0 ? <>
-        <label className="checkbox-label"><input type="checkbox" checked={all} disabled={disabled} ref={element => { if (element) element.indeterminate = visibleCount > 0 && !all; }} onChange={event => {
+        <label className="checkbox-label"><input type="checkbox" title={all ? t("Hide all processes from these results.") : t("Show all processes in these results.")} checked={all} disabled={disabled} ref={element => { if (element) element.indeterminate = visibleCount > 0 && !all; }} onChange={event => {
           change(event.currentTarget, event.target.checked ? processOptions.map(process => process.id) : []);
         }} />{t('All processes')}</label>
-        {processOptions.map(process => <label className="checkbox-label" key={process.id} title={process.id}>
-          <input type="checkbox" data-process-id={process.id} aria-label={`${process.host}: ${process.name}`} title={process.id} checked={selected.has(process.id)} disabled={disabled} onChange={event => {
+        {processOptions.map(process => <label className="checkbox-label" key={process.id} title={`${t("Show or hide this process in the results.")} (${process.id})`}>
+          <input type="checkbox" data-process-id={process.id} aria-label={`${process.host}: ${process.name}`} title={`${t("Show or hide this process in the results.")} (${process.id})`} checked={selected.has(process.id)} disabled={disabled} onChange={event => {
             change(event.currentTarget, processOptions.filter(option => option.id === process.id ? event.target.checked : selected.has(option.id)).map(option => option.id));
           }} />
           <span title={process.id}>{process.host}: {process.name}</span>

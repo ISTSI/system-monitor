@@ -30,6 +30,8 @@
 .live-filter-state { font-size: 11px; margin-top: 8px; color: var(--si-text-muted); }
 .live-override { margin-top: 14px; padding: 12px; border: 1px solid var(--si-border); }
 .live-notice { padding: 12px; background: var(--si-raised); border-left: 3px solid var(--si-warning); font-size: 12px; color: var(--si-warning); }
+.live-interrupted-notice { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+.live-interrupted-notice > span { flex: 1 1 320px; }
 .live-panes { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .live-panes.split { grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); }
 .live-pane { border: 1px solid var(--si-border); border-radius: 5px; min-width: 0; overflow: hidden; }

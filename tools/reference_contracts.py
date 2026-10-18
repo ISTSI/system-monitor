@@ -207,7 +207,7 @@ def validate_project(project: dict[str, Any]) -> None:
             if entities["connections"][jump]["jump_connection_id"] is not None:
                 raise ValueError("Only one jump hop is supported")
     for server in project["servers"]:
-        if server["subsystem_id"] not in entities["subsystems"] or server["connection_id"] not in entities["connections"]:
+        if server["subsystem_id"] not in entities["subsystems"] or (server["connection_id"] is not None and server["connection_id"] not in entities["connections"]):
             raise ValueError("Missing server parent or connection")
     for process in project["processes"]:
         if process["server_id"] not in entities["servers"]:
@@ -215,13 +215,14 @@ def validate_project(project: dict[str, Any]) -> None:
         source = process["log_source"]
         if source["parser_id"] not in entities["parsers"]:
             raise ValueError("Missing parser")
-        connection = entities["connections"][entities["servers"][process["server_id"]]["connection_id"]]
+        connection_id = entities["servers"][process["server_id"]]["connection_id"]
+        connection = entities["connections"][connection_id] if connection_id is not None else None
         paths = [source["active_path"], *source["rotated_patterns"], *[a["path_pattern"] for a in source["archives"]]]
         for path in paths:
             if (not path.startswith("/") or ".." in PurePosixPath(path).parts
                     or any(ord(char) < 32 for char in path)):
                 raise ValueError("Unsafe remote path")
-            if not any(path == root or path.startswith(root.rstrip("/") + "/") for root in connection["allowed_log_roots"]):
+            if connection is not None and not any(path == root or path.startswith(root.rstrip("/") + "/") for root in connection["allowed_log_roots"]):
                 raise ValueError("Remote path outside proposed roots")
     for flow in project["flows"]:
         if flow["source_process_id"] not in entities["processes"] or flow["target_process_id"] not in entities["processes"]:

@@ -464,5 +464,8 @@ export default {
   "down": "w dół",
   "Add process to {name}": "Dodaj proces do {name}",
   "Add server to {name}": "Dodaj serwer do {name}",
-  "Add a parser profile before adding a process.": "Dodaj profil parsera przed dodaniem procesu."
+  "Add a parser profile before adding a process.": "Dodaj profil parsera przed dodaniem procesu.",
+  "SSH connection (optional)": "Połączenie SSH (opcjonalne)",
+  "No connection": "Brak połączenia",
+  "This server appears on the map without SSH access. You can assign a connection later.": "Ten serwer jest widoczny na mapie bez dostępu SSH. Połączenie możesz przypisać później."
 };

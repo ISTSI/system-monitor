@@ -1,5 +1,16 @@
 # System Inspector backend
 
+The optional server-connection follow-up source requires
+`0016_optional_connection` over `0015_remember_login`. Servers can have a null
+connection ID and remain documented on the topology. Historical collection and
+live monitoring reject unconnected servers before opening SSH. Apply the
+migration with serving stopped and the separate migration identity; this source
+change was installed on the retained **8449 preview** following the explicit
+“Perform migration, deploy on 8449.” authorization. Existing accounts,
+configuration and investigations/cache are preserved; 8445/8444 are unchanged.
+Downgrade refuses while any server has no connection, preserving the documented
+servers and their existing data.
+
 The topology/login follow-up source expects `0015_remember_login` over
 `0014_languages`. It persists an explicit per-login Remember me flag: opted-in
 sessions and their secure cookies last a fixed 30 days through inactivity;

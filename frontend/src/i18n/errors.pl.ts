@@ -3,6 +3,7 @@ export default {
   'The session changed. Retry the action.': 'Sesja uległa zmianie. Ponów czynność.',
   'The server could not be reached. Check the connection and retry.': 'Nie można połączyć się z serwerem. Sprawdź połączenie i spróbuj ponownie.',
   'The request could not be completed.': 'Nie udało się wykonać żądania.',
+  'A selected server has no connection assigned. Assign a connection before collecting its logs.': 'Wybrany serwer nie ma przypisanego połączenia. Przypisz połączenie przed pobraniem jego logów.',
   'The request could not be completed. Retry when the server is available.': 'Nie udało się wykonać żądania. Spróbuj ponownie, gdy serwer będzie dostępny.',
   'Authentication is required.': 'Wymagane jest zalogowanie.',
   'Invalid username or password.': 'Nieprawidłowa nazwa użytkownika lub hasło.',

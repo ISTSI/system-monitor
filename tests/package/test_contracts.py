@@ -177,6 +177,20 @@ class ConfigurationAndArchiveContractTests(unittest.TestCase):
     def test_valid_project(self):
         validate_project(load_json("examples/project.example.json"))
 
+    def test_unconnected_servers_retain_safe_path_and_reference_validation(self):
+        value = load_json("examples/project.example.json")
+        for server in value["servers"]:
+            server["connection_id"] = None
+        value["connections"] = []
+        validate_project(value)
+        unsafe = copy.deepcopy(value)
+        unsafe["processes"][0]["log_source"]["active_path"] = "/var/log/../../outside"
+        with self.assertRaisesRegex(ValueError, "Unsafe remote path"):
+            validate_project(unsafe)
+        value["servers"][0]["connection_id"] = "missing"
+        with self.assertRaisesRegex(ValueError, "Missing server parent or connection"):
+            validate_project(value)
+
     def test_duplicate_id_rejected(self):
         value = load_json("examples/project.example.json")
         value["servers"][1]["id"] = value["servers"][0]["id"]

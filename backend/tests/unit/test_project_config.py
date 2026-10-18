@@ -81,6 +81,39 @@ def test_empty_project_is_valid_and_returns_fresh_mutable_collections():
     assert parse_config(json.dumps(second), "json") == (second, [])
 
 
+@pytest.mark.parametrize("format", ["json", "yaml"])
+def test_unconnected_servers_and_their_documented_processes_roundtrip(format):
+    original = sample()
+    for server in original["servers"]:
+        server["connection_id"] = None
+    original["connections"] = []
+    content = json.dumps(original) if format == "json" else yaml.safe_dump(original)
+    parsed, warnings = parse_config(content, format)
+    assert parsed == original
+    assert warnings == []
+
+
+def test_assigning_connection_checks_previously_unconnected_process_roots():
+    config = sample()
+    config["servers"][0]["connection_id"] = None
+    source = next(
+        p["log_source"] for p in config["processes"] if p["server_id"] == config["servers"][0]["id"]
+    )
+    source["active_path"] = "/documented-only/app.log"
+    validate_project(config)
+    config["servers"][0]["connection_id"] = sample()["servers"][0]["connection_id"]
+    reject(config, "active_path")
+
+
+@pytest.mark.parametrize("field,value", [("active_path", "/logs/../etc"), ("active_path", "$(id)")])
+def test_unconnected_process_paths_still_require_safe_static_linux_paths(field, value):
+    config = sample()
+    for server in config["servers"]:
+        server["connection_id"] = None
+    config["processes"][0]["log_source"][field] = value
+    reject(config, field)
+
+
 def test_project_description_bound_fits_runtime_mariadb_text_columns():
     config = sample()
     config["project"]["description"] = "🙂" * project_config.MAX_PROJECT_DESCRIPTION

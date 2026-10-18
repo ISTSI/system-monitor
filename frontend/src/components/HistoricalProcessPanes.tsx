@@ -155,15 +155,15 @@ function ProcessPaneQuery({ projectId, systemName, queryPath, query, seed, seedQ
         <div className="history-pane-status" role="status">
           {pane.busy ? t('Loading process results…') : pane.response && <>{pane.response.matched_count ?? t('Count unknown')} {t(query.lane === 'diagnostic' ? 'diagnostic records' : 'matches')} · {t('Page {page}', { page: pane.page })}{pane.response.partial ? t(' · Partial coverage') : ''}</>}
         </div>
-        {pane.error && <div className="notice error" role="alert"><span>{t(pane.error)}</span><button type="button" aria-label={t('Retry {name}', { name })} disabled={pane.busy} onClick={() => { if (pane.retry) load.current?.(pane.retry); }}>{t('Retry')}</button></div>}
+        {pane.error && <div className="notice error" role="alert"><span>{t(pane.error)}</span><button type="button" title={t("Retry loading the results for this process.")} aria-label={t('Retry {name}', { name })} disabled={pane.busy} onClick={() => { if (pane.retry) load.current?.(pane.retry); }}>{t('Retry')}</button></div>}
         {pane.response && pane.events.length === 0 && <p className="history-pane-empty">{t(pane.response.availability === 'unavailable' ? 'Retained source data unavailable' : 'No matching records')}</p>}
         <VirtualLog columns={columns} highlights={pane.query} events={pane.events} label={`${systemName} (${projectId}) · ${id}`} compact onInspect={event => onInspect(event, pane.query)} selectedEventIds={selectedEventIds} onToggleSelection={onToggleSelection ? event => onToggleSelection(event, pane.query) : undefined} selectionDisabled={selectionDisabled} />
         <div className="history-pane-pagination">
-          <button type="button" aria-label={t('Previous page for {name}', { name })} disabled={!pane.previous.length || pane.busy} onClick={() => {
+          <button type="button" title={t("Show the previous results page for this process.")} aria-label={t('Previous page for {name}', { name })} disabled={!pane.previous.length || pane.busy} onClick={() => {
             load.current?.({ id, query: { ...pane.query, cursor: pane.previous.at(-1) ?? null }, page: pane.page - 1, previous: pane.previous.slice(0, -1) });
           }}>{t('Previous page')}</button>
           <span>{t('Page {page}', { page: pane.page })}</span>
-          <button type="button" aria-label={t('Next page for {name}', { name })} disabled={!pane.response?.next_cursor || pane.busy} onClick={() => {
+          <button type="button" title={t("Show the next results page for this process.")} aria-label={t('Next page for {name}', { name })} disabled={!pane.response?.next_cursor || pane.busy} onClick={() => {
             load.current?.({ id, query: { ...pane.query, cursor: pane.response?.next_cursor ?? null }, page: pane.page + 1, previous: [...pane.previous, pane.query.cursor ?? null] });
           }}>{t('Next page')}</button>
         </div>

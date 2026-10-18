@@ -8,7 +8,7 @@ The structural contract is `contracts/project.schema.json`; the examples in YAML
 |---|---|
 | Project | Stable ID, name, schema version, revision, documentation, shared branding/view defaults; no credentials, users or database settings |
 | Subsystem | Stable ID, unique project-level name, documentation/tags |
-| Server | Stable ID, unique project-level name, exactly one subsystem ID and one target connection ID |
+| Server | Stable ID, unique project-level name, exactly one subsystem ID and an optional target connection ID; `null` means a server documented on the map without SSH access |
 | Process | Stable ID, unique project-level display name, exactly one server ID; optional `pcs_resource_name`; documentation/tags; one log-source definition |
 | Connection profile | Stable ID, display name, host, port, username, credential reference, optional jump connection ID, proposed allowed log roots |
 | Credential | Separate server-owned record; reference ID and safe label are visible; encrypted password and nonce/key version are not exported |
@@ -48,6 +48,12 @@ Only Administrators write the shared semantic model and named view geometry. Ins
 ## Configuration validation
 
 Check unique IDs and names, existing references, single ownership, valid connection chains and no jump cycles. The current release permits at most one jump hop: a target may reference a jump profile whose own jump ID is null. A jump profile need not correspond to a diagram server.
+
+A server can be saved without a connection, including in a system that already
+has reusable profiles. Assigning or clearing its connection is an explicit
+Administrator edit. A missing connection never selects another profile implicitly;
+collection and live monitoring require a configured connection and fail clearly
+before attempting SSH. Existing cached investigations remain readable.
 
 Paths must be absolute Linux paths within configured roots. Reject NUL/control characters, traversal components and expansion syntax. Allow glob metacharacters only in the explicitly typed pattern fields; do not expand shell expressions or environment variables. Validate symlink policy and canonical paths at access time, not only during import. With **Additional security measures** enabled, roots and target enablement require local Administrator approval, which an imported file cannot supply. With that global setting disabled, saved path/parser definitions are usable without separate source confirmation; credentials, explicit host-key trust and root confinement still apply. Import starts no connection and creates no approval record.
 

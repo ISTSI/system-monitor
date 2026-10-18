@@ -10,7 +10,7 @@ from dataclasses import asdict
 from typing import Any
 from uuid import uuid4
 
-from inspector.domain import Principal
+from inspector.domain import Principal, server_connection_id
 from inspector.errors import DomainError
 
 
@@ -60,7 +60,7 @@ class RemoteHistory:
         grouped: dict[str, list[dict]] = {}
         for process_id in selection:
             process = processes[process_id]
-            connection_id = servers[process["server_id"]]["connection_id"]
+            connection_id = server_connection_id(servers[process["server_id"]])
             grouped.setdefault(connection_id, []).append(process)
         self.active[key] += 1
         try:

@@ -7,9 +7,12 @@ import core from '../src/i18n/core.pl.ts';
 import investigation from '../src/i18n/investigation.pl.ts';
 import topology from '../src/i18n/topology.pl.ts';
 import errors from '../src/i18n/errors.pl.ts';
+import generalTooltips from '../src/i18n/general-tooltips.pl.ts';
+import logTooltips from '../src/i18n/log-tooltips.pl.ts';
+import topologyTooltips from '../src/i18n/topology-tooltips.pl.ts';
 import { createTranslator, resolveLanguage } from '../src/i18n/translate.ts';
 
-const dictionary = { ...core, ...investigation, ...topology, ...errors };
+const dictionary = { ...core, ...investigation, ...topology, ...errors, ...generalTooltips, ...logTooltips, ...topologyTooltips };
 const placeholders = value => [...value.matchAll(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g)].map(match => match[1]).sort();
 
 test('account overrides the application language; default follows it', () => {

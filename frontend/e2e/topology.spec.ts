@@ -447,6 +447,7 @@ test('server setup exposes SSH endpoints and saves a new profile atomically with
   async function fillNewServer(dialog: Locator, serverId: string, name: string) {
     await dialog.getByLabel('Name', { exact: true }).fill(name);
     await dialog.getByLabel('Stable ID', { exact: true }).fill(serverId);
+    await dialog.getByRole('combobox', { name: 'Connection profile', exact: true }).selectOption({ label: 'Create a new SSH profile' });
     await dialog.getByLabel('SSH host', { exact: true }).fill('192.0.2.44');
     await dialog.getByLabel('SSH port', { exact: true }).fill('2022');
     await dialog.getByLabel('Username', { exact: true }).fill('logreader');
@@ -461,6 +462,8 @@ test('server setup exposes SSH endpoints and saves a new profile atomically with
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       const dialog = await openServerForm();
       await expect(dialog.getByRole('combobox', { name: 'Connection profile', exact: true })).toHaveValue('');
+      await expect(dialog.getByLabel('SSH host', { exact: true })).toHaveCount(0);
+      await dialog.getByRole('combobox', { name: 'Connection profile', exact: true }).selectOption({ label: 'Create a new SSH profile' });
       await expect(dialog.getByLabel('SSH port', { exact: true })).toHaveValue('22');
       await fillNewServer(dialog, 'cancelled-server', 'Synthetic application host');
       await dialog.getByLabel('SSH host', { exact: true }).scrollIntoViewIfNeeded();

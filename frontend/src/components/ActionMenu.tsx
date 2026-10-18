@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
-type Action = { label: string; onSelect: () => void; disabled?: boolean; dividerBefore?: boolean };
+type Action = { label: string; title: string; onSelect: () => void; disabled?: boolean; dividerBefore?: boolean };
 
-export default function ActionMenu({ label, items }: { label: string; items: Action[] }) {
+export default function ActionMenu({ label, title, items }: { label: string; title: string; items: Action[] }) {
   const [open, setOpen] = useState(false);
   const [availableHeight, setAvailableHeight] = useState(440);
   const container = useRef<HTMLDivElement>(null);
@@ -28,7 +28,7 @@ export default function ActionMenu({ label, items }: { label: string; items: Act
   }, [open]);
 
   return <div className="action-menu" ref={container} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
-    <button ref={trigger} type="button" aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={() => { startAtEnd.current = false; setOpen(!open); }} onKeyDown={event => {
+    <button ref={trigger} type="button" title={title} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={() => { startAtEnd.current = false; setOpen(!open); }} onKeyDown={event => {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); startAtEnd.current = event.key === 'ArrowUp'; setOpen(true); }
     }}>{label}<span aria-hidden="true">⌄</span></button>
     {open && <div ref={popup} id={id} role="menu" aria-label={label} className="action-popup" style={{ maxHeight: availableHeight }} onKeyDown={event => {
@@ -41,6 +41,6 @@ export default function ActionMenu({ label, items }: { label: string; items: Act
         const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
         buttons[next]?.focus();
       }
-    }}>{items.map(item => <div key={item.label} role="none">{item.dividerBefore && <div role="separator" className="action-separator" />}<button type="button" role="menuitem" tabIndex={-1} disabled={item.disabled} onClick={() => { close(true); item.onSelect(); }}>{item.label}</button></div>)}</div>}
+    }}>{items.map(item => <div key={item.label} role="none">{item.dividerBefore && <div role="separator" className="action-separator" />}<button type="button" role="menuitem" title={item.title} tabIndex={-1} disabled={item.disabled} onClick={() => { close(true); item.onSelect(); }}>{item.label}</button></div>)}</div>}
   </div>;
 }

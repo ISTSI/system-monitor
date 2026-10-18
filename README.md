@@ -1,6 +1,29 @@
 # System Inspector — Codex implementation package
 
+The Live monitor interrupted-session reminder fix is installed at
+**https://localhost:8449**. Refresh existing pages, then use **Dismiss** to hide
+the old-monitor reminder for this page. The notice now labels the system ID
+clearly; starting a monitor remains explicit. Both-role installed browser checks
+pass. Backend/schema `0016_optional_connection`, accounts, configuration and
+retained investigations/cache are preserved. See [STATUS.md](progress/STATUS.md).
+
+The optional-connection/topology-grid follow-up is installed at
+**https://localhost:8449**, with schema `0016_optional_connection`. Refresh existing
+pages. Servers can appear on the map without an SSH profile; Add server defaults
+to **No connection**, with assignment and removal available as explicit edits.
+Topology movement uses an invisible 8-pixel snap grid. The backed-up upgrade
+preserves existing configuration, accounts and retained investigations/cache;
+8445 and 8444 are unchanged.
+See [verification and remaining gates](progress/STATUS.md).
+
 The application includes the real backend, MariaDB migrations, local accounts, persistent appearance, independent system workspaces and the Stage 02 topology/configuration implementation. Administrators edit nested diagrams, documentation, flows and named views, with revision checks, undo/redo and explicit configuration import previews. Inspectors navigate a safe read-only projection. See [setup and scope](backend/README.md), [current verification status](progress/STATUS.md) and [incremental plan](progress/V3_SLICE_PLAN.md). Stage 03 adds the historical parser, safe archives, MariaDB event index and virtualised query/context viewer. Stage 04 adds encrypted passwords, explicit host-key and source/root approval, configured path checks, and bounded direct/single-jump SSH/SFTP historical collection. Stage 05 adds supervised live SFTP capture, scoped WebSockets, independent per-page controls, retained literal refiltering, split/merged panes and explicit recording. Stage 06 adds saved personal analysis, exact correlation traces, annotations, pinned context and previewed sanitized offline bundle exchange. Stage 07 adds the safe static Ansible file/ZIP setup wizard, system-scoped preview/reconciliation and parser draft diagnostics. Its verification is recorded in the status document; release qualification remains Stage 08. The original package description below is retained as the handoff baseline.
+
+Short button hover descriptions are installed at **https://localhost:8449**.
+Refresh existing pages, then hover a button for help in the selected UI language.
+The frontend-only deployment preserves the backend, schema
+`0015_remember_login`, accounts, settings, investigations and cache. Actual-served
+browser and preservation checks pass; evidence is under
+`verification/button-tooltips-preview/` and [STATUS.md](progress/STATUS.md).
 
 The matching live/log event presentation is installed at **https://localhost:8449**.
 Refresh existing pages for compact live rows with separate UTC time, process,

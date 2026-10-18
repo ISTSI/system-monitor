@@ -2,7 +2,17 @@
 
 **Current: Stage 07 plus the language follow-up is installed locally at https://localhost:8445 (`0014_languages`).** The separately authorized upgrade used the exact tested artifact, a consistent protected recovery backup and separate migration credentials. Existing accounts, settings, topology, investigations and cache bytes were preserved; the 8444 installation is unchanged. Installed browser checks and independent preservation/security audits pass. Stage 01 on 8443 remains stopped. The isolated 8449 review fixture now runs the current topology/login and Filters/pins frontend/backend at `0015_remember_login`, following the explicit preview-update authorization. Stage 08 has not started. Exact results and limitations are recorded below; earlier blockers remain as dated history.
 
-**Latest source follow-up (18 October 2026):** Live monitor uses `server: process`
+**Latest deployed follow-up (18 October 2026):** all buttons now have short native
+hover descriptions in English and Polish, including menu/icon/disabled controls
+and state-dependent actions. The source audit covers 171 buttons and 21
+disclosures; 13 isolated browser groups, 20 frontend unit cases, lint, typecheck
+and build pass. Following explicit authorization, the frozen frontend is installed
+on **https://localhost:8449**. Actual-served browser checks pass for 18 groups and
+289 controls; final checks preserve backend/schema/data/cache/configuration,
+original sessions and other services. Refresh existing pages to load it. The next
+separate stage gate remains Stage 08.
+
+**Earlier source follow-up (18 October 2026):** Live monitor uses `server: process`
 labels and clearer gap/error/previous-monitor notices. Three isolated component
 browser cases and 20 frontend unit tests pass, as do lint, typecheck and build.
 Both themes were visually inspected. This source follow-up is not deployed;
@@ -3951,3 +3961,534 @@ backend/schema/data and requires no SQL restore or schema downgrade. Backups and
 previous artifacts remain retained; automatic/manual rollback were prepared and
 reviewed, not exercised. No blocker remains. 8449 is left running; the next
 separate gate remains Stage 08 offline-release qualification.
+
+## 18 October 2026 — short button hover descriptions (source only)
+
+Implemented the requested hover help across every authored button, including
+shared modal/retry buttons, menu actions, account/configuration/inventory forms,
+topology, historical/live viewers, filters, pins and investigation exchange.
+Button-like disclosures and navigation actions also describe their purpose.
+Native `title` descriptions use the existing translation mechanism; visible
+labels and accessible names remain available. Toggle descriptions follow their
+current action, including pause/resume and show/hide. Monitor descriptions
+explicitly identify immediate read-only capture, while display pause explains
+that collection/recording continues. Shared ActionMenu now requires a description
+for both the trigger and each item. Existing contextual IDs are preserved.
+
+Changed files: `frontend/src/App.tsx` and the 22 touched components under
+`frontend/src/components/`; new `general-tooltips.pl.ts`, `log-tooltips.pl.ts`
+and `topology-tooltips.pl.ts` under `frontend/src/i18n/`, registered in
+`i18n/index.tsx`; existing `frontend/tests/i18n.test.mjs` includes these
+catalogues in its translation/placeholder checks. Updated `docs/06_UI_UX.md`,
+`docs/12_TRACEABILITY.md` and this status. Evidence is retained under
+`verification/button-tooltips/`. No new permanent test suite or dependency was
+needed for this reversible presentation change.
+
+Requirement mapping: R34 presentation/help. This is a user-requested UI
+follow-up, not the Stage 08 offline release.
+
+Commands actually run from the repository root unless noted:
+
+| Command | Result |
+|---|---|
+| `backend/.venv/Scripts/python.exe scripts/frontend.py typecheck` | PASS, final source. |
+| `backend/.venv/Scripts/python.exe scripts/frontend.py lint` | PASS, zero warnings. |
+| `backend/.venv/Scripts/python.exe scripts/frontend.py test` | PASS: API types match and all 20 frontend unit cases pass, including complete Polish keys and interpolation. |
+| `backend/.venv/Scripts/python.exe scripts/frontend.py build` | PASS; Vite reports the existing large-chunk advisory. |
+| `../.toolchains/node-v24.22.0-win-x64/node.exe .cache/button-tooltips-audit.mjs` (cwd `frontend`) | PASS: all 171 authored JSX buttons, 21 disclosure controls and one ActionMenu callsite have explicit nonoptional string titles; item descriptions are required and forwarded. |
+| `../.toolchains/node-v24.22.0-win-x64/node.exe .cache/button-tooltips-check.mjs` (cwd `frontend`) | PASS: 13 browser groups, 86 rendered-control observations, English/Polish and both themes. |
+| `git diff --check` | PASS with the repository's normal line-ending configuration. |
+
+The one-off browser smoke uses real source components on an isolated loopback
+Vite server and explicitly synthetic intercepted HTTP/WebSockets. It covers
+hovered native titles, enabled/disabled and icon buttons, menu keyboard
+navigation/dismissal/focus restoration, UTC and filter dialogs, sign-in,
+localized React Flow controls and changing live pause/resume help. There are no
+unexpected API/external requests or page errors. Seven captures are retained;
+light filters/login and dark topology/menu/filters plus live controls were
+visually inspected for readability and layout. Native browser tooltip popups
+are checked through their hover/title behavior; their operating-system rendering
+is not captured by headless screenshots.
+
+Earlier attempts are not counted as passes: the initial typecheck/unit run
+overlapped creation of `log-tooltips.pl.ts` and failed on that missing module;
+all final checks pass after the catalogue was saved. The temporary browser
+harness initially needed corrected browser-path/base-URL/Monitor selectors and
+HMR disabled while source edits settled. These were harness corrections; no
+product contract or assertion was relaxed.
+
+No backend/MariaDB/SFTP suite was rerun because this change has no backend,
+schema, persistence or transport changes. Installed-preview checks were not run
+because deployment was not requested. No installed service, real credentials,
+target host or infrastructure was touched. No implementation blocker remains;
+deployment and Stage 08 offline-release qualification remain separate gates.
+
+## 18 October 2026 — authorized hover-help deployment to 8449
+
+The explicit **“Deploy to 8449.”** instruction authorized installation of the
+reviewed tooltip frontend on the retained loopback preview. Prepared
+`.cache/deploy_button_tooltips_preview.py` from the existing scoped deployment
+workflow, with an independent read-only review, and
+`.cache/verify_button_tooltips_8449.mjs` for actual-served verification.
+Deployment state is under `.state/stage7-browser/button-tooltips-preview/`;
+receipts and captures are under `verification/button-tooltips-preview/`.
+Updated README, requirement traceability and this status. Product source and
+dependencies were unchanged during deployment.
+
+The frozen tree contains 20 files, preserving all earlier content-addressed
+assets and license notices. Only `index.html` and new
+`assets/index-CWXtVKDQ.js` differ from the previous frontend; CSS is unchanged.
+Replaced exactly one read-only frontend Compose mount and recreated only the
+8449 service with `--no-deps --pull never`. Backend, images, schema
+`0015_remember_login`, dependencies, configuration and persistent volumes are
+preserved; there was no migration, image pull or target-host connection.
+
+Preflight confirms no active historical/live capture or inventory staging.
+While the serving service was stopped, backed up all 49 database tables in a
+10,766,934-byte consistent SQL dump and archived the scoped state/cache volumes
+with manifests covering 4 state and 1,814 cache entries. Before/after backup
+database and volume snapshots match. Protected recovery material is under
+`.secrets/stage7-browser/button-tooltips-preview/`; the vault configuration and
+existing separately protected key remain unchanged.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`, `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command | Result |
+|---|---|
+| `PY -m py_compile .cache/deploy_button_tooltips_preview.py` | PASS. |
+| `NODE --check .cache/verify_button_tooltips_8449.mjs` | PASS; explicit frontend-config ESLint check also passes. |
+| `PY .cache/deploy_button_tooltips_preview.py build` | PASS: exact tested artifact/evidence frozen; backend unchanged; no Docker mutation. |
+| `PY .cache/deploy_button_tooltips_preview.py inspect` | PASS with reviewed local-Docker access; sandboxed attempt stopped with SetupError before mutation. |
+| `PY .cache/deploy_button_tooltips_preview.py deploy` | PASS: scoped backup, frontend cutover, HTTPS/runtime/data preservation. |
+| `SI_VERIFY_BUTTON_TOOLTIPS_8449=1 NODE .cache/verify_button_tooltips_8449.mjs` | Final PASS: 18 groups, 289 rendered-control observations and 8 screenshots; earlier helper attempts described below. |
+| `PY .cache/deploy_button_tooltips_preview.py cleanup` | PASS: removed only four recorded test sessions and verified their eight workspaces detached/expired or reaped; all original sessions preserved. |
+| `PY .cache/deploy_button_tooltips_preview.py verify` | PASS after cleanup: final runtime, schema, backend, database, state/cache, configuration, original-session, other-service and served-hash checks. |
+| `git diff --check` | PASS. |
+
+Actual-served Playwright checks use only the existing generated synthetic
+Inspector/Administrator accounts and retained synthetic evidence. Every loaded
+HTML/JS/CSS hash and all 18 current/retained public HTTPS file hashes match the
+frozen manifest. Native descriptions are checked and hovered on login,
+account/Preferences, topology/vendor/disabled controls, stopped live controls,
+retained history, cancelled Filters/UTC dialogs, the Administrator System menu
+and a cancelled connection draft. Two pages in one browser context have fresh
+independent workspaces and local live drafts. No capture, WebSocket, SSH,
+configuration/preference/personal-content write, API/asset substitution or global
+logout occurs; unexpected requests and browser errors are zero. Both themes
+were inspected visually. The installed accounts remain English; Polish is
+covered by the unchanged prior isolated source smoke. Native OS tooltip popups
+are verified via hover/title behavior, not screenshot rendering.
+
+Preserved earlier attempts: sandboxed browser execution could not read/write
+protected synthetic account/ledger files and stopped before login; reviewed
+local access resolved it. The first completed browser attempt passed tooltip
+checks but compared the Administrator topology projection to the Inspector
+baseline. Corrected the helper to compare each role to its own captured
+baseline, retaining exact preservation assertions and the failed timestamped
+receipt. The final attempt passes. Cleanup covers sessions/workspaces from both
+completed attempts. No product contract or deployment preservation check failed.
+
+Final verification preserves all 43 stable table counts/checksums, original
+authentication identity/CSRF/auth-version/created/deadline/Remember-me fields
+(allowing only normal nondecreasing activity), state/cache bytes and ownership,
+backend/configuration, other containers and runtime security boundaries.
+Independent deployment and receipt reviews found no discrepancy. Existing
+20-unit/lint/typecheck/build evidence applies to the identical installed
+frontend; unchanged backend/MariaDB/SFTP suites were not rerun for this
+frontend-only deployment.
+
+Recovery: protected `ROLLBACK.txt` documents
+`PY .cache/deploy_button_tooltips_preview.py rollback`. It restores the exact
+previous frontend mount and recreates only 8449, preserving current backend,
+schema and data without SQL restore or migration. Backups and previous assets
+are retained; rollback was prepared/reviewed, not exercised. No blocker remains;
+8449 is left running, 8445/8444 remain unchanged, and Stage 08 remains the next
+separate offline-release gate.
+
+## 18 October 2026 — optional server connections and invisible topology grid (source only)
+
+Implemented the requested map-only servers. Add server defaults to **No
+connection**, including when reusable profiles already exist. No SSH fields or
+credentials are required for this choice. Edit server retains the saved choice
+and explicitly assigns or clears a connection; detaching a server preserves its
+profile. **Create a new SSH profile** remains an explicit, validated option.
+English and Polish optional labels, help and acquisition errors are bundled.
+
+Canonical v2 configuration accepts explicit `connection_id: null`. MariaDB
+migration `0016_optional_connection` makes the existing scoped server connection
+foreign key nullable, preserving validation of assigned references. Process path
+syntax/parser validation remains mandatory; assigning a connection revalidates
+all paths against its roots. Historical planning/start and live start reject an
+unconnected selected server with 409 `SERVER_NOT_CONNECTED` before any SSH work
+or live reservation. Cached investigation reads retain their captured state.
+Downgrade refuses while unconnected servers exist, without deleting servers or
+inventing profiles.
+
+The topology uses an invisible 8-pixel square snap grid for dragged origins,
+approximately a lowercase “o” at normal diagram zoom. Moved nested elements use
+the same canvas grid despite legacy parent offsets. Drop persistence respects
+parent margins and bounds, handles multiple selections and saves keyboard arrow
+movement. Loading a view does not round existing positions. The old dotted
+background is removed. Resize behavior retains React Flow's existing pointer
+increments; this change promises position alignment when moving elements.
+
+Changed files for this follow-up: `frontend/src/components/TopologyEditor.tsx`,
+`TopologyGraph.tsx`, `frontend/src/topology.ts`, new `topology-grid.ts`,
+`frontend/src/i18n/topology.pl.ts` and `errors.pl.ts`,
+`frontend/e2e/topology.spec.ts` and new `topology_grid.spec.ts`;
+`contracts/project.schema.json` and its backend copy;
+`backend/src/inspector/{database,domain,history,history_remote,live,project_config}.py`,
+`persistence/models.py`, new migration `0016_optional_connection.py`,
+`backend/tests/unit/test_project_config.py`, new optional-connection unit/API and
+populated migration tests, and `scripts/verify_optional_connections.py`.
+Aligned the package reference validator in `tools/reference_contracts.py` and
+its `tests/package/test_contracts.py` regression with explicit null connections,
+retaining unsafe-path and supplied-reference rejection.
+Updated README/backend README, domain/UI/MariaDB documentation and requirement
+traceability. Existing unrelated tooltip edits were preserved.
+
+Requirement mapping: R05/R10/R13/R34, with R35/R42/R44/R48 validation and
+persistence boundaries retained. This user-requested follow-up does not complete
+Stage 08.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`; repository root unless noted):
+
+| Command | Result |
+|---|---|
+| `PY scripts/frontend.py typecheck` | PASS, including final browser spec. |
+| `PY scripts/frontend.py lint` | PASS, zero warnings. |
+| `PY scripts/frontend.py test` | PASS: 20 unit cases and generated API type consistency. |
+| `PY scripts/frontend.py build` | PASS; existing Vite chunk-size advisory. |
+| `PY -m pytest backend/tests/unit -q` | PASS: 845 passed, 4 Windows skips, 5 existing WebSocket deprecation warnings. |
+| `PY -m pytest backend/tests/unit/test_project_config.py backend/tests/unit/test_optional_connection.py -q -rs` | PASS: 131 cases. |
+| `PY -m ruff check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts/verify_optional_connections.py` | PASS. |
+| Corresponding `ruff format --check` with the same paths/configuration | PASS: 131 files already formatted. |
+| `.venv/Scripts/python.exe -m mypy src` (cwd `backend`) | PASS: 37 source files. |
+| `PY scripts/verify_optional_connections.py upgrade` | PASS: actual populated MariaDB upgrade/downgrade/reupgrade and scoped FK; 48 existing non-Alembic tables preserved. |
+| `PY scripts/verify_optional_connections.py integration` | Final PASS: 51/51 actual MariaDB optional-connection, topology, history and live API cases, 122.17 seconds, no skips. |
+| `NODE .cache/optional-server-check.mjs` (cwd `frontend`) | PASS: 5 variants, 23 saved synthetic payloads; English/Polish and both themes. |
+| `INSPECTOR_E2E_REPORT_STAGE=stage-7 INSPECTOR_E2E_REPORT_NAME=topology-grid-browser NODE node_modules/@playwright/test/cli.js test e2e/topology_grid.spec.ts` (cwd `frontend`; environment variables set through PowerShell) | PASS: 2/2 browser cases. |
+| `PY tools/validate_schemas.py` | PASS: 20 schemas, 102 positive and 36 rejected negative instances. Package evidence only. |
+| `PY tools/validate_package.py` | PASS: package consistency only. |
+| `PY -m unittest discover -s tests/package -q` | PASS: 129 run, 120 passed and 9 POSIX-only skips on Windows. Package evidence only. |
+| `git diff --check` | PASS; normal repository line-ending notices. |
+
+The final integration receipt is `optional_c3f0c6.log` and its command JSON.
+It verifies null save/export/reassignment/undo, the scoped database FK and
+historical/live pre-SSH rejection, plus the existing topology/history/live
+regressions, including local synthetic direct/jump SFTP. The initial
+`optional_703892.log` records 50 passing cases and one new test failure caused
+by parsing the export response envelope as the configuration. Corrected only
+that test's envelope parsing; the complete rerun passes. The initial sandboxed
+Docker invocation could not access the local daemon and stopped before
+provisioning; reviewed local-Docker access ran the disposable tests. Existing
+preview containers were not recreated or removed.
+
+Evidence: `verification/optional-server-topology/` contains the browser receipt,
+saved payloads, captures and frontend check record; `verification/topology-grid/`
+contains the dedicated browser report and theme captures;
+`verification/optional-connections/` contains backend commands and MariaDB
+migration receipts. Browser checks mount actual source components with explicitly
+synthetic callbacks/transport, without a deployed backend or credentials. They
+exercise save/reopen/assign/detach, explicit SSH validation, no initial layout
+write, nested/process/server/subsystem movement, negative/top-left boundaries,
+multiselection, callback persistence/reload, keyboard movement and Inspector
+read-only behavior. Map-only light and explicit-profile Polish dark forms, plus
+both topology themes, were inspected visually. Independent read-only review
+found no missed null handling, scope or root-validation boundary.
+
+Windows unit skips are synthetic symlink developer privileges (retention),
+pinned ordinary-handle rename (live SFTP), POSIX vault permissions, and
+OS-denied synthetic symlink creation (SSH files). These skips are recorded
+explicitly, not counted as passes. Earlier harness attempts needed the explicit
+repository Node path, Windows Vite virtual-path normalization, a constrained
+fixture parent height and a negative-zero assertion correction. Final browser
+checks pass. Early grid attempts wrote the generic Stage 01 browser-report
+path; the authoritative new grid result is the dedicated report above, not
+historical Stage 01 application evidence. No product contract was relaxed.
+
+No installed service, retained database/schema, real credentials, monitored
+host or deployment was changed. This source requires the matching backend and
+additive migration before installation. Deployment and Stage 08 offline-release
+qualification remain separate gates. No implementation blocker remains.
+
+## 18 October 2026 — authorized optional-connection/grid migration and deployment to 8449
+
+The explicit **“Perform migration, deploy on 8449.”** instruction authorized
+the backed-up installation of the reviewed optional-connection/grid follow-up
+on **https://localhost:8449**. It is running with the matching frozen backend,
+frontend and MariaDB schema **`0016_optional_connection`**. Refresh existing
+pages to load the new assets. Existing configuration, accounts, settings and
+retained investigations/cache are preserved; 8445/8444 and all other retained
+service identities remain unchanged. This does not complete Stage 08.
+
+Prepared `.cache/build_optional_connections_preview.py`,
+`.cache/deploy_optional_connections_preview.py` and
+`.cache/verify_optional_connections_8449.mjs`, with independent read-only review.
+The frozen package is under `.state/stage7-browser/optional-connections-preview/`;
+receipts and captures are under `verification/optional-connections-preview/`.
+Updated README/backend README, MariaDB documentation, requirement traceability
+and this status. No product code or dependency changed during installation.
+
+The frozen backend contains 62 files. It retains grouped pins, collection/display
+range separation, remembered login and all other reviewed behavior while adding
+the nullable server connection and safe pre-SSH rejection. Its unchanged
+`pyproject.toml` matches the previous installation; the existing reviewed
+`uv.lock` is retained in the package. The separate frontend contains 21 files,
+preserving 19 previous non-index asset/notice files, and adds
+`assets/index-CZNZNHJi.js` with the existing `assets/index-gpCxLP0-.css`. Only the
+serving backend mount, its frontend mount and the separate one-shot migrator
+backend mount changed. The empty nested web mountpoint was prepared before
+cutover without changing any frozen file hashes. Runtime images, dependencies,
+configuration, TLS/vault sources and state/cache named volumes are preserved.
+Only the 8449 service was recreated, with `--no-deps --pull never`; there was no
+registry pull, global logout or connection to monitored hosts.
+
+Preflight verified the existing schema, runtime, served assets, absence of live
+or historical capture and empty inventory staging. With serving stopped, backed
+up all 49 database tables in a 10,891,973-byte consistent SQL dump and archived
+the scoped volumes with manifests covering **4 state entries and 1,814 cache
+entries**, including directories. Database snapshots, canonical row hashes and
+volume content/ownership matched before and after backup. Protected recovery
+material is under `.secrets/stage7-browser/optional-connections-preview/`;
+the existing separately protected vault source is unchanged. Separate migration
+credentials applied `0015_remember_login` → `0016_optional_connection` while
+serving was stopped. All 49 row counts, complete existing authentication values
+and all 43 stable tables' original canonical row hashes/counts match. The scoped
+server connection FK remains present; the connection column is nullable.
+
+MariaDB's physical `servers` checksum changes when the nullable-column storage
+layout changes, despite identical values. The independently run disposable
+populated proof in `physical-checksum-proof-opt_upgrade_119baa.json` demonstrates
+this across upgrade, guarded refused downgrade, explicit reassignment, downgrade
+and reupgrade: all 48 existing non-Alembic tables' canonical values remain exact.
+The installed migration consequently requires exact original canonical rows for
+all 43 stable tables, exact old authentication values and 47 unchanged physical
+table checksums, allowing only this proven server-table checksum change.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command | Result |
+|---|---|
+| `PY -m py_compile .cache/deploy_optional_connections_preview.py .cache/preserve_optional_attempt.py` and build-helper compile | PASS. |
+| `PY .cache/build_optional_connections_preview.py` | PASS once: frozen imports/OpenAPI/nullable server/FK/pre-SSH error and existing contracts; no lifespan, Docker, database or protected input. |
+| `NODE --check .cache/verify_optional_connections_8449.mjs` | PASS, including final corrected helper. |
+| `NODE frontend/node_modules/eslint/bin/eslint.js --config frontend/eslint.config.js --no-ignore .cache/verify_optional_connections_8449.mjs --max-warnings 0` | PASS. |
+| `PY .cache/deploy_optional_connections_preview.py inspect` | PASS with reviewed local access; initial sandbox attempt stopped with SetupError before mutation. |
+| `PY .cache/deploy_optional_connections_preview.py deploy` | Final PASS: stopped-service backup, migration, cutover and installed preservation/runtime/assets. Two earlier safely reverted attempts are described below. |
+| `PY .cache/diagnose_optional_preview.py` | Initial CLI-only probe exit16; corrected read-only streamed probe PASS, then all 43 original stable rows verified against the second attempt's pre-migration baseline after rollback. |
+| `docker compose run --help` | Confirmed this installed CLI lacks `run --pull`; service `pull_policy: never` is checked instead. |
+| `PY .cache/prove_optional_checksum.py` | PASS with reviewed local access: independent disposable populated MariaDB proof; initial sandbox attempt stopped before provisioning. |
+| `PY .cache/preserve_optional_attempt.py` / `PY .cache/preserve_optional_attempt.py attempt2` | PASS: retained the exact failed private attempt directories and rollback/backup receipts within verified workspace paths. No recursive deletion. |
+| `SI_VERIFY_OPTIONAL_CONNECTIONS_8449=1 NODE .cache/verify_optional_connections_8449.mjs` (variable set through PowerShell) | PASS with reviewed local access: all 19 installed-browser checks and four screenshots. |
+| `PY .cache/deploy_optional_connections_preview.py cleanup` | PASS: only 2 recorded test authentication sessions removed; 8 workspaces detached/expired or already reaped; original sessions preserved. |
+| `PY .cache/deploy_optional_connections_preview.py verify` | PASS after browser cleanup: final schema, original data, state/cache, protected inputs, assets/runtime security and other services. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+The actual-served browser uses only generated synthetic accounts and an exact
+UUID/name/description-marked test system. It verifies server creation with no
+profiles, default **No connection** with reusable profiles present, save/reopen,
+explicit assignment and removal, invisible 8-pixel process/server/subsystem and
+multiple-selection movement, undo/redo and reload. Two same-context pages have
+independent server-issued workspaces; Inspectors cannot mutate the shared
+diagram. Both roles reopen retained historical investigations and preserve
+their job/workspace/bookmark snapshots. Original systems A/B, settings and
+personal preferences remain exact. Every loaded HTML/JS/CSS byte hash and all
+19 current/retained public HTTPS files match the frozen manifest. Four captures
+were inspected in both themes; optional forms and the nested diagram render
+correctly. No API/asset substitution, WebSocket, SSH, collection, unexpected
+request or browser error occurred. Installed account languages remain unchanged;
+English/Polish coverage also remains the preceding identical source evidence.
+
+Teardown empties only its generated test system using the normal revisioned
+confirmed-deletion API, then archives it. One empty archived synthetic system
+and its scoped revision history remain as deliberate test evidence. No null
+test server remains to prevent a future guarded downgrade. Preservation checks
+exclude only that independently verified new system's rows; every original
+stable row remains checked. No preexisting system/entity/personal content was
+written. Test workspaces were acknowledged detached; cleanup deleted only the
+recorded new authentication sessions and retained all original session
+identity/CSRF/auth-version/deadline/Remember-me fields, allowing only normal
+nondecreasing activity.
+
+Earlier attempts are retained, not counted as successful deployments. First,
+this installed Compose rejected the proposed `run --pull never` option before
+the backup probe or migration. The helper restored the exact old application
+and schema 0015. Read the actual CLI help, removed the unsupported run flag and
+verified both services' existing `pull_policy: never`; serving `up` retains its
+supported `--pull never`. Second, backup and DDL succeeded but the initial
+overstrict physical checksum assertion flagged the server-table nullability
+layout. Guarded rollback safely downgraded to 0015 and restored the old package.
+An independent read-only probe then confirmed every original stable row still
+matched the pre-migration baseline. Only after the disposable proof above did
+the third attempt use the correct logical-data guard and succeed. Protected
+attempts and receipts remain under their `-attempt1`/`-attempt2` paths. Neither
+attempt restored SQL, deleted user data or affected another service.
+
+The first browser launch was sandbox-denied while opening protected synthetic
+accounts/ledger, before login or shared writes; reviewed local access resolved
+it. Before the actual run, read-only review corrected helper Undo/Redo POST
+allowlists/response waits and the archive response envelope check. The actual
+completed browser run passes; no product assertion or authorization contract
+was relaxed. The same frozen source retains the preceding 845-unit (4 Windows
+skips), 51-MariaDB-integration, migration lifecycle, 20-frontend-unit,
+typecheck/lint/build and source-browser evidence; no additional product edit
+required those suites to be repeated during deployment.
+
+Recovery: protected `ROLLBACK.txt` documents
+`PY .cache/deploy_optional_connections_preview.py rollback`. It requires no
+active captures/staging and zero servers with null connections across all
+systems, including archived ones. It stops only 8449, downgrades through the
+separate migrator to `0015_remember_login`, restores the exact previous Compose
+mounts and recreates only that service, preserving later data. It never invents
+connections or deletes user entities to bypass the guard. Future worktree edits
+do not prevent recovery from the hash-verified frozen artifacts. Partial MariaDB
+DDL is inspected explicitly; full SQL/cache restore is separate recovery work
+requiring authorization and revocation of restored sessions before exposure.
+Automatic rollback was exercised successfully twice; the later manual command
+was prepared and reviewed, not executed. No blocker remains. 8449 is left
+running with schema 0016; Stage 08 offline-release qualification remains the
+next separate gate.
+
+## 18 October 2026 — interrupted-monitor reminder correction (source only)
+
+The user reported repeatedly seeing `_ISTSI_TEST (60bdb139-...): A previous
+monitor was interrupted...`. That UUID is the immutable **system** ID, not an
+automatically reopened monitor. Every Live-tab refresh previously searched the
+last 100 owned sessions for any interrupted record and reused the current
+capture-notice state for the reminder. A retained old record therefore showed
+the same warning again on each fresh page. Opening Live must still start no SSH;
+selecting processes and explicitly choosing Monitor starts a new session.
+
+Separated the historical reminder from capture continuity notices and labelled
+its prefix **System**. Added bundled English/Polish **Dismiss** with per-page
+acknowledgement of the displayed interrupted IDs. Returning from another section
+and delayed list responses cannot restore acknowledged IDs; a newly interrupted
+ID may produce a new reminder. Explicit successful start/resume clears the
+reminder. Document reload intentionally starts with fresh acknowledgement state.
+No shared storage, server mutation, session deletion or recording cleanup is
+used, and current capture-gap/resync notices remain visible.
+
+Changed files: `frontend/src/components/LiveViewer.tsx`, `frontend/src/styles.css`,
+`frontend/src/i18n/investigation.pl.ts`,
+`frontend/e2e/live_notices.spec.ts`,
+`frontend/e2e/live_notices.playwright.config.ts`, `docs/06_UI_UX.md`,
+`docs/12_TRACEABILITY.md` and this status. The isolated test transport now models
+unique monitor IDs on successive explicit starts and supports historical and
+delayed lists. An optional report directory preserves earlier browser evidence.
+
+Commands actually run (`NODE` = `.toolchains/node-v24.22.0-win-x64/node.exe`;
+frontend commands run from `frontend/`, with paths relative to that directory):
+
+| Command | Result |
+|---|---|
+| `NODE --experimental-strip-types --test tests/*.test.mjs` | PASS: all 20 unit cases, including bundled Polish key/placeholder coverage. |
+| `NODE scripts/check-api-types.mjs` | PASS: generated types match unchanged backend OpenAPI. |
+| `NODE node_modules/typescript/bin/tsc --noEmit` | PASS. |
+| `NODE node_modules/eslint/bin/eslint.js . --max-warnings 0` | PASS. |
+| `NODE node_modules/vite/bin/vite.js build` | PASS: production assets built; Vite reports the existing application chunk exceeds its 500 kB advisory threshold (837.63 kB JS). |
+| Set `INSPECTOR_LIVE_NOTICE_REPORT_DIR=../verification/live-interrupted-notice`; `NODE node_modules/@playwright/test/cli.js test --config e2e/live_notices.playwright.config.ts --output ../test-results/live-interrupted-notice` | PASS: 8/8 Chromium browser cases in 10.7 seconds, no skips. Node emits the non-failing NO_COLOR/FORCE_COLOR environment advisory. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Logs and the JSON report are under `verification/live-interrupted-notice/`.
+Inspected `screenshots/live-interrupted-reminder-light.png` and
+`screenshots/live-interrupted-reminder-dark.png`: reminder and Dismiss are
+readable with the normal process picker/viewer. The eight browser cases cover
+same-context two-page acknowledgement isolation; no start/attach/mutation when
+dismissing; returning to Live; delayed lists after dismissal/start; new interrupted
+IDs; a distinct monitor ID after explicit Stop → Monitor; and retained actual
+continuity/error notices, plus prior presentation/filter/pause cases.
+
+These are real-component browser tests with explicitly mocked HTTP/WebSockets,
+served only by the isolated local Vite harness. No deployed application, real
+credential, database or monitored host was accessed. Backend/MariaDB/SFTP suites
+were not rerun because this correction changes no backend/API/persistence/
+transport behavior. No installation/deployment or installed-preview check was
+performed. Existing working-tree changes were preserved. Next: any requested
+deployment remains a separate action; Stage 08 offline-release qualification
+remains its separate gate, with no new completion claim.
+
+## 18 October 2026 — authorized interrupted-reminder deployment on 8449
+
+The user explicitly requested **“Deploy on 8449”**. Installed the exact tested
+frontend at **https://localhost:8449**, preserving the optional-connection backend,
+schema `0016_optional_connection`, accounts, preferences, system definitions,
+retained investigations and cache. Refresh existing pages to load the clearly
+labelled System reminder and **Dismiss**. Dismissal belongs to that page; starting
+a new monitor remains explicit. No schema migration, dependency update, image
+pull, target connection or global logout was performed. 8445/8444 and every other
+recorded service retain their original identity, image and start/restart state.
+
+Prepared `.cache/deploy_live_interrupted_preview.py` from the established local
+frontend-only deploy workflow and reviewed it independently before mutation.
+The helper freezes the five current build files, retains all old hashed assets
+and notices, verifies the prior installed package and eight-case source-browser
+receipt, and changes exactly one read-only frontend mount for `stage7-browser`.
+The serving backend remains the frozen optional-connections package and the
+existing pinned non-root runtime image. Only this service was recreated, with
+`--no-deps --pull never`.
+
+Read-only preflight passed: all 49 tables/schema/runtime/old served assets
+verified, no active capture/subscriptions/history sources or inventory staging.
+With serving stopped, created a consistent **11,297,773-byte** scoped MariaDB
+dump and state/cache archives; manifests cover **4 state entries and 1,814 cache
+entries**, including directories. The stopped database snapshots and volume
+manifests matched before/after backup. Recovery material is protected under
+`.secrets/stage7-browser/live-interrupted-preview/`; the vault recovery source
+remains separately protected and unchanged. Backup/public receipts are under
+`verification/live-interrupted-preview/`.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command | Result |
+|---|---|
+| `PY -m py_compile .cache/deploy_live_interrupted_preview.py` | PASS. |
+| `PY .cache/deploy_live_interrupted_preview.py build` | PASS: frozen frontend/assets, original backend and prior browser receipt verified without Docker/database/protected input. |
+| `PY .cache/deploy_live_interrupted_preview.py inspect` | Sandboxed attempt stopped with SetupError before mutation; reviewed local-access execution PASS. |
+| `PY .cache/deploy_live_interrupted_preview.py deploy` | PASS: stopped-service backup, frontend-only cutover and installed preservation/runtime/assets checks. |
+| `NODE --check .cache/verify_live_interrupted_8449.mjs` | PASS, including agent's final syntax check. |
+| `NODE frontend/node_modules/eslint/bin/eslint.js --config frontend/eslint.config.js --no-ignore .cache/verify_live_interrupted_8449.mjs --max-warnings 0` | PASS. |
+| Set `SI_VERIFY_LIVE_INTERRUPTED_8449=1`; `NODE .cache/verify_live_interrupted_8449.mjs` | PASS with reviewed local access: actual-served checks for both roles, genuine reminders and independent workspaces; 12 screenshots. |
+| `PY .cache/deploy_live_interrupted_preview.py cleanup` | PASS: removed only 2 recorded newly generated test authentication sessions after all 6 created workspaces acknowledged detach. |
+| `PY .cache/deploy_live_interrupted_preview.py verify` | PASS after cleanup: final schema/backend/security, original data/authentication, protected inputs, state/cache, assets and other services. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+The installed browser uses only generated synthetic Administrator/Inspector
+accounts and `stage7-fixture-a`. Both accounts have genuine retained interrupted
+monitors (3 Inspector, 1 Administrator); no mock API responses or injected
+session rows were needed. It checks the labelled system identity, visible
+reminder, local Dismiss with zero API mutations, hidden reminder after returning
+from Topology and an unaffected second page in the same browser context.
+Independent selections/layout/filter drafts and fresh workspaces pass. Both
+roles reopen retained investigations; job, saved workspace, bookmarks, topology,
+live-session list and personal-preference snapshots remain exact. Current and
+retained public HTTPS files (**21**) and every browser-loaded HTML/JS/CSS match
+the frozen hashes. No WebSocket, collection, SSH, unexpected request or browser
+error occurs. All installed account languages remain unchanged (English);
+bundled Polish coverage remains the preceding unit/source evidence.
+
+Inspected the installed Inspector reminder in both light/dark themes and the
+Administrator dismissed state. All 12 captures are retained in the browser
+receipt. The final preservation audit verifies **43 stable tables**, schema and
+backend package, original authentication identity/auth-version/CSRF/deadline/
+Remember-me values (allowing normal nondecreasing activity), protected accounts/
+application/vault/TLS files, state/cache content and ownership. Only generated
+test login sessions were deleted; original user sessions were not revoked.
+
+Recovery: protected `ROLLBACK.txt` documents
+`PY .cache/deploy_live_interrupted_preview.py rollback`. It first requires no
+active captures/staging, restores the exact previous frontend Compose mount and
+recreates only 8449 against the same backend/schema, preserving later data.
+Previous content-hashed assets are retained. No migration or SQL restore is
+needed; backups are recovery-only, with any full data restore/revocation a
+separate authorized action. Manual rollback was prepared/reviewed, not executed;
+deployment passed on its first attempt. Existing worktree changes remain intact.
+No deployment blocker remains. Stage 08 offline-release qualification remains
+the next separate gate and is not completed by this local deployment.

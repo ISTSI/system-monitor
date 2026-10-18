@@ -3,7 +3,7 @@ import type { components } from './api/schema';
 export type EntityKind = 'subsystem' | 'server' | 'process' | 'flow' | 'connection' | 'parser' | 'view';
 export type Documented = { id: string; name: string; description: string; tags: string[] };
 export type Subsystem = Documented;
-export type Server = Documented & { subsystem_id: string; connection_id?: string };
+export type Server = Documented & { subsystem_id: string; connection_id?: string | null };
 export type LogSource = { active_path: string; rotated_patterns: string[]; archives: { path_pattern: string; member_patterns: string[] }[]; parser_id: string; encoding: string; allow_symlink: boolean };
 export type Process = Documented & { server_id: string; pcs_resource_name: string | null; log_source?: LogSource };
 export type Connection = { id: string; name: string; host: string; port: number; username: string; credential_ref: string; jump_connection_id: string | null; allowed_log_roots: string[] };

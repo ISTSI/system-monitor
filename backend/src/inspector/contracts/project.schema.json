@@ -166,7 +166,7 @@
             "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
           },
           "connection_id": {
-            "type": "string",
+            "type": ["string", "null"],
             "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
           },
           "description": {

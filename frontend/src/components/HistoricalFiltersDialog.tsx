@@ -117,15 +117,15 @@ export default function HistoricalFiltersDialog({ initial, processOptions, bound
         <UtcDateTimeInput bound="To" value={draft.to} onChange={to => { setDraft(current => ({ ...current, to })); setValidationError(''); }} />
       </div>
       <p className="muted">{t('All values are in UTC. The start is inclusive and the end is exclusive.')}</p>
-      {bounds && <button type="button" onClick={() => { setDraft(current => ({ ...current, from: bounds.from, to: bounds.to })); setValidationError(''); }}>{t('Reset time range')}</button>}
+      {bounds && <button type="button" title={t("Reset the display time range to the collection bounds.")} onClick={() => { setDraft(current => ({ ...current, from: bounds.from, to: bounds.to })); setValidationError(''); }}>{t('Reset time range')}</button>}
     </fieldset>
     <fieldset className="history-filter-fields" disabled={disabled}>
       <legend>{t('Existing filters')}</legend>
       {filterCount ? <ul className="history-filter-list">{groups.flatMap(({ id, filter }) => (['include', 'exclude'] as const).flatMap(kind => (filter[kind] ?? []).map((term, index) => <li key={`${id}:${kind}:${index}`}>
         <span title={id || undefined}>{scopeLabel(id)}</span><strong>{t(kind === 'include' ? 'Include' : 'Exclude')}</strong><code>{term}</code>
-        <button type="button" aria-label={t('Remove {kind} filter {index} for {scope}', { kind: t(kind === 'include' ? 'include' : 'exclude'), index: index + 1, scope: scopeLabel(id) })} onClick={() => updateFilter(id, current => ({ ...current, [kind]: current[kind]?.filter((_, position) => position !== index) ?? [] }))}>{t('Remove filter')}</button>
+        <button type="button" title={t("Remove this literal term from the filter draft.")} aria-label={t('Remove {kind} filter {index} for {scope}', { kind: t(kind === 'include' ? 'include' : 'exclude'), index: index + 1, scope: scopeLabel(id) })} onClick={() => updateFilter(id, current => ({ ...current, [kind]: current[kind]?.filter((_, position) => position !== index) ?? [] }))}>{t('Remove filter')}</button>
       </li>)))}</ul> : <p className="muted">{t('No log content filters.')}</p>}
-      <button type="button" disabled={disabled || !filterCount} onClick={() => { setDraft(current => ({ ...current, filter: { ...current.filter, include: [], exclude: [] }, per_process_filters: {} })); setValidationError(''); }}>{t('Clear content filters')}</button>
+      <button type="button" title={t("Remove all content filters while keeping the time range.")} disabled={disabled || !filterCount} onClick={() => { setDraft(current => ({ ...current, filter: { ...current.filter, include: [], exclude: [] }, per_process_filters: {} })); setValidationError(''); }}>{t('Clear content filters')}</button>
     </fieldset>
     <fieldset className="history-filter-fields" disabled={disabled}>
       <legend>{t('Add a filter')}</legend>
@@ -135,17 +135,17 @@ export default function HistoricalFiltersDialog({ initial, processOptions, bound
           <label>{t('Filter action')}<select aria-label={t('Filter action')} value={action} onChange={event => setAction(event.target.value as 'include' | 'exclude')}><option value="include">{t('Include')}</option><option value="exclude">{t('Exclude')}</option></select></label>
           <label>{t('Filter scope')}<select aria-label={t('Filter scope')} value={scope} onChange={event => setScope(event.target.value)}><option value="">{t('All processes')}</option>{processOptions.map(process => <option key={process.id} value={process.id} title={process.id}>{process.host}: {process.name}</option>)}</select></label>
         </div>
-        <button type="submit">{t('Add filter')}</button>
+        <button type="submit" title={t("Add this literal term to the selected filter scope.")}>{t('Add filter')}</button>
       </form>
       <div className="form-grid">
         <label>{t('Global include matching')}<select aria-label={t('Global include matching')} value={draft.filter.include_mode} onChange={event => updateFilter('', filter => ({ ...filter, include_mode: event.target.value as 'any' | 'all' }))}><option value="all">{t('All include terms')}</option><option value="any">{t('Any include term')}</option></select></label>
         <label className="checkbox-label"><input type="checkbox" checked={draft.filter.case_sensitive} onChange={event => updateFilter('', filter => ({ ...filter, case_sensitive: event.target.checked }))} />{t('Global case sensitive')}</label>
       </div>
-      {!!scope && <details><summary title={scope}>{t('Per-process matching')} · {scopeLabel(scope)}</summary><div className="form-grid">
+      {!!scope && <details><summary title={`${t("Show matching options for this process.")} (${scope})`}>{t('Per-process matching')} · {scopeLabel(scope)}</summary><div className="form-grid">
         <label>{t('Process include matching')}<select aria-label={t('Process include matching')} value={scopeFilter.include_mode} onChange={event => updateFilter(scope, filter => ({ ...filter, include_mode: event.target.value as 'any' | 'all' }))}><option value="all">{t('All include terms')}</option><option value="any">{t('Any include term')}</option></select></label>
         <label className="checkbox-label"><input type="checkbox" checked={scopeFilter.case_sensitive} onChange={event => updateFilter(scope, filter => ({ ...filter, case_sensitive: event.target.checked }))} />{t('Process case sensitive')}</label>
       </div></details>}
     </fieldset>
-    <div className="form-actions"><button type="button" disabled={disabled} onClick={onClose}>{t('Cancel')}</button><button type="button" className="primary" disabled={disabled} onClick={() => { void applyFilters(); }}>{t('Apply filters')}</button></div>
+    <div className="form-actions"><button type="button" title={t("Discard filter changes and close this dialog.")} disabled={disabled} onClick={onClose}>{t('Cancel')}</button><button type="button" title={t("Apply this time range and literal filters to retained logs.")} className="primary" disabled={disabled} onClick={() => { void applyFilters(); }}>{t('Apply filters')}</button></div>
   </Modal>;
 }

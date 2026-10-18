@@ -376,7 +376,8 @@ def validate_project(config: dict[str, Any]) -> None:
             _linux_path(root, path + f".allowed_log_roots[{root_index}]")
     for index, server in enumerate(config["servers"]):
         reference("subsystems", server["subsystem_id"], f"servers[{index}].subsystem_id")
-        reference("connections", server["connection_id"], f"servers[{index}].connection_id")
+        if server["connection_id"] is not None:
+            reference("connections", server["connection_id"], f"servers[{index}].connection_id")
     for index, parser in enumerate(config["parsers"]):
         _timestamp(parser["timestamp"], f"parsers[{index}].timestamp")
     for index, process in enumerate(config["processes"]):
@@ -391,17 +392,24 @@ def validate_project(config: dict[str, Any]) -> None:
             _fail(source_path + ".encoding", "unsupported text encoding.")
         if encoding not in _SUPPORTED_ENCODINGS:
             _fail(source_path + ".encoding", "unsupported text encoding.")
-        roots = records["connections"][server["connection_id"]]["allowed_log_roots"]
+        roots = (
+            records["connections"][server["connection_id"]]["allowed_log_roots"]
+            if server["connection_id"] is not None
+            else None
+        )
         _linux_path(source["active_path"], source_path + ".active_path")
-        _within_roots(source["active_path"], roots, source_path + ".active_path")
+        if roots is not None:
+            _within_roots(source["active_path"], roots, source_path + ".active_path")
         for pattern_index, pattern in enumerate(source["rotated_patterns"]):
             field = source_path + f".rotated_patterns[{pattern_index}]"
             _linux_path(pattern, field, pattern=True)
-            _within_roots(pattern, roots, field)
+            if roots is not None:
+                _within_roots(pattern, roots, field)
         for archive_index, archive in enumerate(source["archives"]):
             field = source_path + f".archives[{archive_index}]"
             _linux_path(archive["path_pattern"], field + ".path_pattern", pattern=True)
-            _within_roots(archive["path_pattern"], roots, field + ".path_pattern")
+            if roots is not None:
+                _within_roots(archive["path_pattern"], roots, field + ".path_pattern")
             for member_index, pattern in enumerate(archive["member_patterns"]):
                 _linux_path(
                     pattern, field + f".member_patterns[{member_index}]", pattern=True, member=True

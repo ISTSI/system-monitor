@@ -44,7 +44,7 @@ export default function UtcDateTimeInput({ bound, value, onChange }: {
           <label>{timeLabel}<input type="time" aria-label={timeLabel} value={time} step="1" required onChange={event => { setTime(event.target.value); setError(''); }} /></label>
         </div>
         {error && <p className="notice error" role="alert">{t(error)}</p>}
-        <div className="form-actions"><button type="button" onClick={() => setOpen(false)}>{t("Cancel")}</button><button className="primary" type="submit">{t("Use date and time")}</button></div>
+        <div className="form-actions"><button title={t("Close the picker without changing this time bound.")} type="button" onClick={() => setOpen(false)}>{t("Cancel")}</button><button title={t("Apply the selected UTC date and time to this bound.")} className="primary" type="submit">{t("Use date and time")}</button></div>
       </form>
     </Modal>}
   </div>;

@@ -559,7 +559,7 @@ class Server(NamedTopology, Base):
         ),
     )
     subsystem_id: Mapped[str] = mapped_column(identifier())
-    connection_id: Mapped[str] = mapped_column(identifier())
+    connection_id: Mapped[str | None] = mapped_column(identifier(), nullable=True)
 
 
 class Process(NamedTopology, Base):

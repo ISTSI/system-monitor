@@ -2,6 +2,111 @@
 
 All 56 requirements map to application acceptance targets. The requirement table is not a test-result report; implemented evidence and remaining limits appear below it.
 
+The 18 October 2026 interrupted-monitor reminder correction extends
+R26/R32/R34/R49: an old interrupted session no longer populates the current
+capture's continuity notice. The separate reminder labels the system identity,
+offers page-local **Dismiss**, remains acknowledged across section changes and
+clears on explicit start/resume. Other pages and retained session/recording data
+are unaffected; new interruption IDs can show a fresh reminder. A document
+refresh has a fresh acknowledgement state. Delayed list responses cannot
+restore a dismissed reminder or replace current capture-gap evidence. The
+[isolated browser report](../verification/live-interrupted-notice/browser-test-only.json)
+passes **8/8**, including two new reminder/lifecycle cases, with light/dark
+captures inspected. These are real-component tests with explicitly mocked
+HTTP/WebSockets, not installed-preview or new SSH/MariaDB evidence. All 20
+frontend unit tests, generated API consistency, TypeScript, lint and production
+build pass. Exact commands and the bundle-size advisory are recorded in
+[STATUS.md](../progress/STATUS.md). This is a source correction; deployment and
+Stage 08 remain separate.
+
+The subsequent explicit **“Deploy on 8449”** authorization installed this exact
+frontend over the existing schema `0016_optional_connection` backend. The
+[installed browser receipt](../verification/live-interrupted-preview/browser.json)
+verifies genuine historical reminders and page-local dismissal under both roles,
+same-context duplicated pages, retained investigations and actual served asset
+hashes, with no substituted API/assets or capture. Twelve screenshots cover
+both themes; representative reminders and dismissed state were inspected. The
+[backup](../verification/live-interrupted-preview/backup.json),
+[installation](../verification/live-interrupted-preview/installed.json) and
+targeted browser cleanup and
+[final preservation audit](../verification/live-interrupted-preview/verified.json)
+receipts preserve the original backend, 43 stable
+tables, original authentication fields, protected inputs and cache/ownership.
+Only 8449's read-only frontend mount changes; no migration or other installation
+is updated. Exact commands and recovery are recorded in
+[STATUS.md](../progress/STATUS.md). Stage 08 remains a separate gate.
+
+The 18 October 2026 optional-connection/topology-grid follow-up extends
+R05/R10/R13/R34: servers can be documented without SSH profiles, new server
+forms default to **No connection**, and editing explicitly assigns or clears a
+profile. The canonical v2 contract accepts null; the project-scoped MariaDB
+foreign key still validates assigned profiles. Historical/live acquisition
+rejects unconnected servers before opening SSH, while cached investigations
+retain their captured source snapshots. Additive migration
+`0016_optional_connection` preserves existing assignments and refuses downgrade
+while unconnected servers exist.
+
+Topology edits snap to an invisible 8-pixel canvas grid, including nested
+elements, without rewriting a view merely by opening it. Source-component
+[server form browser evidence](../verification/optional-server-topology/browser-smoke.json)
+covers both themes and English/Polish, explicit SSH creation/validation,
+assignment, clearing and reopening. The [grid browser report](../verification/topology-grid/browser-results.json)
+passes both movement/keyboard/read-only cases. [Backend verification](../verification/optional-connections/backend-checks.json)
+records 845 passing unit cases (4 Windows skips), 51 passing actual MariaDB API
+regressions and the populated schema upgrade/downgrade/reupgrade with all 48
+existing non-Alembic tables preserved. Actual commands, database and grid results,
+and limitations are recorded in [STATUS.md](../progress/STATUS.md). This is a
+source follow-up; deployment and Stage 08 remain separate gates.
+
+The subsequent explicit **“Perform migration, deploy on 8449.”** authorization
+installed that frozen backend/frontend and migrated the retained 8449 preview
+to `0016_optional_connection`. The [installed browser check](../verification/optional-connections-preview/browser.json)
+passes 19 checks against actual HTTPS responses, including nullable server
+save/reopen/assignment/removal, persisted invisible 8-pixel snapping with
+undo/redo, independent same-context workspaces, Inspector read-only behavior and
+unchanged retained investigations for both roles. No API or asset substitution,
+SSH, collection, existing configuration/preference write or global logout occurs.
+One generated system is emptied and archived after verification; its synthetic
+rows are explicitly scoped out of preservation comparisons. Original stable
+rows, session identity/deadlines and state/cache bytes/ownership remain checked.
+The [migration receipt](../verification/optional-connections-preview/migration.json)
+preserves all 49 table counts, original authentication fields, 43 stable tables'
+canonical rows and 47 unchanged physical checksums. The changed `servers`
+checksum is independently reproduced as nullability storage metadata with exact
+row equality in a disposable populated schema. Backups, prior artifacts and two
+safely reverted earlier helper attempts are retained. Deployment details and
+recovery constraints are in [STATUS.md](../progress/STATUS.md). This deployment
+does not complete Stage 08 or change 8445/8444.
+
+The 18 October 2026 hover-help follow-up extends R34 with short native button
+descriptions in bundled English and Polish. This includes menu items, icon and
+disabled buttons, disclosure controls and action links; toggled controls explain
+their current action. The [source audit](../verification/button-tooltips/source-coverage.json)
+covers all 171 authored JSX buttons, 21 disclosures and the required action-menu description
+contract. The [frontend checks](../verification/button-tooltips/frontend-checks.json)
+pass all 20 unit cases, API type consistency, lint, TypeScript and build.
+The [isolated browser smoke](../verification/button-tooltips/browser-smoke.json)
+passes 13 groups covering English/Polish, both themes, disabled/icon/menu controls,
+dialogs, vendor graph controls and state-dependent pause/resume help. Browser
+evidence and its source-only limitations are recorded in
+[STATUS.md](../progress/STATUS.md). This frontend follow-up does not complete
+Stage 08.
+
+The subsequent explicit **“Deploy to 8449.”** authorization installed the frozen
+hover-help frontend on **https://localhost:8449**. The
+[actual-served browser receipt](../verification/button-tooltips-preview/browser.json)
+passes 18 groups and 289 control observations, including both roles/themes,
+menus/dialogs and independent same-context page workspaces. Its current English
+accounts were retained; alternate-language evidence remains the earlier isolated
+English/Polish check. No API or asset response substitution, collection, SSH,
+preference/configuration/personal-content write or global logout occurred.
+The [final preservation check](../verification/button-tooltips-preview/verified.json)
+verifies 43 stable tables, schema/backend, configuration, state/cache and original
+authentication fields, plus unchanged other services and 18 public HTTPS files.
+Four recorded smoke sessions were removed after their eight workspaces detached.
+Protected backup and frontend-only rollback material remain retained. This local
+deployment is separate from Stage 08 offline-release qualification.
+
 The 18 October 2026 live-event presentation follow-up extends R17/R21/R23/R25/
 R34/R49: live and historical tables share compact row geometry, metadata cells,
 safe text/highlight rendering and theme styles. The expanded

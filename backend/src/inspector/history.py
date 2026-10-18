@@ -26,7 +26,7 @@ from starlette.responses import StreamingResponse
 
 from inspector import auth, services
 from inspector.config import Config
-from inspector.domain import ID_PATTERN, Principal, ProjectContext
+from inspector.domain import ID_PATTERN, Principal, ProjectContext, server_connection_id
 from inspector.errors import DomainError
 from inspector.history_cache import READ_CACHE
 from inspector.persistence.models import (
@@ -407,6 +407,8 @@ def approved_candidates(config: Config, document: dict, selection: list[str]) ->
         raise not_found()
     servers = {s["id"]: s for s in document["servers"]}
     connections = {c["id"]: c for c in document["connections"]}
+    for process_id in selection:
+        server_connection_id(servers[processes[process_id]["server_id"]])
     candidates = []
     for entry in local_manifest(config):
         if entry["process_id"] not in selection:
@@ -415,7 +417,7 @@ def approved_candidates(config: Config, document: dict, selection: list[str]) ->
         source = process["log_source"]
         remote_path = entry["remote_path"]
         server = servers[process["server_id"]]
-        roots = connections[server["connection_id"]]["allowed_log_roots"]
+        roots = connections[server_connection_id(server)]["allowed_log_roots"]
         if not any(
             PurePosixPath(remote_path).is_relative_to(PurePosixPath(root)) for root in roots
         ):

@@ -3,6 +3,7 @@ import { defineConfig } from '@playwright/test';
 import { resolve } from 'node:path';
 
 process.env.PLAYWRIGHT_BROWSERS_PATH ??= resolve('../.cache/playwright');
+const reportDirectory = resolve(process.env.INSPECTOR_LIVE_NOTICE_REPORT_DIR ?? '../verification/live-events-presentation');
 
 export default defineConfig({
   testDir: '.',
@@ -13,7 +14,7 @@ export default defineConfig({
   expect: { timeout: 5000 },
   outputDir: '../test-results/live-notices',
   globalSetup: './live_notices.setup.ts',
-  reporter: [['list'], ['json', { outputFile: resolve('../verification/live-events-presentation/browser-test-only.json') }]],
+  reporter: [['list'], ['json', { outputFile: resolve(reportDirectory, 'browser-test-only.json') }]],
   use: {
     baseURL: 'http://127.0.0.1:5189',
     browserName: 'chromium',

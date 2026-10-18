@@ -1,5 +1,26 @@
 # 14 — MariaDB persistence, configuration and lifecycle
 
+The optional server-connection follow-up source expects
+`0016_optional_connection`, following `0015_remember_login`. It makes only
+`servers.connection_id` nullable, retaining its project-scoped foreign key for
+assigned connections and preserving all existing rows. A null connection records
+a server documented on the map without SSH access. No connection profile or
+approval is invented. Downgrade requires explicit assignment of connections to
+all servers first and otherwise refuses before changing the schema. Migration
+uses the separate migration identity with serving stopped. The explicit
+**“Perform migration, deploy on 8449.”** authorization on 18 October 2026 installed
+the matching backend/frontend and applied `0016_optional_connection` to only the
+retained loopback 8449 preview after a consistent SQL/state/cache backup.
+All 49 table counts, all old authentication fields and canonical hashes/counts
+for all 43 original stable tables are preserved; the other 47 non-Alembic table
+checksums are unchanged. MariaDB's physical `servers` checksum changes with
+column nullability despite exact row equality, independently reproduced in a
+disposable populated schema, including downgrade/reupgrade. Recovery refuses
+downgrade with any unconnected server, including archived systems. Old source,
+assets and protected backups remain retained; 8445/8444 are unchanged. See
+`verification/optional-connections-preview/` and `progress/STATUS.md` for receipts
+and the two safely reverted earlier helper attempts.
+
 The explicit **“Update the 8449 environment”** authorization on 18 October 2026
 upgraded only the retained synthetic preview from `0014_languages` to
 `0015_remember_login`. Serving stopped before the protected SQL/state/cache

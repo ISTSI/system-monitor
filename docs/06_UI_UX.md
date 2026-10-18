@@ -10,6 +10,14 @@ Implement one set of components using `assets/themes/tokens.json` and its CSS tr
 
 Use local system sans-serif and monospace stacks; do not fetch external fonts or copy workstation font files. Normal text should meet a 4.5:1 contrast target; large text and essential UI graphics/focus targets require their applicable 3:1 checks [S22]. Actual browser rendering, transparency and overlays must be inspected; token tests alone do not establish accessibility. Indicators always include text or an icon with an accessible name, not colour alone. Keep transitions short and honour reduced-motion preferences.
 
+Every button has a short native hover description explaining its action, including
+icon buttons, menu items, disabled controls and disclosure buttons. Use bundled
+English/Polish UI text and keep descriptions in sync with toggled actions such as
+pause/resume and show/hide. Keep visible labels and accessible names; hover help
+supplements them. Navigation links presented as actions also describe their
+destination. Descriptions distinguish display pause, capture stop and actions
+that immediately start log collection.
+
 Branding remains configurable, initially System Inspector, and initial UI language remains English. The SYSTEM MONITOR heading and example addresses do not mandate branding or data; the separately authorized English/Polish language controls are described below. IP/Port fields appear only when corresponding service endpoint metadata exists; never substitute the SSH port for an application port or invent addresses. The reference's RUNNING/OPERATIONAL values are illustrative. With no process-health probe in scope, show documented/unknown health separately from observed log-access states (Not checked, Reading, Disconnected, Permission denied). A live SSH session or recent log event does not prove an entire subsystem is operational.
 
 ## Theme preferences and Administrator settings
@@ -74,6 +82,16 @@ Support desktop sizes from 1280×720 through 1920×1080 and larger. At the small
 ## Topology editing
 
 Only Administrators may persist topology edits, drag shared nodes, create edges or save named layouts. Inspectors retain pan/zoom, multi-select, search, dependency highlight, group expand/collapse and personal panel sizes, without shared writes. Disable React Flow mutation handlers as well as UI edit controls, and enforce the same restrictions server-side.
+
+Add server defaults to **No connection**. The server can be saved and documented
+on the map without any SSH fields. The Administrator can explicitly select an
+existing connection, choose **Create a new SSH profile**, or clear an assignment
+in Edit server. Only selecting a connection exposes SSH setup details.
+
+Topology elements snap to an invisible 8-pixel square grid when moved,
+approximately the width of a lowercase “o” at normal diagram zoom. Nested elements
+share the canvas alignment while retaining their explicit parents. Loading a
+saved view does not move its existing elements; snapping applies when editing.
 
 Subsystems are outer labelled groups; servers are nested groups with a header; processes are compact custom nodes. Use group geometry and valid parent relationships, not just visually overlapping rectangles. A process drag remains within its parent by default. Explicit Move to server opens a target picker and confirms the change. Moving a server between subsystems is likewise explicit.
 
@@ -226,6 +244,15 @@ stream-error notices. A `TRANSPORT_DISCONNECTED` gap identifies the affected
 `server: process` when supplied and explains interrupted source reading and
 potentially missing entries. It is not proof of a network failure or process
 health; missing files and other retryable SFTP failures can produce this reason.
+
+The earlier-interrupted-monitor reminder labels its prefix as **System**; that
+UUID identifies the system, not a resumed monitor. Offer **Dismiss** for this
+historical reminder. Acknowledgement belongs to this page and survives section
+changes without shared browser storage or changes to retained monitors and
+recordings. A newly interrupted monitor may show a new reminder; refreshing the
+document creates a fresh page acknowledgement state. A successful explicit start
+or resume clears the reminder. Keep current capture continuity/resync notices
+separate so acknowledgement cannot hide missing-log evidence.
 
 The primary filter is a single Contains string field with a clear button and a case-sensitive toggle. An Advanced drawer exposes multiple include/exclude terms and any/all inclusion. Filter edits debounce briefly, apply on the backend and show applying/applied state. Make literal behaviour discoverable; do not label the field Regex. Clearing the filter restores retained unmatched events.
 

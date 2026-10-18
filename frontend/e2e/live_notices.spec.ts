@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page, type WebSocketRoute } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Request, type WebSocketRoute } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { components } from '../src/api/schema';
@@ -11,6 +11,10 @@ const project = 'test-only-project';
 const processIds = ['process-internal-one', 'process-internal-two'];
 const labels = ['server-one: worker-one', 'server-two: worker-two'];
 const literal = { include: [], exclude: [], include_mode: 'any' as const, case_sensitive: true };
+const reminderText = 'An earlier monitor in this system was interrupted.';
+const reportDirectory = resolve(process.env.INSPECTOR_LIVE_NOTICE_REPORT_DIR ?? '../verification/live-events-presentation');
+const screenshotDirectory = resolve(reportDirectory, 'screenshots');
+type HeldListing = { release: () => void; request: Request };
 
 function event(index: number, processIndex = index % 2): LiveEvent {
   const timestamp = new Date(Date.UTC(2026, 9, 18, 10, 0, index)).toISOString().replace('.000Z', 'Z');
@@ -23,13 +27,28 @@ function event(index: number, processIndex = index % 2): LiveEvent {
   };
 }
 
-async function mockTransport(page: Page, seed: { events: LiveEvent[]; diagnostics?: LiveEvent[] } = { events: processIds.map((_, index) => event(index)) }) {
+function interruptedSession(id: string): LiveSession {
+  return {
+    project_id: project, workspace_id: `historical-workspace-${id}`, session_id: id, lease_revision: 1, filter_version: 1,
+    status: 'interrupted', process_ids: [processIds[0]], recording: false, investigation_id: null, layout: 'merged',
+    global_filter: literal, per_process_filters: {}, requested_rows: 1, seed_rows_by_process: {}, detached: true,
+    snapshot: { events: [], diagnostics: [], counters: {}, sources: [], coverage: {}, filter_version: 1, seq: 0 },
+  };
+}
+
+async function mockTransport(page: Page, seed: { events: LiveEvent[]; diagnostics?: LiveEvent[] } = { events: processIds.map((_, index) => event(index)) }, historicalSessions: LiveSession[] = []) {
   const starts: components['schemas']['LiveCreateInput'][] = [];
   const filters: components['schemas']['LiveFilterInput'][] = [];
+  const mutations: { method: string; path: string }[] = [];
   const unexpected: string[] = [];
   const sockets: WebSocketRoute[] = [];
+  const listingHolds: ((listing: HeldListing) => void)[] = [];
+  let historical = historicalSessions;
   let session: LiveSession | null = null;
   let seq = 0;
+  function holdNextListing() {
+    return new Promise<HeldListing>(resolve => { listingHolds.push(resolve); });
+  }
   function send(type: string, payload: Record<string, unknown>) {
     if (!session || !sockets.length) throw new Error('Start the synthetic monitor before sending a frame.');
     sockets.at(-1)!.send(JSON.stringify({ protocol_version: 2, project_id: project, workspace_id: session.workspace_id, session_id: session.session_id, filter_version: session.filter_version, type, seq: ++seq, sent_at: '2026-10-18T10:00:02.000000Z', payload }));
@@ -47,14 +66,20 @@ async function mockTransport(page: Page, seed: { events: LiveEvent[]; diagnostic
     if (url.origin !== origin) { unexpected.push('External request blocked'); await route.abort(); return; }
     if (!url.pathname.startsWith('/api/')) { await route.continue(); return; }
     const method = route.request().method();
+    if (method !== 'GET') mutations.push({ method, path: url.pathname });
     if (url.pathname === '/api/v1/auth/csrf' && method === 'GET') { await route.fulfill({ json: { csrf_token: 'test-only-token' } }); return; }
     const base = `/api/v1/projects/${project}`;
     if (url.pathname === `${base}/usage` && method === 'GET') { await route.fulfill({ json: { project_id: project, workspace_id: url.searchParams.get('workspace_id'), counts: { workspace: session?.process_ids.length ?? 0 }, limits: { workspace: 5 } } }); return; }
-    if (url.pathname === `${base}/live-sessions` && method === 'GET') { await route.fulfill({ json: { project_id: project, items: session ? [session] : [] } }); return; }
+    if (url.pathname === `${base}/live-sessions` && method === 'GET') {
+      const items = structuredClone([...(session ? [session] : []), ...historical]);
+      const hold = listingHolds.shift();
+      if (hold) await new Promise<void>(release => { hold({ release, request: route.request() }); });
+      await route.fulfill({ json: { project_id: project, items } }); return;
+    }
     if (url.pathname === `${base}/live-sessions` && method === 'POST') {
       const input = route.request().postDataJSON() as components['schemas']['LiveCreateInput']; starts.push(input);
       session = {
-        project_id: project, workspace_id: input.workspace_id, session_id: `test-only-monitor-${input.workspace_id}`, lease_revision: 1, filter_version: 1,
+        project_id: project, workspace_id: input.workspace_id, session_id: `test-only-monitor-${input.workspace_id}-${starts.length}`, lease_revision: 1, filter_version: 1,
         status: 'running', process_ids: input.process_ids, recording: false, investigation_id: null, layout: input.mode,
         global_filter: input.filter, per_process_filters: input.per_process_filters, requested_rows: input.seed_rows,
         seed_rows_by_process: input.seed_rows_by_process, detached: false,
@@ -81,7 +106,7 @@ async function mockTransport(page: Page, seed: { events: LiveEvent[]; diagnostic
       if (frame.type === 'hello' && session) send('snapshot', { ...session.snapshot });
     });
   });
-  return { starts, filters, unexpected, sockets, send, append };
+  return { starts, filters, mutations, unexpected, sockets, send, append, holdNextListing, setHistoricalSessions: (items: LiveSession[]) => { historical = items; } };
 }
 
 test.skip(({ baseURL }) => baseURL !== origin, 'Run only with e2e/live_notices.playwright.config.ts; this fixture must never contact an installed application.');
@@ -110,6 +135,25 @@ async function chooseBoth(page: Page) {
   for (const label of labels) await choices.getByRole('checkbox', { name: label, exact: true }).check();
 }
 
+async function revisitLive(page: Page, waitForListing = true) {
+  const listing = waitForListing ? page.waitForResponse(response => response.request().method() === 'GET' && response.url().endsWith(`/projects/${project}/live-sessions`)) : null;
+  await page.getByRole('button', { name: 'Topology', exact: true }).click();
+  await page.getByRole('button', { name: 'Live monitor', exact: true }).click();
+  if (listing) { await (await listing).finished(); await flushRendering(page); }
+}
+
+async function flushRendering(page: Page) {
+  await page.evaluate(() => new Promise<void>(resolve => { requestAnimationFrame(() => requestAnimationFrame(() => resolve())); }));
+}
+
+async function finishListing(page: Page, listing: HeldListing) {
+  listing.release();
+  const response = await listing.request.response();
+  if (!response) throw new Error('The delayed synthetic listing did not return a response.');
+  await response.finished();
+  await flushRendering(page);
+}
+
 async function measuredRows(table: Locator): Promise<number> {
   return table.evaluate(element => {
     const heading = element.querySelector<HTMLElement>('[role="row"]')!;
@@ -127,8 +171,8 @@ async function startSynthetic(page: Page) {
 }
 
 async function capturePresentation(page: Page, name: string) {
-  const directory = resolve('../verification/live-events-presentation/screenshots'); mkdirSync(directory, { recursive: true });
-  await page.locator('.live-panes').screenshot({ path: resolve(directory, `${name}.png`), animations: 'disabled' });
+  mkdirSync(screenshotDirectory, { recursive: true });
+  await page.locator('.live-panes').screenshot({ path: resolve(screenshotDirectory, `${name}.png`), animations: 'disabled' });
 }
 
 test('live rows match historical density, metadata and safe unwrapped text in both themes', async ({ page }) => {
@@ -280,6 +324,96 @@ test('visiting Live, choosing sources and returning from another tab require an 
   expect(transport.starts).toHaveLength(1); expect(transport.sockets).toHaveLength(1); expect(transport.unexpected).toEqual([]);
 });
 
+test('earlier interrupted monitors have a page-local dismissible reminder; new interrupted IDs remain visible', async ({ page, context }) => {
+  const earlier = interruptedSession('test-only-earlier-monitor');
+  const transport = await mockTransport(page, undefined, [earlier]);
+  await visitLive(page);
+  const reminder = page.locator('.live-interrupted-notice');
+  await expect(reminder).toContainText(reminderText);
+  await expect(reminder).toContainText(`System: Synthetic test system (${project})`);
+  await expect(page.getByTestId('live-session-id')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Monitor', exact: true })).toBeEnabled();
+  expect(transport.starts).toEqual([]); expect(transport.mutations).toEqual([]); expect(transport.sockets).toHaveLength(0);
+  mkdirSync(screenshotDirectory, { recursive: true });
+  for (const theme of ['light', 'dark']) {
+    await page.getByRole('button', { name: `${theme === 'light' ? 'Light' : 'Dark'} test theme`, exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    await page.screenshot({ path: resolve(screenshotDirectory, `live-interrupted-reminder-${theme}.png`), fullPage: true, animations: 'disabled' });
+  }
+
+  const second = await context.newPage();
+  const other = await mockTransport(second, undefined, [earlier]);
+  await visitLive(second);
+  await expect(second.locator('.live-interrupted-notice')).toContainText(reminderText);
+
+  const pending = transport.holdNextListing();
+  await revisitLive(page, false);
+  const delayed = await pending;
+  await reminder.getByRole('button', { name: 'Dismiss previous monitor notice', exact: true }).click();
+  await expect(reminder).toHaveCount(0);
+  await expect(second.locator('.live-interrupted-notice')).toBeVisible();
+  await finishListing(page, delayed);
+  await expect(reminder).toHaveCount(0);
+  await revisitLive(page);
+  await expect(reminder).toHaveCount(0);
+
+  transport.setHistoricalSessions([interruptedSession('test-only-newly-interrupted-monitor'), earlier]);
+  await revisitLive(page);
+  await expect(reminder).toContainText(reminderText);
+  await reminder.getByRole('button', { name: 'Dismiss previous monitor notice', exact: true }).click();
+  await expect(reminder).toHaveCount(0);
+  await revisitLive(page);
+  await expect(reminder).toHaveCount(0);
+  expect(transport.starts).toEqual([]); expect(transport.mutations).toEqual([]); expect(transport.sockets).toHaveLength(0);
+  expect(transport.unexpected).toEqual([]); expect(other.mutations).toEqual([]); expect(other.unexpected).toEqual([]);
+  await second.close();
+});
+
+test('explicit monitoring clears the historical reminder, ignores delayed listings and starts a fresh ID after stop', async ({ page }) => {
+  const transport = await mockTransport(page, undefined, [interruptedSession('test-only-interrupted-before-start')]);
+  await visitLive(page);
+  const reminder = page.locator('.live-interrupted-notice');
+  await expect(reminder).toContainText(reminderText);
+  expect(transport.starts).toEqual([]); expect(transport.mutations).toEqual([]);
+
+  const pending = transport.holdNextListing();
+  await revisitLive(page, false);
+  const delayed = await pending;
+  await startSynthetic(page);
+  const firstId = await page.getByTestId('live-session-id').innerText();
+  expect(firstId).not.toBe(project);
+  await expect(reminder).toHaveCount(0);
+  await finishListing(page, delayed);
+  await expect(reminder).toHaveCount(0);
+  await revisitLive(page);
+  await expect(reminder).toHaveCount(0);
+  await expect(page.getByTestId('live-session-id')).toHaveText(firstId);
+  expect(transport.starts).toHaveLength(1);
+
+  transport.send('gap', { process_id: processIds[0], reason: 'TRANSPORT_DISCONNECTED' });
+  const gap = page.locator('.live-notice:not(.live-interrupted-notice)').filter({ hasText: 'TRANSPORT_DISCONNECTED' });
+  await expect(gap).toContainText('Continuity gap');
+  await expect(gap).toContainText('some log entries may be missing');
+  await revisitLive(page);
+  await expect(gap).toContainText('TRANSPORT_DISCONNECTED');
+  await expect(reminder).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Stop this monitor', exact: true }).click();
+  await expect(page.getByTestId('live-session-state')).toHaveText('stopped');
+  await expect(gap).toContainText('TRANSPORT_DISCONNECTED');
+  await revisitLive(page);
+  await expect(page.getByTestId('live-session-id')).toHaveText(firstId);
+  expect(transport.starts).toHaveLength(1);
+  await startSynthetic(page);
+  await expect(page.getByTestId('live-session-id')).not.toHaveText(firstId);
+  await expect(reminder).toHaveCount(0);
+  await expect(gap).toHaveCount(0);
+  expect(transport.starts).toHaveLength(2);
+  expect(transport.mutations.filter(item => item.path.endsWith('/stop'))).toHaveLength(1);
+  expect(transport.mutations.filter(item => item.path.endsWith('/attach'))).toHaveLength(0);
+  expect(transport.unexpected).toEqual([]);
+});
+
 test('process choices, filters, pane headings, source details and copied rows use server: process names', async ({ page }) => {
   const transport = await mockTransport(page);
   await visitLive(page); await chooseBoth(page);
@@ -323,11 +457,11 @@ test('source interruption and code-only stream failure retain useful notices and
   await expect(page.locator('.live-selection > summary')).toHaveText('Process selection (previous monitor: 2 sources)');
   await expect(page.getByRole('button', { name: 'Stop this monitor', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Monitor selected', exact: true })).toBeEnabled();
-  const directory = resolve('../verification/live-events-presentation/screenshots'); mkdirSync(directory, { recursive: true });
+  mkdirSync(screenshotDirectory, { recursive: true });
   for (const theme of ['light', 'dark']) {
     await page.getByRole('button', { name: `${theme === 'light' ? 'Light' : 'Dark'} test theme`, exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await page.screenshot({ path: resolve(directory, `live-notices-test-only-${theme}.png`), fullPage: true, animations: 'disabled' });
+    await page.screenshot({ path: resolve(screenshotDirectory, `live-notices-test-only-${theme}.png`), fullPage: true, animations: 'disabled' });
   }
   await page.getByRole('button', { name: 'Topology', exact: true }).click();
   await page.getByRole('button', { name: 'Live monitor', exact: true }).click();

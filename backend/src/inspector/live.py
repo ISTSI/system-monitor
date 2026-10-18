@@ -19,7 +19,7 @@ from sqlalchemy import and_, case, delete, func, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from inspector import auth, services
-from inspector.domain import ID_PATTERN, Principal, ProjectContext
+from inspector.domain import ID_PATTERN, Principal, ProjectContext, server_connection_id
 from inspector.errors import DomainError
 from inspector.history import (
     HistoricalEvent,
@@ -578,6 +578,10 @@ class LiveManager:
             parsers = {entry["id"]: entry for entry in document["parsers"]}
             if not set(payload.process_ids) <= processes.keys():
                 raise missing()
+            process_connections = {
+                process_id: server_connection_id(servers[processes[process_id]["server_id"]])
+                for process_id in payload.process_ids
+            }
             usage = await self.usage(session, actor, project, payload.workspace_id)
             for scope, count in usage["counts"].items():
                 if count + len(payload.process_ids) > usage["limits"][scope]:
@@ -591,7 +595,7 @@ class LiveManager:
             for process_id in payload.process_ids:
                 process = processes[process_id]
                 server = servers[process["server_id"]]
-                connection_id = server["connection_id"]
+                connection_id = process_connections[process_id]
                 if connection_id not in snapshots:
                     snapshots[connection_id] = await self.access.prepare_in_transaction(
                         session, actor, project, connection_id, configuration.revision, session_hash
