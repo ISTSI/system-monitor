@@ -1,0 +1,71 @@
+# Separate recipe: an external verified-TLS endpoint, no local database service.
+name: ${INSPECTOR_STACK:?Use manage.py to create a private runtime}
+services:
+  migrate:
+    image: ${INSPECTOR_IMAGE:?Load the release images first}
+    pull_policy: never
+    user: "10001:10001"
+    command: [python, -m, inspector.cli, db, upgrade, --config, /etc/system-inspector/application.yaml, --username, "${INSPECTOR_MIGRATION_USER:?Set the scoped migration account}", --password-file, /run/secrets/inspector_db_migration_password]
+    volumes:
+      - ./application.yaml:/etc/system-inspector/application.yaml:ro
+      - ./tls/database-ca.crt:/run/tls/database-ca.crt:ro
+    secrets: [inspector_db_migration_password]
+    networks: [service]
+    read_only: true
+    tmpfs: ["/tmp:size=128m,mode=1777"]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 128
+    mem_limit: 1g
+  app:
+    image: ${INSPECTOR_IMAGE:?Load the release images first}
+    pull_policy: never
+    restart: unless-stopped
+    user: "10001:10001"
+    environment:
+      INSPECTOR_CONFIG_FILE: /etc/system-inspector/application.yaml
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    volumes:
+      - ./application.yaml:/etc/system-inspector/application.yaml:ro
+      - ./tls/database-ca.crt:/run/tls/database-ca.crt:ro
+      - ./data/state:/var/lib/system-inspector
+      - ./data/cache:/var/cache/system-inspector
+    secrets: [inspector_db_password]
+    networks: [service]
+    read_only: true
+    tmpfs: ["/tmp:size=256m,mode=1777"]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 256
+    mem_limit: 4g
+    stop_grace_period: 60s
+    healthcheck:
+      test: [CMD, python, -m, inspector.cli, healthcheck]
+      interval: 5s
+      timeout: 8s
+      retries: 24
+      start_period: 15s
+  proxy:
+    image: ${PROXY_IMAGE:?Load the release images first}
+    pull_policy: never
+    restart: unless-stopped
+    user: "10001:10001"
+    depends_on:
+      app: {condition: service_healthy}
+    ports: ["${INSPECTOR_BIND_ADDRESS:-127.0.0.1}:${INSPECTOR_HTTPS_PORT:-8443}:8443"]
+    volumes:
+      - ./tls/server.crt:/run/tls/server.crt:ro
+      - ./tls/server.key:/run/tls/server.key:ro
+    networks: [service]
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 64
+    mem_limit: 128m
+networks:
+  service: {}
+secrets:
+  inspector_db_migration_password: {file: ./secrets/inspector_db_migration_password}
+  inspector_db_password: {file: ./secrets/inspector_db_password}

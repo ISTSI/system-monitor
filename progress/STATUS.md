@@ -1,8 +1,46 @@
 # Implementation status — version 3
 
-**Current: Stage 07 plus the language follow-up is installed locally at https://localhost:8445 (`0014_languages`).** The separately authorized upgrade used the exact tested artifact, a consistent protected recovery backup and separate migration credentials. Existing accounts, settings, topology, investigations and cache bytes were preserved; the 8444 installation is unchanged. Installed browser checks and independent preservation/security audits pass. Stage 01 on 8443 remains stopped. The isolated 8449 review fixture now runs the current topology/login and Filters/pins frontend/backend at `0015_remember_login`, following the explicit preview-update authorization. Stage 08 has not started. Exact results and limitations are recorded below; earlier blockers remain as dated history.
+**19 October 2026 supervisor recovery — verified:** the existing local 8445
+application was restarted after a database-lock probe timed out across host
+standby/VM resume. All three installed HTTPS origins are ready again. All 49
+tables match the expected startup state; accounts, sessions, configuration,
+vault, source/assets and all 902 cache files are preserved. Only the old active
+workspace was detached by the normal startup transition. MariaDB, 8444, 8449
+and the synthetic SSH services were not restarted. See the final dated entry
+below; Stage 08 qualification remains open.
 
-**Latest deployed follow-up (18 October 2026):** all buttons now have short native
+**19 October 2026 connectivity repair — verified:** both 8445/8449 backends
+now reach `192.168.1.137:2111` and `:2112`; actual application host-key
+inspection completes in 0.102–0.121 seconds. A leftover release-test bridge
+(`192.168.0.0/20`) captured the target route and was removed. Fixture retirement
+now releases its networks. Main application data/sessions and exact cache
+bytes are preserved; 8445 uses a private Linux cache volume, and 8444 is restored
+with source matching its original image/schema. The separate 8445 System still
+needs its own passwords and verified host-key approvals. Exact evidence and
+limitations are recorded in the final dated repair entry below; Stage 08 stays
+open.
+
+**Stage 08 current: implemented and locally qualified candidate, gate still open.**
+The final artifact is `dist/system-inspector-0.1.0-offline-rc3/`; native Ubuntu /
+Rocky and strict zero-image-host offline transfer remain untested. The later
+authorized Help frontend update is installed on 8445 with its existing backend
+and schema 0016; 8449/8444 are unchanged. The dated Stage 08 entries and
+[qualification report](../docs/18_RELEASE_QUALIFICATION.md) supersede earlier
+statements that Stage 08 has not started.
+
+**Current installed frontend (19 October 2026):** Stage 08 Help is installed at
+https://localhost:8445 from the verified rc3 build. Refresh existing pages.
+The existing backend/image/schema `0016_optional_connection` and original data
+are preserved. Both-role actual-served Help and retained-investigation browser
+checks pass in the accounts' existing Polish language, with both themes and
+independent same-context workspaces; English installed rendering was not
+exercised. The new release runtime and remaining native/offline qualification
+gates are separate. 8449/8444 are unchanged. Exact deployment and final
+preservation results are in the latest dated entry below.
+
+**Earlier backend upgrade (18 October 2026):** Stage 07 and the then-current follow-ups were installed locally at https://localhost:8445 (`0016_optional_connection`). The explicit “Deploy to 8445” authorization installed the exact verified backend/frontend after a consistent protected SQL/state/cache backup and separate migrations through `0015_remember_login` to `0016_optional_connection`. Accounts, original sessions, settings, topology, investigations and cache were preserved. That deployment's browser results and limitations remain in its dated entry below. The subsequent Stage 08 Help frontend update retains this backend/schema. The 8449 preview remains at `0016_optional_connection`; it and 8444 are unchanged. Stage 01 on 8443 remains stopped. Earlier entries retain their original deployment state.
+
+**Earlier deployed follow-up (18 October 2026):** all buttons now have short native
 hover descriptions in English and Polish, including menu/icon/disabled controls
 and state-dependent actions. The source audit covers 171 buttons and 21
 disclosures; 13 isolated browser groups, 20 frontend unit cases, lint, typecheck
@@ -4492,3 +4530,562 @@ separate authorized action. Manual rollback was prepared/reviewed, not executed;
 deployment passed on its first attempt. Existing worktree changes remain intact.
 No deployment blocker remains. Stage 08 offline-release qualification remains
 the next separate gate and is not completed by this local deployment.
+
+## 18 October 2026 — authorized current-package deployment on 8445
+
+The user explicitly requested **“Deploy to 8445”**. Installed the current
+verified application at **https://localhost:8445**, copying the exact frozen
+optional-connection backend and interrupted-reminder frontend already verified
+on 8449 into independent installation artifacts. Refresh existing pages. This
+includes the current topology/grid and optional connections, Remember me,
+connection Copy, collection/display ranges, grouped pins, live event columns,
+button descriptions and page-local interrupted-monitor reminder correction.
+Only 8445's runtime backend/web mounts and its separate migrator backend mount
+change. Existing pinned images, configuration, secrets, scripts, network,
+loopback binding, state volume and cache bind remain in place. 8449/8444 and all
+other recorded services retain their container/image/start/restart identities.
+
+The stopped-service recovery point is protected under
+`.secrets/current-8445-install/`. The **194,664,132-byte compressed MariaDB dump**
+and state/cache tar archives have recorded SHA-256 hashes. Archive members were
+independently streamed to verify content hashes, type, count, ownership and
+mode against manifests: **2 state entries and 960 cache entries**, including
+directories. Before/after-backup database snapshots, exact stable row hashes and
+volume manifests match. Configuration recovery is protected with the backup;
+vault recovery remains separately protected at the original
+`.secrets/stage4-ssh/vault-master.key`. No secret payload was printed.
+
+With serving stopped, the separate `migrate` service applied
+**`0014_languages` → `0015_remember_login` → `0016_optional_connection`**.
+All **49 table counts**, **46 unaffected physical table checksums**, canonical
+row hashes for **43 stable tables**, and every original authentication field
+survived. Existing sessions gained `remember_me=false`; their identities, CSRF,
+authentication versions and deadlines remain exact. The server's scoped
+connection foreign key remains enforced with the intended nullable column.
+MariaDB's physical server checksum changes with nullability, so exact logical
+row equality is the established preservation guard. No SQL restore, account
+reset, global logout, new image/dependency, target connection or capture ran.
+
+Prepared and independently reviewed `.cache/deploy_current_8445.py` and
+`.cache/verify_current_8445.mjs`. Build verifies the frozen preview package and
+its matching source/browser receipts, then preserves prior content-hashed
+assets in the new read-only web overlay. **27 public HTTPS files** and every
+browser-loaded HTML/JS/CSS byte hash match the frozen manifests. The installed
+runtime passes verified TLS/readiness, unauthenticated WebSocket rejection
+(403), UID/GID 10001, one ASGI worker, read-only root/source, dropped
+capabilities, no-new-privileges, resource limits and restricted MariaDB DML
+grants. Root/migration credentials remain absent from the serving service.
+
+Commands actually run from the repository root (`PY` =
+`backend/.venv/Scripts/python.exe`; `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command | Result |
+|---|---|
+| `PY -m py_compile .cache/deploy_current_8445.py` | PASS. |
+| `PY .cache/deploy_current_8445.py build` | PASS: immutable independent artifacts, current source/preview correspondence and unchanged dependency locks. |
+| `PY .cache/deploy_current_8445.py inspect` | Initial nonmutating helper KeyError: the installed migration service is `migrate`, unlike the preview's `integration`. Corrected the service/config selection before deployment; retry PASS. |
+| `PY .cache/deploy_current_8445.py deploy` | PASS with reviewed local access: consistent verified backups, both migrations, 43 stable table rows, original sessions, state/cache, runtime security, assets and unchanged other services. |
+| `NODE --check .cache/verify_current_8445.mjs` | PASS after both preparation and independent review. |
+| `NODE frontend/node_modules/eslint/bin/eslint.js --config frontend/eslint.config.js --no-ignore .cache/verify_current_8445.mjs --max-warnings 0` | PASS. |
+| Set `SI_VERIFY_CURRENT_8445=1`; `NODE .cache/verify_current_8445.mjs` | PASS with reviewed local access: both actual-served roles, English/Polish, retained investigations, independent same-context workspaces and eight light/dark screenshots. |
+| `PY .cache/deploy_current_8445.py cleanup` | PASS: removed only the two recorded new test login sessions after all six new workspaces acknowledged detach. Original sessions preserved. |
+| `PY .cache/deploy_current_8445.py verify` | PASS after browser cleanup: all 43 original stable table rows, original sessions, state/cache, protected inputs, runtime security, exact HTTPS assets and all other service identities preserved. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+The installed browser uses only the original generated Stage 03 accounts and
+`stage3-fixture-a`. It opens two pages in each account's single browser context,
+checks distinct server-issued workspaces and independent process selections,
+pane layouts and filter drafts, and reopens existing synthetic investigations.
+Topology, preferences, job, saved workspace, bookmark, investigation-list and
+live-session snapshots remain equal before/after. Both logins show unchecked
+Remember me; Administrator diagnostics confirm schema0016. No collection,
+WebSocket, SSH, shared configuration, preference or personal-content write is
+allowed. Only login, own bounded workspace create/detach and retained query
+operations pass the request guards. The two generated auth sessions alone are
+removed by recorded hash and owner, preserving original sessions.
+
+Both synthetic accounts currently have **zero interrupted monitors**, so this
+installed run verifies no stale reminder appears; it cannot claim installed
+Dismiss behavior on 8445. The exact unchanged frontend retains the preceding
+eight-case isolated source and genuine-reminder 8449 installed evidence. Eight
+screenshots cover both themes/roles; inspected the Polish light retained-history
+screen and English dark stopped-Live screen, including readable translated
+controls and event-column header. Browser errors, forbidden requests and
+WebSocket attempts are zero. Its receipt is
+`verification/current-8445-install/browser.json` with immutable timestamped
+attempt evidence and helper hash. Other receipts are `build.json`,
+`preflight.json`, `backup.json`, `migration.json`, `installed.json` and
+`session-cleanup.json` in that directory. The final `verified.json` audit passes
+after cleanup; 8445 is left running and ready at schema0016. No deployment
+blocker remains.
+
+Recovery is documented in protected `ROLLBACK.txt`:
+`PY .cache/deploy_current_8445.py rollback`. It requires no active work/staging,
+no servers with null connections (including archived systems), no remembered
+sessions and unchanged original stable data. It stops only8445, downgrades
+through the separate migrator to0014, restores the exact old Compose and
+recreates only that service. It never invents profiles, deletes user data or
+revokes original sessions to satisfy a guard. Partial0016 DDL is inspected and
+completed before downgrade; partial0015 DDL remains stopped for reviewed
+recovery. Full SQL/state/cache restore is separate authorized recovery and must
+revoke restored sessions before exposure. Rollback was prepared/reviewed,
+not executed; deployment succeeded on its first mutation attempt.
+
+The initial direct Docker listing was sandbox-denied before mutation; reviewed
+local access succeeded. The preflight helper correction and the browser
+review's bounded selected-job polling/direct-request guards changed deployment
+tooling only. Product source, dependencies and test contracts were not edited.
+The copied source retains the previous 845-unit (four Windows skips),
+51-MariaDB-integration, populated migration lifecycle, 20-frontend-unit,
+lint/typecheck/build and eight-case current-reminder source evidence. Those
+suites were not repeated because deployment adds no product code. Full backup
+restore, native Ubuntu/Rocky installation and blocked-Internet release gates
+were not run: this request authorizes a retained local deployment, not Stage 08
+implementation/qualification. Next separate stage gate remains Stage 08.
+
+Changed repository documentation: `README.md`, `progress/STATUS.md`,
+`docs/12_TRACEABILITY.md`, `docs/14_MARIADB.md`. Local tooling, manifests,
+verification receipts and protected recovery artifacts are recorded above.
+
+## 18–19 October 2026 — Stage 08 implementation and offline candidate
+
+The user requested **“Proceed with stage 8.”** Implemented only prompt 08,
+including its added Version 4 Help requirement. The stage gate is **not
+complete**: no native Ubuntu 24.04 LTS or Rocky Linux 9/rootless Podman/SELinux
+host exists here, and the shared local Docker engine was not emptied or
+reconfigured to imitate a clean offline host. The exact boundary and
+requirement/acceptance evidence are in
+`docs/18_RELEASE_QUALIFICATION.md`. No deployment, push, upload, production
+target or real credential was used. 8445/8449/8444 retain their prior packages.
+
+Changed files/groups:
+
+* `frontend/src/{App.tsx,components/Common.tsx,components/HelpDialog.tsx,components/help.css,helpContent.ts,i18n/index.tsx,i18n/help.pl.ts}`
+  and `frontend/tests/i18n.test.mjs`: nine searchable local EN/PL Help chapters,
+  prerequisites and exact read-only SSH/SFTP operation list; workspace remains
+  mounted. Help/source/restored/cold browser tests are in `frontend/e2e/`.
+* `scripts/{build_stage8,release_offline,stage8_report,stage8_linux,stage8_runtime,stage8_seed,stage8_external_tls,stage8_regressions}.py`,
+  `deploy/app/release.Dockerfile`, `deploy/offline/`: actual isolated wheel,
+  non-root image builds, three archives, identity/checksum verification,
+  CycloneDX SBOM, installed package inventory/original notices, managed/external
+  recipes, certificates, private initialization, separate migration and
+  interactive bootstrap, bounded coordinated recovery, Podman/systemd fallback.
+* `backend/tests/unit/test_{release_offline,stage8_seed,stage8_external_tls}.py`,
+  `deploy/offline/test_runtime.py`; corrected the diagnostics regression to
+  revoke a fresh synthetic Administrator instead of its shared fixture account.
+* `fixtures/inventory/stage8-companion/` and its deterministic ZIP, `.gitignore`,
+  `Makefile`, `deploy/app/README.md`, `docs/OFFLINE_OPERATIONS.md`,
+  `docs/18_RELEASE_QUALIFICATION.md`, README, traceability, MariaDB/toolchain
+  records and this status. Existing lockfiles and original theme images remain
+  unchanged.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual outcome |
+|---|---|
+| `PY scripts/release_offline.py build --connected` and repeated with `--output dist/system-inspector-0.1.0-offline-rc2` | PASS: actual app/proxy/DB archives. Second build includes the inspected Help layout correction. Earlier candidate directories are retained; rc3 supersedes them with corrected runtime tools/report/notices. |
+| `PY -m pytest backend/tests/unit -q` | 858 passed, 5 Windows platform skips; earlier unchanged baseline 845 passed/4 skipped. |
+| `PY scripts/stage8_linux.py` | 862 passed, one Windows-DACL-only skip; all 129 package tests passed, offline/non-root/read-only Linux runner. |
+| `PY scripts/stage8_regressions.py integration` | Final fresh schema: **194 passed**, 470.56 seconds. |
+| `PY scripts/stage8_regressions.py foundation-upgrade`, `upgrade`, `optional-upgrade` | PASS: populated 0002/0012/0015-to-0016 copies, retained identities/data and applicable downgrade/refusal/reupgrade. |
+| `PY scripts/stage8_external_tls.py` | PASS: production asyncmy/authenticated API and shipped client with complex UTF-8 passwords; bad CA/name/expiry/plaintext rejected. Final receipt `external-tls/s8tls-a0a008b8a3.json`. |
+| Docker network-none Linux `python -B -m unittest discover -s /tests -p test_runtime.py -v` | 14 passed, no skips. Exact command in `runtime/operator-tests.json`. |
+| `PY -m unittest discover -s tests/package -q`; package/schema/deployment validators | 129 tests pass (9 Windows skips); validators pass. Linux package run exercises all 129. |
+| Ruff checks and format checks over backend/tests/migrations/scripts; explicit Python 3.9 runtime helpers; backend `mypy src` | PASS; mypy 37 modules. |
+| `PY scripts/frontend.py lint`, `typecheck`, `test` | PASS, generated API parity and 20 unit tests. |
+| `PY scripts/frontend.py e2e --config=e2e/help.playwright.config.ts` | 4 passed; inspected light/dark/EN/PL/narrow source screenshots. Reporter path corrected and final root receipt verified. |
+| `PY scripts/frontend.py e2e --config e2e/live_notices.playwright.config.ts` | Existing 8 component-browser cases passed; explicitly intercepted HTTP/WebSockets. |
+| Stage 08 manifest/URL/served-assets env + `PY scripts/frontend.py e2e stage8_browser.spec.ts` | Source **5 passed**; restored **2 passed/3 source-only skips**; cold **2 passed/3 skips**. Actual images/API/DB/SFTP/nginx; no API or asset substitution. |
+| `PY scripts/stage8_runtime.py prepare`, `fresh-attempt`, `start`, `configure` | Final isolated startup/explicit synthetic SFTP approval PASS. Failed test volumes retained; Windows adapter uses real Linux script/data modes and loopback ingress with outbound NAT disabled. |
+| `PY scripts/stage8_runtime.py recover`, then corrected `resume-restore` | Backup PASS; first revoke failed on nonexistent `error_code`. Corrected SQL and test helper permissions/LF; final restore PASS before exposure. **126 source checksums, 2 decrypted vault records**, stable rows/roles/preferences/ownership/mappings and zero auth/active work verified. |
+| `PY scripts/stage8_runtime.py cold-restart` | PASS: three hash-verified archives reloaded, new containers, retained SQL/cache preserved, SFTP remains stopped. Existing engine images were not deleted. |
+| `PY scripts/stage8_runtime.py stop` | PASS: only the final disposable stack stopped; test volumes and protected recovery retained. |
+| `PY scripts/stage8_report.py`; final `release_offline.py assemble` and `verify` | Combined receipts and verified final rc3. See `verification/stage-8/release.json`, manifest and TEST_REPORT. |
+| `PY scripts/stage8_runtime.py verify-release-archives --release dist/system-inspector-0.1.0-offline-rc3`; shipped `manage.py verify` | PASS: final export bytes hash-check and load to the exact previously exercised app/proxy/MariaDB IDs. Docker save tar metadata differs between exports, so tar-byte equality was not assumed. Receipt `runtime/final-archive-load.json`; retained stacks remain stopped. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Meaningful corrections found by real gates are retained in failed receipts:
+shared-fixture logout; a helper attribute typo on its first correction;
+strict synthetic CA extensions; YAML tmpfs splitting; sourced init nounset;
+escaped exact-schema DML grants; raw/private vault ownership and backup
+exclusion; init/restore key handling; external password preservation; and the
+recovery SQL column. A generated BOM receipt temporarily broke strict package
+JSON scanning; normalized that receipt rather than weakening the validator.
+Help's native search Escape/focus tests now exercise clearing then closing.
+
+Actual source/restored/cold browser captures were inspected, including the
+Polish Help chapter, both themes and retained event rows. Both same-account
+different-system and duplicated-system pages retain independent server-issued
+workspaces. Source tests import direct INI into A and companion-YAML ZIP into
+B, investigate local SFTP, save private investigations/pins and exchange a
+redacted bundle. Ten initial live subscriptions and control isolation pass;
+sustained paced-producer latency/RSS was not remeasured. The separately
+protected backup excludes the raw vault key; no recovery material enters the
+release. Exact test-platform and remaining-gate limits are recorded in
+`verification/stage-8/qualification.json` and the packaged test report.
+
+**Next: finish the outstanding Stage 08 native-platform, clean-host/firewall,
+previous-release rollback and remaining release qualification checks.** Do not
+claim a later stage or a fully qualified/distributable release from this
+candidate. Complete OSS corresponding-source/offer coverage is not asserted by
+the bundled notice inventory. Local target installation still needs separate
+authorization.
+
+## 19 October 2026 — authorized Stage 08 Help deployment on 8445
+
+The user explicitly requested **“Deploy to 8445”** after the Stage 08 candidate
+work. Installed the frozen rc3 Help frontend at **https://localhost:8445**;
+refresh existing pages. The installed backend, migrations and dependency locks
+already match the candidate's non-web payload, so this deployment changes only
+the frontend read-only mount. It retains the same runtime image, application
+configuration, TLS and schema `0016_optional_connection`. No migration, image
+replacement or release-runtime conversion was necessary. 8449, 8444 and the
+other retained service identities remain unchanged.
+
+The isolated overlay is `.state/stage8-8445-install/web`, with its build/asset
+manifests alongside it. The five current build files match the verified wheel
+and release manifest; retained content-hashed assets bring the installed tree
+to **31 files**. **29 public index/JS/CSS files** are verified over HTTPS. The
+two license texts are installed artifacts, not public routes in this existing
+backend. Candidate manifest SHA256 is
+`1fe12710f8e924bca10c4752b1adf8d9b22edeaa14cfafb03c353a00d5c84fbc`;
+wheel SHA256 is
+`8f88e160c2800798420cf9be069a3ad35bcf62b514dd9206e6b99cad11643bf8`.
+The predeployment independent comparison/review is
+`verification/stage-8/deployment-review.json`.
+
+Only the 8445 serving container stopped for the consistent protected backup in
+`.secrets/stage8-8445-install/`. The compressed SQL dump is **194,675,317 bytes**,
+SHA256 `cdc8f8c215a1dec51842247b64f6a60352c29c4d36a89d78a3b02b590e1ba7d2`.
+State/cache tar streams are checked against the stopped-volume path, type,
+ownership, mode, byte-count and content-hash manifests. The state archive
+excludes the raw vault key; recovery retains it separately at
+`.secrets/stage4-ssh/vault-master.key`, after verifying exact 32-byte/hash
+equality with the deployed key. Application configuration and the exact prior
+Compose file are protected with the recovery material. Neither credentials nor
+backup payloads were printed or placed in the release.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`, `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual outcome |
+|---|---|
+| `PY -m py_compile .cache/deploy_stage8_8445.py`; `PY .cache/deploy_stage8_8445.py build` | PASS: immutable candidate/release/wheel/frontend identity, unchanged backend/migrations/locks, retained assets and prior passing browser receipts. |
+| `PY .cache/deploy_stage8_8445.py inspect` | PASS: actual runtime/security/schema/TLS/assets, inactive captures, no inventory staging and protected-input preflight. |
+| `PY .cache/deploy_stage8_8445.py deploy` | PASS: stopped consistent backup, verified SQL/cache/state, exact preservation before switch, frontend-only Compose change, one-service restart and installed audit. No rollback was needed. |
+| `NODE --check .cache/verify_stage8_8445.mjs`; explicit repository-configured ESLint check | PASS. The verifier has direct-request and browser-origin guards. |
+| `SI_VERIFY_STAGE8_8445=1 NODE .cache/verify_stage8_8445.mjs` | PASS in one run: actual served frontend, both roles, Polish Help, both themes, same-context workspaces and retained investigations. |
+| `PY .cache/deploy_stage8_8445.py cleanup` | PASS: only the two new verification login rows removed; six new workspaces acknowledged detached; every original login session preserved. |
+| `PY .cache/deploy_stage8_8445.py verify` | Final unchanged strict rerun PASS after the independent helper exited. The first attempt stopped at strict Compose-container-set equality while that read-only audit used a temporary Compose one-off container; all SQL/session/cache/protected-input comparisons had passed. Its failed receipt remains retained. |
+| `PY .cache/audit_stage8_8445_independent.py` | Corrected scope PASS: actual backend/runtime/schema/data/mounts, 29 public HTTPS files, all 31 installed files, exact frontend-only Compose change and vault/backup boundaries. The first attempt incorrectly requested a notice artifact as an HTTP resource and returned 404; its failed receipt is retained. |
+| `PY tools/validate_package.py` | PASS: specification/fixture integrity only; not application or runtime evidence. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+Public phase receipts are in `verification/stage8-8445-install/`, including
+`build.json`, `preflight.json`, `backup.json`, `installed.json`, `browser.json`,
+`session-cleanup.json` and final **`verified.json` (PASS)**. Installed and final
+post-cleanup preservation checks compare all **43
+stable table row digests**, original authentication identity/version/CSRF/
+expiry/remember fields, unchanged cache/state bytes and ownership, protected
+configuration/accounts/vault/TLS hashes, and other container identities. The
+serving runtime remains UID 10001, root/source mounts read-only, capabilities
+dropped and no-new-privileges; unauthenticated WebSocket upgrade returns 403.
+The independent receipt is `independent-audit.json`; initial audit assumptions
+and the concurrent final-check attempt remain in
+`independent-audit-attempt-1.json` and `final-audit-attempt-1.json`. No application
+contract or strict service-identity guard was relaxed. The notice files remain
+available in the mounted tree/offline release; this Help deployment adds no
+public notice routes or links.
+
+The actual-served browser opens nine Help chapters, exercises search/no-results,
+the eleven SSH/SFTP descriptions, Escape/close/focus and light/dark themes while
+preserving live drafts. Both synthetic accounts currently select **Polish**;
+this deployment does **not** claim installed English rendering. Both languages
+remain bundled with exact verified hashes and have the earlier Stage 08 source
+and release-image browser evidence. Two pages in one browser context have fresh
+independent workspaces and controls. Retained investigations, notes and bookmarks
+reopen with unchanged before/after hashes. Twelve screenshots are retained;
+representative Help light/dark and retained-history captures were inspected.
+No collection, WebSocket, SSH connection, global logout, stored preference,
+configuration or personal-content write was performed. No pre-existing
+interrupted monitor exists for these accounts, so that older dismissal path was
+not re-exercised.
+
+Frontend rollback is prepared in the protected `ROLLBACK.txt` and reviewed
+helper: restore the exact previous Compose frontend mount and recreate only
+8445 with the same backend/image/schema, `--no-deps --pull never`. It does not
+restore SQL, downgrade, reset accounts or revoke original sessions. It was not
+executed. Full SQL/cache/state recovery remains separate and would require
+restored-session revocation. The historical 0014-to-0016 deployment/rollback
+entrypoints were not invoked.
+
+Changed repository documentation: `README.md`, `docs/12_TRACEABILITY.md`,
+`docs/14_MARIADB.md`, `docs/18_RELEASE_QUALIFICATION.md` and this status. Deployment
+tooling/manifests/receipts are local generated artifacts. Product source and
+dependencies were not changed, so the already recorded Stage 08 unit,
+integration and browser suites were not repeated. Native Ubuntu/Rocky,
+clean-host/firewall, previous-release rollback and remaining qualification
+checks stay open; this retained frontend installation does not complete that
+stage gate. 8445 is left running with Help available; no deployment blocker
+remains. Next stage work is the outstanding Stage 08 qualification above.
+
+## 19 October 2026 — SSH timeout investigation on 8445
+
+User reported **“Przekroczono czas testu połączenia SSH.”** while inspecting
+host keys at `https://localhost:8445`. Read-only inspection of both retained
+applications, deployment receipts, backend source, MariaDB metadata and local
+network routes was followed by separately user-authorized TCP/banner probes
+to **only `192.168.1.137:2111` and `:2112`**. No target credentials or commands
+were sent. The probe did not attempt authentication or collect logs.
+
+At **2026-10-19 06:34:58 UTC**, Windows opened TCP and received SSH banners on
+both configured ports in **0.064/0.040 seconds**. The 8445 and 8449 backend
+containers each timed out opening TCP to both ports after approximately
+**5.017 seconds**. This establishes a Docker-to-target network failure before
+SSH negotiation; the failing 8445 host-key inspection therefore cannot be
+fixed by changing a password or accepting a key. Both containers have an
+outbound default route on their non-internal browser network. Windows routes
+`192.168.1.0/24` through `OpenVPN TAP-Windows6`, next hop `10.99.88.114`.
+The failing segment is between Docker and the VPN target network; the exact
+Docker Desktop/VPN/firewall component has not been isolated. No network or
+infrastructure repair is authorized by this diagnostic request.
+
+An independent setup difference also exists. `_ISTSI_TEST` on 8445 is project
+`0a408687-d817-4891-b57f-7d38fd21a992` (revision 7), while the same display name
+on 8449 is project `60bdb139-c0b8-4751-bf4c-785f6e5f35cd` (revision 74).
+Connections `mcn1`/`mcn2` have matching host/ports but **no bound password or
+approved host key in the 8445 project**. The 8449 project has both, with past
+successful tests/collections/live sessions. These are separate installations
+and project identities, not a single synchronized configuration. A password
+and independently verified host-key approval must be configured explicitly
+for the 8445 project after reachability is restored. Missing target credentials
+do not block anonymous key inspection and do not explain the present timeout.
+
+Both vaults are available; Additional security measures is disabled in both,
+so expired manual source approvals are not the active blocker. Current backend
+source matches the installed snapshot. The latest Help deployment preserved
+the backend, schema, vault and original data; its browser audit explicitly did
+not test target reachability. Static **“Nie sprawdzono”** topology labels are
+not results of connection tests. No source/UI/security contract change is
+justified by the network evidence.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual outcome |
+|---|---|
+| `docker ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'` | PASS after read-only sandbox elevation; 8445/8449 apps running, MariaDB healthy. Initial sandbox Docker access was denied. |
+| `docker logs --since 10h --tail 90 system-inspector-local-runtime-stage3-1` | PASS; application startup succeeded; an event-loop delay is present but does not explain the independent TCP probe failures. |
+| `PY .cache/diagnose_deployed_ssh.py system-inspector-local-runtime-stage3-1 system-inspector-local-stage7-browser-1` | PASS; read-only SQL transaction, only nonsecret connection/trust/expiry/audit/error metadata; no SSH or password decryption. |
+| `Get-NetIPAddress -AddressFamily IPv4`; `Get-NetRoute -AddressFamily IPv4`; `Get-NetIPInterface -AddressFamily IPv4` | PASS with read-only elevation; initial unelevated CIM route/interface queries were denied. |
+| `docker network inspect system-inspector-local_database system-inspector-local_browser system-inspector-local_stage7-browser-network`; `docker exec <8445/8449-container> cat /proc/net/route`; `PY .cache/inspect_ssh_routes.py` | PASS; retained route/network evidence, no network changes. |
+| `PY .cache/probe_ssh_reachability.py` | PASS as diagnosis: fixed-target, five-second TCP/three-second banner deadlines, two ports per source; Windows succeeds, both app containers time out. Explicit user approval preceded all target probes. |
+| `PY -m pytest backend/tests/unit/test_ssh_access.py backend/tests/unit/test_ssh_transport.py -q -rs` | Windows: 44 passed, 1 POSIX-permissions case skipped, 1 failed; the synthetic 200ms deadline test expires before reaching its post-authentication SFTP barrier. Isolated rerun of that case fails identically. No contract was changed. |
+| `docker run --rm --pull=never --network=none --user=10001:10001 --read-only --cap-drop=ALL --security-opt=no-new-privileges:true --pids-limit=128 --memory=1g --tmpfs=/tmp:mode=1777 --mount 'type=bind,source=C:\_Projects\system-monitor\backend,target=/workspace/backend,readonly' --mount 'type=bind,source=C:\_Projects\system-monitor\examples,target=/workspace/examples,readonly' --workdir=/workspace/backend --env PYTHONPATH=/workspace/backend/src --env PYTHONDONTWRITEBYTECODE=1 --entrypoint python system-inspector-runner:stage7 -m pytest tests/unit/test_ssh_access.py tests/unit/test_ssh_transport.py -q -rs -p no:cacheprovider` | PASS: **46 passed in 3.51 seconds**. First harness attempt omitted the required examples mount: 45 passed, 1 missing-fixture failure; corrected by mounting that fixture, without changing tests. |
+
+Generated, ignored diagnostic scripts are `.cache/diagnose_deployed_ssh.py`,
+`.cache/probe_ssh_reachability.py` and `.cache/inspect_ssh_routes.py`.
+`PY -m py_compile` over those three helpers and
+`git -c core.safecrlf=false diff --check` both pass.
+Evidence: `verification/ssh-deployment-diagnosis/metadata.json`,
+`reachability.json` and `routing.json`. These contain operational metadata,
+not passwords, ciphertext, host-key material or raw log data. Repository
+documentation changed: this status only. UI/browser checks were not rerun
+because application source and deployed assets are unchanged. No real-credential
+authentication, automatic trust, service restart, migration, deployment, VPN
+change, data copying, push or remote command was performed. Next step is
+restoring Docker/VPN reachability with operator authorization, then completing
+the separate 8445 connection setup. Stage 08 qualification remains open.
+
+## 19 October 2026 — authorized connectivity repair, verified complete
+
+The user requested **“Fix the connectivity issues”**, then explicitly approved
+**“Allow Docker Desktop restart”** after automatic review required permission
+for the Docker-wide interruption. The initial shutdown was rejected because
+the general repair request did not explicitly authorize interrupting every
+Docker workload. The already stopped services were restored while that
+question was pending; no indirect shutdown bypass was attempted. The later
+approved Desktop restart preserved images/volumes, but did **not** fix TCP
+reachability. Its failed connectivity receipt remains retained.
+
+The proven cause was the retained Stage 08 bridge
+`inspector-s8-64535531e7_browser-edge`, ID
+`58f48694731955e72c0c62d6776985406f37ceda5f73f2392aa84acbc9c45ad4`,
+with subnet **`192.168.0.0/20`**. It includes the configured target
+`192.168.1.137`, so the Docker engine sent traffic to that bridge instead of the
+VPN. Windows and native WSL reached the target; application/default-bridge
+containers timed out, and an engine-host-network probe returned `EHOSTUNREACH`.
+The application's own default route alone did not reveal this engine route.
+
+Before removing that exact network, inspection confirmed zero live endpoints
+and only one stopped reference: the exited, read-only Stage 08 test proxy
+`inspector-s8-64535531e7-proxy-1`. It has no data volumes and only read-only TLS
+binds. Its full metadata and the network metadata were preserved under
+`.state/ssh-connectivity-repair/`. **Only the network was removed**; the stopped
+test proxy, TLS files, images and all data volumes were retained. That retired
+fixture needs recreation before any future use; it was not restarted. No
+network/volume prune or target-host change was performed.
+
+At **2026-10-19 07:08:39 UTC**, Windows and both installed backends opened both
+ports and received SSH banners. The backend checks took **0.030–0.061 seconds**.
+The deployed application's actual `ssh_transport.inspect_key` then succeeded
+for `mcn1` and `mcn2` on both installations in **0.102–0.121 seconds**. Both
+8449 results match their existing approved fingerprints. These checks sent no
+passwords or remote commands and wrote no host-key trust. The separate 8445
+System still lacks its own saved passwords/approved keys; they were not copied
+from the separate 8449 project.
+
+The controlled restarts exposed two retained-installation issues, both recovered:
+
+- **8445 cache:** the Windows bind began returning `EACCES` even to container
+  root, while native WSL could still read its files. The existing protected
+  Stage 08 archive exactly matched all **899 pre-restart files / 230,872,292
+  bytes**, including per-file hashes, ownership and modes. A new private Linux
+  volume, `system-inspector-8445-cache-recovered-20261019`, was populated and
+  independently verified as service UID 10001. Only the 8445 cache mount changed;
+  its image, backend, Help assets, application configuration, schema and vault
+  remained unchanged. The original bind directory and archive are retained.
+  New cache writes belong to the new volume; do not switch back without
+  preserving them. No SQL restore or migration was performed.
+- **8444 source/image drift:** this older installation already returned HTTP
+  503 before stopping. It mounted the live repository, which had advanced beyond
+  the running image; restarting exposed missing AsyncSSH. The original image's
+  Python locks and schema `0004_topology_name_history` match Git commit
+  `ae6d935c7e007ed7de64dc65b7a27f0fdc9f97fd`. Its original backend and matching
+  frontend were rebuilt offline into `.state/stage2-8444-recovery/`; only that
+  service's source mount changed, with the original image explicitly pinned.
+  Twenty-four tables are byte-identical; `workspaces` follows the original
+  startup detach/revision transition. All 25 tables match the precomputed
+  expected startup state, with accounts/sessions unchanged. All 25 remain
+  unchanged after the public-login browser inspection. No schema upgrade or
+  dependency installation was performed. Future guarded start is
+  `PY .cache/recover_8444.py start`.
+
+The **final strict audit passes**: all **44 compared tables in each 8445/8449
+schema**, original login identities, exact state/cache file manifests and
+protected configuration/vault digests match the pre-restart snapshot. The
+container-generated environment fingerprint changes when 8445 is recreated;
+its configuration and vault files are compared independently and unchanged.
+All three installations return verified-certificate HTTPS readiness and serve
+their expected assets. 8445/8449 frontend hashes are unchanged. All seven
+System Inspector services are running; MariaDB is healthy. The restored 8444
+login screenshot was visually inspected with no login, preference write,
+external request or target connection.
+
+The source prevention fix adds `stop_fixture()` to `scripts/stage8_runtime.py`.
+Terminal stop and abandoned fresh/restore attempts now run **project-scoped
+`compose down --timeout 60`**, preserving named volumes, images, private files
+and recovery evidence. Temporary backup/cold-restart stops remain unchanged.
+This addresses accumulated fixture routes; deployment subnet selection must
+still avoid LAN/VPN ranges. The corrected helper was unit tested, not executed
+against other retained release fixtures during this repair.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`, `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`):
+
+| Command/check | Actual outcome |
+|---|---|
+| `docker desktop version/status/--help`; `wsl --list --verbose`; `wsl --status`; local Docker/WSL settings and route inspections | Installed Desktop 4.33.1/Engine 27.1.1, Windows 10/WSL2. Native mirrored networking was not enabled. This old Desktop CLI has no status/restart subcommands. Some non-admin firewall/CIM reads were denied; no policy was weakened. |
+| `PY .cache/probe_ssh_reachability.py --output verification/ssh-connectivity-repair/before-repair.json` | Windows succeeds, both app containers time out. `after-container-restart.json` and `after-desktop-restart.json` retain the same failure. |
+| `wsl -d docker-desktop -- sh -c 'nc -z -w 5 192.168.1.137 2111; echo WSL_TCP_EXIT=$?'`; disposable credential-free host/bridge probes | Native WSL succeeds; engine host reports errno 113 and bridge times out. Evidence: `engine-vs-bridge.json`. |
+| `PY .cache/repair_docker_vpn.py prepare/stop/start`, then `stop --desktop-pass` and `start --desktop-pass --skip-legacy` | PASS after deterministic metadata checks; graceful database-last shutdown/database-first healthy startup. First preflight safely stopped before any mutation because Mounts iteration order varied. Three read-only samples prove Destination-sorted equality. Desktop reload changed only `Dns/DnsOptions/DnsSearch` null to empty arrays; reproducing the original hashes proves that exact serialization difference. |
+| `DockerCli.exe -Shutdown`; hidden `Start-Process ... Docker Desktop.exe`; `docker version` | Initial shutdown auto-review rejected; subsequent explicitly approved shutdown/start PASS, fresh backend PIDs and original images/volumes. It did not solve the overlapping route. |
+| `PY .cache/verify_existing_cache_backup.py`; `PY .cache/repair_cache_bind.py prepare/apply` | PASS: exact pre-restart archive/file manifest, independent service-UID verification and only-8445 cache remount. Initial initializer attempts lacked stdin forwarding, encountered the archive's valid root-directory metadata, then failed its post-write read after dropping access to service-owned files. The populated volume was accepted only after independent full verification; no populated volume was overwritten. |
+| Original 8444 source/image locks, `PY -B -m pytest tests/unit -q -p no:cacheprovider --basetemp <recovery>/test-tmp`; original-source Ruff/mypy; `NODE <tsc> --noEmit`; `NODE <vite> build`; original frontend lint | PASS: **253 unit tests**, matching original asset names, source/type/lint/build and original-image compatibility. Exact argv/cwd are retained in `8444-recovery-*.json`. Initial CRLF/archive, Compose-profile and mutable-image-tag assumptions failed strict guards and were corrected with exact Git blobs and the original image digest. No dependency install. |
+| `PY .cache/recover_8444.py deploy`; guarded verification; public-login Playwright/visual review | PASS: original image/schema, expected 25-table startup state, accounts/sessions, TLS/assets and other six services preserved. A raw Mounts-order audit attempt failed; bounded read-only samples reproduced all six original metadata hashes and canonical comparison passes without ignoring fields. Browser state remains unchanged. |
+| `docker network rm inspector-s8-64535531e7_browser-edge` | PASS after exact subnet/ownership/zero-live-endpoint/stopped-reference preflight and metadata preservation; no container/image/file/volume removed. |
+| `PY .cache/probe_ssh_reachability.py --output verification/ssh-connectivity-repair/after-route-conflict-removal.json`; `PY .cache/verify_repaired_ssh_keys.py` | PASS: all six TCP/banner checks, all four actual app-code host-key inspections; no credentials, remote commands or trust writes. |
+| `PY -m pytest backend/tests/unit/test_stage8_runtime_lifecycle.py backend/tests/unit/test_stage8_external_tls.py backend/tests/unit/test_stage8_seed.py -q -rs -p no:cacheprovider` | PASS: **11 passed, 1 skipped** in 1.65 seconds, including all six new lifecycle cases. Skip: Windows symlink permission. Initial lifecycle fixture lacked `images.app`: five passed/one failed, corrected fixture then combined checks pass. |
+| `PY -m ruff check --config backend/pyproject.toml scripts/stage8_runtime.py backend/tests/unit/test_stage8_runtime_lifecycle.py`; matching `ruff format --check`; `PY -m py_compile` on those files | PASS. An initial lint call omitted the repository's required backend config; configured formatting/checks pass after formatting two files. No contract relaxed. |
+| `PY .cache/verify_final_connectivity_repair.py` | **PASS**: both 44-table snapshots, sessions/cache/config/vault, HTTPS 8444/8445/8449, unchanged main assets and no target subnet overlap. First final harness attempt did not handle host/none networks' null IPAM config; corrected diagnostic only, same strict data checks. |
+| `git -c core.safecrlf=false diff --check`; diagnostic helpers `py_compile`; final `docker ps` | PASS; all seven services running, DB healthy. |
+
+Final evidence is `verification/ssh-connectivity-repair/final-verification.json`,
+`after-route-conflict-removal.json`, `application-key-inspection.json`,
+`cache-backup-comparison.json`, `cache-volume-installed.json`,
+`8444-recovery-installed.json` and `8444-recovery-browser-preservation.json`.
+Earlier failed diagnostic/guard receipts are retained. Root operational helpers
+and recovery artifacts are generated/ignored under `.cache/`, `.state/` and
+`verification/`; raw backups remain separately protected under `.secrets/`.
+
+Changed repository files: `scripts/stage8_runtime.py`,
+`backend/tests/unit/test_stage8_runtime_lifecycle.py`, `README.md`,
+`docs/11_DEPLOYMENT_AND_OPERATIONS.md`, `docs/12_TRACEABILITY.md`,
+`docs/14_MARIADB.md`, `docs/18_RELEASE_QUALIFICATION.md`,
+`docs/OFFLINE_OPERATIONS.md` and this status. The existing offline rc3 artifacts
+are unchanged; this operational repair does not qualify another platform or
+close Stage 08. No monitored-host authentication/SFTP/content collection,
+password or trust copying, remote command, production deployment or push was
+performed. **No connectivity repair blocker remains.** Next operator action:
+complete the separate 8445 connection setup in the UI; next stage work remains
+the outstanding native/strict offline Stage 08 qualification.
+
+## 19 October 2026 — local 8445 supervisor timeout diagnosed and recovered
+
+The supplied `NOT_READY` / `Supervisor is unavailable.` response was reproduced
+on **https://localhost:8445**. Both 8444 and 8449 remained ready; MariaDB was
+healthy. The HTTP boundary in `backend/src/inspector/app.py` rejects requests
+after the dedicated MariaDB supervisor connection fails. This is the required
+fail-closed behaviour, rather than an SSH password or host-key error.
+
+At **11:00:20.020 UTC (13:00:20 Europe/Warsaw)**, the 8445 backend reported
+`phase=lock_owner error=TimeoutError elapsed_seconds=239.075` for its normally
+one-second supervisor probe. MariaDB aborted that same lock connection at
+11:00:20.013 UTC, without a database shutdown/restart. Windows recorded exit
+from connected standby at 11:00:19.851 UTC and Hyper-V virtual networking
+initialization at 11:00:20.151 UTC. These correlated events indicate host/VM
+suspension interrupted the probe. The supervisor deliberately latches failure;
+database recovery and browser refresh alone cannot clear it. An alive process
+returning 503 is not restarted by Docker's ordinary restart policy.
+
+The guarded preflight verified local Docker, all seven expected containers,
+healthy MariaDB, schema `0016_optional_connection`, no competing owner of the
+8445 supervisor lock, and no active history jobs, live sessions, subscriptions
+or pending inventory uploads/previews. Before mutation it recorded all 49
+table hashes, state/cache file manifests, source/configuration/vault digests,
+container identities and the other installations' verified-certificate HTTPS
+assets. The same strict state/identity checks were repeated immediately before
+the restart. No deployed source, image, Compose definition, network, volume,
+database schema, credentials or trust was changed.
+
+Only the existing **`system-inspector-local-runtime-stage3-1`** container was
+restarted with `docker restart --time 30`. It shut down cleanly at
+12:21:52.248 UTC and completed startup at **12:21:59.473 UTC**. The final audit
+passes: all **49 tables** match their precomputed expected startup state, with
+only the existing active workspace becoming detached and advancing revision.
+Accounts and original authentication sessions are unchanged. Private state and
+all **902 cache files / 230,881,084 bytes** have identical hashes, modes and
+UID/GID. Configuration, vault, backend source, image, mounts and frontend assets
+are unchanged. The same container now owns its supervisor lock. No collection
+or monitor restarted automatically. All three origins return HTTPS 200 for
+liveness, readiness and their frontend/assets; the other six containers have
+unchanged start timestamps and identities.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`):
+
+| Command/check | Actual outcome |
+|---|---|
+| `docker ps`, filtered timestamped app/MariaDB logs, `docker inspect`, read-only Windows System events | PASS: isolated 8445 failure and correlated standby/Hyper-V resume; no monitored-host connection. Initial sandboxed Docker access was denied; read-only elevated inspection was allowed. |
+| `PY .cache/recover_supervisor_8445.py prepare` | PASS: 8444/8449 ready, 8445 alive but unavailable; healthy DB, absent supervisor owner, 49-table/file/configuration baseline. |
+| `PY .cache/recover_supervisor_8445.py restart` | PASS after repeated strict preflight: only the existing 8445 container restarted, without recreation/migration. |
+| `PY .cache/recover_supervisor_8445.py verify` | **PASS**: all nine preservation/readiness checks, including all 49 tables and complete cache manifests. |
+| `PY -m pytest backend/tests/unit/test_database_guards.py backend/tests/unit/test_api_boundary.py -q -rs -p no:cacheprovider` | **16 passed in 4.21 seconds**; failure latching, no silent reconnection, caller cancellation and API health/error boundaries remain intact. |
+| `PY -m py_compile .cache/recover_supervisor_8445.py`; `git -c core.safecrlf=false diff --check` | PASS. |
+
+Evidence is under `verification/supervisor-8445-recovery/`: `before.json`,
+`restarted.json`, `verified.json`, `supervisor-failure.txt`,
+`database-failure.txt` and `windows-resume-events.json`. These retain hashes and
+operational diagnostics, without passwords, vault bytes, raw logs or account
+tokens. The ignored recovery helper is `.cache/recover_supervisor_8445.py`;
+its restart phase rejects reuse after its receipt exists. Repository changes
+for this incident are this status and the targeted troubleshooting row in
+`docs/OFFLINE_OPERATIONS.md`. Application source/requirements are unchanged.
+
+No application UI changed, so a new authenticated browser run was not performed;
+installed certificate-checked HTTP and asset verification passed instead. No
+full integration suite or new platform/offline qualification was claimed for
+this operational recovery. No real SSH credential use, monitored-host contact,
+remote command, deployment, migration, Docker-wide restart or push occurred.
+Refresh the 8445 page to obtain a fresh workspace and explicitly start any
+desired new monitor. Stage 08 remains at its existing native Ubuntu/Rocky and
+strict clean-host offline qualification gate.

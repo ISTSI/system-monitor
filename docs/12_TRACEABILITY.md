@@ -1,6 +1,78 @@
 # 12 — Requirement-to-acceptance traceability
 
+The **19 October 2026 connectivity repair** adds operational evidence for
+R02/R36/R45: an overlapping, unused release-test bridge was isolated and removed;
+both installed backends then fetched SSH banners and host keys from the two
+explicitly authorized target ports. No target credentials or commands were
+sent and no host-key trust was created. Cache recovery and database/session
+preservation are checked separately; this does not claim authenticated SFTP or
+complete the native/offline release gates. See the dated
+[repair status](../progress/STATUS.md) and
+[application key inspection](../verification/ssh-connectivity-repair/application-key-inspection.json).
+
+Stage 08 candidate evidence is recorded in
+[release qualification](18_RELEASE_QUALIFICATION.md). R02/R28/R35–R37/R42–R56
+gain real three-image packaging, verified external TLS, 194 MariaDB/SSH
+regressions, populated upgrade copies, all-system cache/credential recovery and
+actual-image source/restored/cold browser evidence. The top-menu Help covers
+R34/R35 and prompt 08's Version 4 gate with nine local EN/PL chapters and the
+exact read-only SSH/SFTP operation list. Its four source-browser scenarios and
+both-role actual-image checks pass without replacing workspace controls.
+
+AT64/AT85 and the implemented portions of AT63/AT87/AT120 have a coordinated
+two-system fresh-volume restore, 126 source checksums, two recovered vault
+credentials, revoked sessions and both-role disconnected investigation access.
+AT82 includes actual authenticated verified-TLS MariaDB with complex passwords
+and rejected invalid certificates. AT116 includes populated 0002/0012/0015 to
+0016 copies with unchanged scoped identities/data. AT62, the strict clean-host
+transfer/firewall portions of AT63/AT87/AT120, complete prior-artifact rollback
+AT65 and remaining final qualification AT66 are **open**, not passed by recipes
+or package checks. R01/R36 retain native-platform limitations. See the linked
+report for exact commands, browser/performance boundaries and retained failures.
+
+The subsequent **19 October 2026 “Deploy to 8445”** authorization installs the
+verified rc3 Help frontend on the retained local application. R34/R35 and
+prompt 08's Help gate have [actual-served browser evidence](../verification/stage8-8445-install/browser.json)
+for both roles: nine chapters, search/no-results, eleven read-only SSH/SFTP
+operations, both themes, keyboard close/focus and preserved page drafts.
+Both accounts' existing language is Polish; English installed rendering was
+not exercised. English/Polish source and release-image evidence remains above.
+Same-context duplicated-system pages receive independent workspaces, retained
+investigations/notes/bookmarks reopen unchanged, and no target connections or
+collection are started. The [stopped-service backup](../verification/stage8-8445-install/backup.json)
+and [installation audit](../verification/stage8-8445-install/installed.json)
+preserve all 43 stable tables, accounts, original sessions, configuration and
+cache/state bytes/ownership. The existing backend/image/schema 0016 are
+unchanged; 29 public asset hashes match. This frontend deployment leaves
+8449/8444 unchanged and does not qualify the new release runtime or native OS
+recipes. The [independent audit](../verification/stage8-8445-install/independent-audit.json)
+also verifies all 31 installed files, separating the two installed notice
+artifacts from public routes. See [status](../progress/STATUS.md) for exact
+commands and final checks. The [final post-cleanup verification](../verification/stage8-8445-install/verified.json)
+passes with the unchanged strict service-identity guard after both temporary
+read-only audits have finished.
+
 All 56 requirements map to application acceptance targets. The requirement table is not a test-result report; implemented evidence and remaining limits appear below it.
+
+The explicit **“Deploy to 8445”** authorization on 18 October 2026 installed all
+current verified follow-ups on the retained local installation, including
+schema `0016_optional_connection`. Deployment evidence for R35/R42/R44/R45/R49/R55
+is the stopped-service [backup](../verification/current-8445-install/backup.json),
+the preservation-checked [migration](../verification/current-8445-install/migration.json),
+and the [installation audit](../verification/current-8445-install/installed.json).
+The [actual-served browser receipt](../verification/current-8445-install/browser.json)
+checks both roles, English/Polish, retained investigations, fresh same-context
+workspaces and independent live drafts, without collection, WebSockets or
+content/configuration/preference writes. Eight light/dark screenshots are
+retained and representative captures were inspected. Both synthetic accounts
+have no historical interrupted monitors, so installed reminder dismissal was
+not exercised on 8445; the unchanged package retains the preceding source and
+8449 evidence below. Current and retained public assets match frozen hashes;
+accounts, original sessions, 43 stable tables and state/cache are preserved.
+The [final post-browser audit](../verification/current-8445-install/verified.json)
+passes after targeted test-session cleanup. 8449 and 8444 remain unchanged.
+This local deployment does not qualify Stage 08
+offline release, native Ubuntu/Rocky recipes or a full backup restore.
 
 The 18 October 2026 interrupted-monitor reminder correction extends
 R26/R32/R34/R49: an old interrupted session no longer populates the current

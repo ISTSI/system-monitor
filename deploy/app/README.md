@@ -1,4 +1,14 @@
-# Stage 01 application image
+# Application images
+
+Stage 08 builds `release.Dockerfile` from an isolated, verified wheel and an
+allowlisted context through `scripts/release_offline.py`. It never changes a
+retained installation. The release includes separately built non-root nginx,
+the pinned MariaDB image, three archives, checksum inventory, CycloneDX SBOM,
+original notices and a qualification report. See
+[offline operations](../../docs/OFFLINE_OPERATIONS.md). Artifact production is
+separate from the native Ubuntu/Rocky acceptance gate; consult the report.
+
+## Earlier Stage 01 image
 
 The application wheel includes the built local React assets. The image uses
 the recorded official Python 3.13.16 Linux amd64 digest, locked production

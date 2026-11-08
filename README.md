@@ -1,5 +1,43 @@
 # System Inspector — Codex implementation package
 
+**19 October 2026 connection repair:** SSH host-key inspection now succeeds for
+`192.168.1.137:2111` and `:2112` from both 8445 and 8449. A leftover release-test
+bridge (`192.168.0.0/20`) diverted that traffic away from the VPN; that specific
+network was removed. The 8445 cache is preserved in a private Linux volume,
+and 8444 is restored with source matching its original image/schema. The 8445
+System still needs its own saved passwords and verified host-key approvals.
+See [repair evidence and verification](progress/STATUS.md).
+
+Stage 08 **Help** is installed at **https://localhost:8445** following the
+19 October 2026 deployment authorization. Refresh existing pages to load the
+nine searchable local chapters. The frontend matches the verified rc3 build;
+the existing backend and schema `0016_optional_connection` are unchanged.
+Accounts, original sessions, configuration, investigations and cache are
+preserved. The 8449 and 8444 installations are unchanged. Deployment checks are
+recorded in [status](progress/STATUS.md).
+
+Stage 08 source and an offline release candidate are now available under
+`dist/system-inspector-0.1.0-offline-rc3/`. This adds bundled English/Polish
+**Help**, real application/proxy/MariaDB archives, verified manifests/checksums,
+SBOM/notices, private operator tooling and tested two-system recovery/cold
+restart. **The release gate remains open** for native Ubuntu/Rocky and strict
+clean-host offline qualification. See [qualification](docs/18_RELEASE_QUALIFICATION.md),
+[operator guide](docs/OFFLINE_OPERATIONS.md) and [status](progress/STATUS.md).
+Building the candidate did not change retained installations; the subsequent
+authorized 8445 frontend update is recorded above.
+
+The earlier backend upgrade was installed at **https://localhost:8445**
+following the explicit **“Deploy to 8445”** authorization on 18 October 2026.
+Refresh existing pages. It includes the current topology, optional connections,
+Remember me, investigation/pin controls, live event presentation, button help
+and interrupted-monitor reminder correction. The backed-up upgrade applied
+`0015_remember_login` and `0016_optional_connection`, preserving accounts,
+settings, configuration, investigations, original sessions and cache. Both-role
+installed browser checks pass in English and Polish. The 8449 preview and 8444
+installation are unchanged. See [deployment evidence](progress/STATUS.md).
+Stage 08 offline-release qualification remains a separate gate. Earlier
+deployment entries below describe their original installation dates.
+
 The Live monitor interrupted-session reminder fix is installed at
 **https://localhost:8449**. Refresh existing pages, then use **Dismiss** to hide
 the old-monitor reminder for this page. The notice now labels the system ID

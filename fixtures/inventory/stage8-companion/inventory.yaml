@@ -1,0 +1,5 @@
+all:
+  children:
+    stage8_browser:
+      hosts:
+        stage8-documented-only: {}

@@ -4,10 +4,14 @@ import asyncio
 import json
 import threading
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
-from inspector import diagnostics
+from inspector import auth, diagnostics
+from inspector.domain import Principal
+from inspector.persistence.models import User
+from inspector.security import issue_token
 
 pytestmark = [pytest.mark.mariadb, pytest.mark.asyncio(loop_scope="session")]
 ROOT = Path(__file__).resolve().parents[3]
@@ -76,20 +80,48 @@ async def test_parser_worker_releases_security_lock_and_rechecks_logged_out_cook
         parser=document["parsers"][0],
         sample="2026-10-16T12:00:00Z sensitive-diagnostic-sample",
     )
-    async with foundation.client(foundation.database.administrator) as client:
-        pending = asyncio.create_task(
-            client.post(f"/api/v1/projects/{foundation.project_a}/parsers/test", json=payload)
+    # Logout revokes the account globally. Use a dedicated synthetic Administrator
+    # so this regression cannot invalidate the session-scoped bootstrap actor.
+    password = issue_token()
+    username = "diagnostic-" + str(uuid4())
+    async with foundation.database.sessions.begin() as session:
+        user = await auth.create_user(
+            session,
+            foundation.database.administrator.principal,
+            username,
+            "Synthetic diagnostic Administrator",
+            password,
+            "administrator",
         )
-        try:
-            assert await asyncio.to_thread(started.wait, 5), "Parser worker never started"
-            # Logout needs the global security lock too. It must complete while
-            # the bounded parser worker is still waiting, rather than behind it.
-            logged_out = await asyncio.wait_for(
-                client.post("/api/v1/auth/logout", json={}), timeout=3
+        account = type(foundation.alice)(
+            username, password, Principal(user.id, user.role, user.auth_version)
+        )
+    try:
+        async with foundation.client(account) as client:
+            pending = asyncio.create_task(
+                client.post(f"/api/v1/projects/{foundation.project_a}/parsers/test", json=payload)
             )
-            assert logged_out.status_code == 200, logged_out.text
-        finally:
-            release.set()
-        response = await asyncio.wait_for(pending, timeout=5)
-        assert response.status_code == 401, response.text
-        assert "sensitive-diagnostic-sample" not in response.text
+            try:
+                assert await asyncio.to_thread(started.wait, 5), "Parser worker never started"
+                # Logout needs the global security lock too. It must complete while
+                # the bounded parser worker is still waiting, rather than behind it.
+                logged_out = await asyncio.wait_for(
+                    client.post("/api/v1/auth/logout", json={}), timeout=3
+                )
+                assert logged_out.status_code == 200, logged_out.text
+            finally:
+                release.set()
+            response = await asyncio.wait_for(pending, timeout=5)
+            assert response.status_code == 401, response.text
+            assert "sensitive-diagnostic-sample" not in response.text
+    finally:
+        async with foundation.database.sessions.begin() as session:
+            current = await session.get(User, account.principal.user_id)
+            await auth.update_user(
+                session,
+                foundation.database.administrator.principal,
+                current.id,
+                current.auth_version,
+                role="inspector",
+                enabled=False,
+            )

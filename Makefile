@@ -1,4 +1,5 @@
 UV ?= uv
+RELEASE_ARGS ?=
 
 .PHONY: dev test lint typecheck build integration e2e release-offline db-prepare db-images db-up db-migrate db-test db-status db-stop
 dev:
@@ -12,6 +13,8 @@ test:
 lint:
 	$(UV) run --project backend --locked ruff check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts
 	$(UV) run --project backend --locked ruff format --check --config backend/pyproject.toml backend/src backend/tests backend/migrations scripts
+	$(UV) run --project backend --locked ruff check --config backend/pyproject.toml --target-version py39 deploy/offline
+	$(UV) run --project backend --locked ruff format --check --config backend/pyproject.toml --target-version py39 deploy/offline
 	$(UV) run --project backend --locked python scripts/frontend.py lint
 
 typecheck:
@@ -19,16 +22,16 @@ typecheck:
 	$(UV) run --project backend --locked python scripts/frontend.py typecheck
 
 build:
-	$(UV) run --project backend --locked python scripts/build_stage1.py
+	$(UV) run --project backend --locked python scripts/build_stage8.py
 
 integration:
-	$(UV) run --project backend --locked python scripts/local_mariadb.py new-test --run
+	$(UV) run --project backend --locked python scripts/stage8_regressions.py integration
 
 e2e:
 	$(UV) run --project backend --locked python scripts/frontend.py e2e
 
 release-offline:
-	$(UV) run --project backend --locked python scripts/release_offline.py
+	$(UV) run --project backend --locked python scripts/release_offline.py $(RELEASE_ARGS)
 
 db-prepare:
 	$(UV) run --project backend --locked python scripts/local_mariadb.py prepare

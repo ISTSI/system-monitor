@@ -24,6 +24,10 @@ Validate managed Docker MariaDB and a verified-TLS external database endpoint. T
 
 Rerun all gates including same-browser-context parallel pages, real MariaDB cross-project constraints and data-upgrade copies, two-system imports and backup/restore, 10-source low-rate capacity, blocked-Internet cold startup and no automatic SSH on restart. A second System must require no second backend/database. Package checks are not application evidence.
 
+## Version 4 gate
+
+Add a "Help" section in the top menu. Describe there full system functionality, including requirements for a adding specific elements (servers, processes), as well as full list of commands that SSH module will use to manage servers and processes. Divide the Help section into logical segments and chapters. Add information about non functional elements of the system, the backend, database, configuration files, logs etc.
+
 ## Completion gate
 
 All R01–R56 have implementation and test evidence; the final application is not a mock. Offline release artifacts exist and their hashes verify. Report any untested OS/runtime or environmental blocker explicitly as a release limitation. Do not deploy, push, expose production ports or contact actual monitored hosts without separate authorisation.

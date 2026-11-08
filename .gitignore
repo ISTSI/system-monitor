@@ -39,4 +39,5 @@ verification/
 *.gz
 *.zip
 !fixtures/inventory/browser-source-order.zip
+!fixtures/inventory/stage8-companion-yaml.zip
 backend/src/inspector/web/

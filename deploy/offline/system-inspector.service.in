@@ -1,0 +1,18 @@
+# Rootless systemd user unit fallback for Podman 4.4 or newer, Rocky Linux 9.
+# Replace both absolute paths before installing; do not copy this as-is.
+[Unit]
+Description=System Inspector private offline container stack
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+UMask=0077
+ExecStart=/usr/bin/python3 @RUNTIME@/manage.py --release @RELEASE@ --runtime @RUNTIME@ --engine podman start
+ExecStop=/usr/bin/python3 @RUNTIME@/manage.py --release @RELEASE@ --runtime @RUNTIME@ --engine podman stop
+TimeoutStartSec=600
+TimeoutStopSec=180
+
+[Install]
+WantedBy=default.target

@@ -1,5 +1,16 @@
 # Observed toolchain — 17 October 2026
 
+Stage 08 retains both dependency lockfiles and the recorded Python 3.13.16 /
+Node 24.22.0 / npm 11.19.1 toolchains. Connected preparation actually resolved
+and pulled official nginx **1.30.6-alpine**, Linux amd64 manifest
+`sha256:959ae6b898852db82e5b29b929388e59914f42be0a8f4d44c89a4c1f53b49208`.
+The built proxy runs UID/GID 10001 with local certificates. Existing pinned
+Python and MariaDB inputs are unchanged. Build/loaded image IDs and actual OS
+package versions are in each release manifest/inventory, not guessed here.
+Docker Desktop 4.33.1 / Linux Engine 27.1.1 / Compose 2.29.1-desktop.1 on Windows
+were exercised. Native Ubuntu 24.04 LTS and Rocky Linux 9/Podman remain untested.
+See [Stage 08 evidence](../docs/18_RELEASE_QUALIFICATION.md).
+
 SSH setup follow-up: the real uv resolution added **AsyncSSH 2.24.1** only;
 existing locked dependency versions were retained. Python 3.13 compatibility was
 tested in Windows and the Linux runner. Its original EPL-2.0/GPL-2.0-or-later

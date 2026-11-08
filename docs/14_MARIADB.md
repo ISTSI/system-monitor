@@ -1,5 +1,67 @@
 # 14 — MariaDB persistence, configuration and lifecycle
 
+The **19 October 2026 connectivity repair** performs no migration or SQL
+restore. After a clean restart exposed Windows cache-bind traversal failures,
+the separately protected existing cache archive was verified against the exact
+pre-restart manifest: **899 files / 230,872,292 bytes**, with identical content,
+UID/GID and file modes. Only 8445's cache mount was replaced with the private
+Linux volume `system-inspector-8445-cache-recovered-20261019`, still mounted at
+`/var/cache/system-inspector`; original bind data is retained. New cache writes
+belong to that volume, so later rollback must preserve them rather than simply
+switching back to the old bind. Backend, schema `0016_optional_connection`,
+accounts, original sessions, credentials, trust and vault material are retained.
+The older 8444 installation uses frozen source and frontend matching its
+original image and schema `0004_topology_name_history`, without upgrading its
+database. See `verification/ssh-connectivity-repair/` and the dated status entry.
+
+The separately authorized **19 October 2026 Help deployment to 8445** changes
+only the read-only frontend mount. Backend, runtime image, MariaDB schema
+`0016_optional_connection` and serving credentials remain unchanged; no
+migrator or DDL was needed. With serving stopped, the protected consistent
+194,675,317-byte compressed SQL dump and matching cache/state archives were
+verified before installation. The raw vault key is excluded from the state
+archive; its separately protected recovery source was checked for exact
+32-byte/hash equality. All 43 stable table digests, original sessions, accounts,
+preferences, configuration, investigations, cache bytes and ownership survive.
+Receipts are under `verification/stage8-8445-install/`. Prepared rollback
+restores only the previous frontend mount with the same backend/schema; it
+does not restore SQL, downgrade or revoke original sessions. Full data recovery
+remains a separate operation. Other installations are unchanged.
+
+Stage 08 adds working managed/external runtime tools under `deploy/offline/`
+without migrating any retained installation. Real external-TLS tests exercise
+the production asyncmy engine and authenticated API through a custom hostname,
+including Unicode/whitespace/quoted passwords, and reject wrong CA/name/expiry
+and plaintext. Runtime and migration users retain exact schema grants. Serving
+never receives root/migration secrets.
+
+The disposable final-image recovery quiesces all writers, makes a consistent
+InnoDB dump with matching state/cache and excludes the raw vault key. Fresh
+volumes reprovision SQL accounts; a separately protected raw 32-byte key is
+rebound with UID 10001/mode 0600. Before exposure, recovery verifies 126 raw
+source checksums, two decrypted credential records, identical stable table
+digests/roles/preferences/owners/mappings, zero sessions and no active work.
+Both-role browser checks reopen both systems with SFTP stopped, including after
+archive reload/cold container restart. Native host installation and zero-image
+transfer remain open. See [qualification](18_RELEASE_QUALIFICATION.md) and the
+[operator guide](OFFLINE_OPERATIONS.md); existing deployment history follows.
+
+The explicit **“Deploy to 8445”** authorization on 18 October 2026 upgraded the
+retained 8445 installation from `0014_languages` through `0015_remember_login`
+to `0016_optional_connection` with the matching verified backend/frontend.
+Serving stopped before the protected consistent SQL/state/cache backup; only
+the separate migrator received DDL credentials. All 49 table counts, 46
+unaffected physical checksums, 43 stable table row hashes and every original
+authentication field survived migration, with existing remember flags false.
+The serving application retains only DML credentials. Cached investigations,
+configuration, settings, accounts and state/cache ownership are preserved;
+8449/8444 remain unchanged. Both-role installed browser checks pass in English
+and Polish. Recovery guards refuse downgrade with unconnected servers or
+remembered sessions; full backup restore remains separate recovery work.
+Receipts are under `verification/current-8445-install/`; exact commands and
+recovery instructions are recorded in `progress/STATUS.md`. Earlier deployment
+paragraphs below preserve their original scope and dates.
+
 The optional server-connection follow-up source expects
 `0016_optional_connection`, following `0015_remember_login`. It makes only
 `servers.connection_id` nullable, retaining its project-scoped foreign key for

@@ -32,6 +32,17 @@ The deployment policy has a strict schema and matching examples, while the app l
 
 The **Linux server**, not merely the user's Windows laptop, must be able to resolve/reach the configured target or jump host. For jump connections, the jump host must be permitted to forward to the selected target. Both SSH legs need independent host-key trust. Tests should distinguish DNS failure, routing/VPN failure, rejected forwarding, bad credentials, host-key mismatch, SFTP unavailable and file permission failure.
 
+Inspect the container engine's complete network/subnet set when the host reaches
+a target but containers cannot. A bridge belonging to a stopped test stack still
+installs a route: `192.168.0.0/20`, for example, includes `192.168.1.137` and can
+divert SSH away from the VPN even when the application's own default route looks
+correct. Check `docker network ls` and each network's IPAM and container
+references, including stopped containers. Preserve metadata and remove only a
+verified unused test network; do not prune unrelated networks or data volumes.
+Select deployment subnets that do not overlap the host's LAN/VPN routes. Local
+qualification fixtures must release their networks when abandoned or stopped,
+while retaining named data volumes and protected recovery material.
+
 No discovery scan or automated connection to all hosts is needed at startup. Connect only through explicit operations against configured approved sources. Verify an offline cold start with all Internet egress blocked while permitting LAN/VPN and DNS required by the deployment. Inspect browser and server traffic for external calls, including fonts, analytics, update checks and icons.
 
 ## Backup, restore and updates

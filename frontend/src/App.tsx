@@ -5,6 +5,7 @@ import { ErrorNotice, Icon } from './components/Common';
 import Login from './components/Login';
 import Catalogue from './components/Catalogue';
 import SystemWorkspace from './components/SystemWorkspace';
+import HelpDialog from './components/HelpDialog';
 import { PasswordDialog, PreferencesDialog, SettingsDialog, UsersDialog } from './components/Management';
 import { useAppearance } from './theme/useAppearance';
 import { I18nProvider, resolveLanguage, useTranslator, type LanguagePreference } from './i18n';
@@ -20,7 +21,7 @@ export default function App() {
   const [sessionError, setSessionError] = useState('');
   const [notice, setNotice] = useState('');
   const [path, setPath] = useState(window.location.pathname);
-  const [dialog, setDialog] = useState<'password' | 'preferences' | 'settings' | 'users' | null>(null);
+  const [dialog, setDialog] = useState<'password' | 'preferences' | 'settings' | 'users' | 'help' | null>(null);
   const [appearanceError, setAppearanceError] = useState('');
   const [appearanceBusy, setAppearanceBusy] = useState(false);
   const authEpoch = useRef(0);
@@ -180,6 +181,7 @@ export default function App() {
         {administrator && <button title={t("Manage local accounts and their access.")} onClick={() => setDialog('users')}>{t("Accounts")}</button>}
         {administrator && <button title={t("Change shared application settings.")} onClick={() => setDialog('settings')}>{t("Settings")}</button>}
         {administrator && <a title={t("Create, edit, archive and restore system configurations.")} href="/admin" className={adminView ? 'active' : ''} onClick={(event) => { if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { event.preventDefault(); navigate('/admin'); } }}>{t("Admin")}</a>}
+        <button title={t('Read the offline guide to features, setup and operations.')} onClick={() => setDialog('help')}>{t('Help')}</button>
       </nav>
       <div className="account-controls">
         {bootstrap.demo_mode && <span className="demo-label">{t("SYNTHETIC DEMO DATA")}</span>}
@@ -196,5 +198,6 @@ export default function App() {
     {dialog === 'preferences' && <PreferencesDialog appearance={preferences?.theme_mode ?? 'default'} appearanceBusy={appearanceBusy || languageBusy} appearanceError={appearanceError} onAppearanceChange={(mode) => { void saveAppearance(mode); }} onAppearanceRetry={retryAppearance} language={preferences?.language ?? 'default'} languageBusy={languageBusy || appearanceBusy} languageError={languageError} onLanguageChange={mode => { void saveLanguage(mode); }} onLanguageRetry={retryLanguage} onClose={() => setDialog(null)} />}
     {dialog === 'settings' && administrator && <SettingsDialog onClose={() => setDialog(null)} onSaved={(settings) => { setBootstrap((current) => current ? { ...current, branding: settings.branding, default_theme_mode: settings.default_theme_mode, default_language: settings.default_language } : current); broadcast('appearance'); }} />}
     {dialog === 'users' && <UsersDialog session={session} onClose={() => setDialog(null)} onSelfRevoked={() => { clearProtected('Your account changed. Sign in again to continue.'); broadcast('authentication'); }} />}
+    {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
   </div></I18nProvider>;
 }

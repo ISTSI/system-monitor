@@ -18,7 +18,7 @@ export function ErrorNotice({ children, retry }: { children: ReactNode; retry?: 
   return <div className="notice error" role="alert"><span>{typeof children === 'string' ? t(children) : children}</span>{retry && <button type="button" title={t("Try the failed operation again.")} onClick={retry}>{t("Retry")}</button>}</div>;
 }
 
-export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Modal({ title, onClose, children, className }: { title: string; onClose: () => void; children: ReactNode; className?: string }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -28,7 +28,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
     element?.showModal();
     return () => { element?.close(); previous?.focus(); };
   }, []);
-  return <dialog ref={ref} onCancel={event => { event.preventDefault(); onClose(); }} aria-labelledby={titleId}><div className="dialog-head"><h2 id={titleId}>{title}</h2><button type="button" aria-label={t("Close dialog")} title={t("Close this dialog.")} onClick={onClose}>×</button></div>{children}</dialog>;
+  return <dialog ref={ref} className={className} onCancel={event => { event.preventDefault(); onClose(); }} aria-labelledby={titleId}><div className="dialog-head"><h2 id={titleId}>{title}</h2><button type="button" aria-label={t("Close dialog")} title={t("Close this dialog.")} onClick={onClose}>×</button></div>{children}</dialog>;
 }
 
 export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
