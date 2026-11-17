@@ -1,5 +1,16 @@
 # System Inspector — Codex implementation package
 
+**Import server JSON is installed at https://localhost:8445** following the
+16 November 2026 deployment authorization. Refresh the page, then choose
+**System → Import server JSON** as an Administrator. Generate one file per host
+using the [JSON example](examples/server-import/server.example.json) and
+[field guide](examples/server-import/README.md). Preview and merge its services
+into the selected System, retaining other servers and stable identities on
+reimport. The matching backend/frontend update keeps schema
+`0016_optional_connection`, accounts, original sessions, configuration,
+investigations and cache. See [deployment evidence](progress/STATUS.md).
+Existing offline rc3 release archives are unchanged.
+
 **19 October 2026 connection repair:** SSH host-key inspection now succeeds for
 `192.168.1.137:2111` and `:2112` from both 8445 and 8449. A leftover release-test
 bridge (`192.168.0.0/20`) diverted that traffic away from the VPN; that specific
@@ -8,13 +19,13 @@ and 8444 is restored with source matching its original image/schema. The 8445
 System still needs its own saved passwords and verified host-key approvals.
 See [repair evidence and verification](progress/STATUS.md).
 
-Stage 08 **Help** is installed at **https://localhost:8445** following the
-19 October 2026 deployment authorization. Refresh existing pages to load the
-nine searchable local chapters. The frontend matches the verified rc3 build;
-the existing backend and schema `0016_optional_connection` are unchanged.
-Accounts, original sessions, configuration, investigations and cache are
-preserved. The 8449 and 8444 installations are unchanged. Deployment checks are
-recorded in [status](progress/STATUS.md).
+The earlier Stage 08 **Help** deployment on **https://localhost:8445** followed
+the 19 October 2026 authorization. Its frontend matched the verified rc3 build
+and added nine searchable local chapters, preserving the backend, schema
+`0016_optional_connection`, accounts, original sessions, configuration,
+investigations and cache. The newer server JSON update above includes that Help
+and its new import instructions. The 8449 and 8444 installations are unchanged.
+Deployment checks are recorded in [status](progress/STATUS.md).
 
 Stage 08 source and an offline release candidate are now available under
 `dist/system-inspector-0.1.0-offline-rc3/`. This adds bundled English/Polish

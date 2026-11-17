@@ -30,6 +30,7 @@ def main() -> int:
     validations = 0
     for schema, example in [
         ("project.schema.json", "examples/project.example.json"),
+        ("server-import.schema.json", "examples/server-import/server.example.json"),
         ("project-v1.schema.json", "examples/legacy/project-v1.example.json"),
         ("query.schema.json", "contracts/query.example.json"),
         ("event.schema.json", "contracts/event.example.json"),

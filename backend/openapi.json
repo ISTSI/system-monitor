@@ -8883,6 +8883,7 @@
               "ini",
               "yaml",
               "canonical_json",
+              "server_json",
               "static_zip"
             ],
             "title": "Format"
@@ -11084,6 +11085,7 @@
               "ini",
               "yaml",
               "canonical_json",
+              "server_json",
               "static_zip"
             ],
             "title": "Format"

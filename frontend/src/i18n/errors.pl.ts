@@ -99,4 +99,5 @@ export default {
   'Remote access stopped because persistence is unavailable.': 'Dostęp zdalny został zatrzymany z powodu niedostępności trwałego zapisu.',
   'The target/root approval expired; ask an Administrator.': 'Zatwierdzenie celu lub katalogów logów wygasło; skontaktuj się z administratorem.',
   'Source access changed; repeat the request.': 'Dostęp do źródła uległ zmianie; ponów żądanie.',
+  'Single-server JSON requires one directly uploaded file; ZIP companions and multiple sources are unsupported.': 'JSON pojedynczego serwera wymaga jednego bezpośrednio przesłanego pliku; pliki towarzyszące ZIP i wiele źródeł nie są obsługiwane.',
 } satisfies Record<string, string>;

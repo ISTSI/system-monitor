@@ -21,7 +21,7 @@ host-key trust or target/root approval.
 | `POST /inventory/previews/{preview_id}/cancel` | `{}`; deletes only the owner's preview, preserving its upload for remapping; returns `{cancelled:true}` |
 | `POST /parsers/test` | `{project_id,expected_revision,parser,sample}`; tests a parser draft against bounded supplied text without persisting the draft or sample |
 
-`format` is `ini`, `yaml`, `canonical_json` or `static_zip`. `source_files` is a
+`format` is `ini`, `yaml`, `canonical_json`, `server_json` or `static_zip`. `source_files` is a
 nonempty ordered list of uploaded paths, including the uploaded filename for a
 direct file. An upload response includes `filename`, detected `format` (nullable),
 `files` entries with `path,size,role,format,sha256`, `file_count`, `expanded_bytes`,
@@ -29,6 +29,16 @@ direct file. An upload response includes `filename`, detected `format` (nullable
 `manifest_sha256`. It also returns `project_id`, `inventory_source_id`, `upload_id`,
 `expected_revision` and `expires_us`; expiry is an integer-microsecond string.
 It never returns source-file contents or imported secret values.
+
+`server_json` accepts one direct UTF-8 JSON file conforming to
+`contracts/server-import.schema.json` (format marker `system-inspector-server`,
+independent schema version `1.0`). Its single `server` and `services` list
+normalize into the same host/process reconciliation pipeline. It cannot be
+combined with other sources or ZIP companions. The file supplies no project,
+owner, revision or approval authority; route and stored upload/preview bindings
+remain authoritative. The normalized host also carries its display `name`,
+defaulting to its stable alias. Full project interchange remains schema 2.0.
+See [exporter format and example](../examples/server-import/README.md).
 
 The parse response identifies the same project/source/upload/revision and returns
 `hosts`, `groups`, `warnings`, `conflicts`, `provenance`, `manifest`,

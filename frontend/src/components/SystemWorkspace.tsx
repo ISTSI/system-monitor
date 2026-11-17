@@ -30,7 +30,7 @@ export default function SystemWorkspace({ projectId, session, navigate, branding
   const [editor, setEditor] = useState<Editor | null>(null);
   const [accessConnectionId, setAccessConnectionId] = useState('');
   const [manager, setManager] = useState<'connection' | 'parser' | null>(null); const [importing, setImporting] = useState(false);
-  const [inventoryImporting, setInventoryImporting] = useState(false);
+  const [inventoryImporting, setInventoryImporting] = useState<'ini' | 'server_json' | null>(null);
   const [moving, setMoving] = useState<{ kind: 'server' | 'process'; id: string } | null>(null);
   const [deleting, setDeleting] = useState<{ selection: Selection; impact: DeleteImpact } | null>(null);
   const [dependency, setDependency] = useState<'upstream' | 'downstream' | ''>('');
@@ -229,7 +229,8 @@ export default function SystemWorkspace({ projectId, session, navigate, branding
         { label: t("List connections"), title: t("Manage this system’s SSH connection profiles."), onSelect: () => setManager('connection'), dividerBefore: true },
         { label: t("List Parsers"), title: t("Manage this system’s timestamp and correlation parsers."), onSelect: () => setManager('parser') },
         { label: t("Import configuration"), title: t("Preview and import a JSON or YAML system configuration."), onSelect: () => setImporting(true), dividerBefore: true },
-        { label: t("Import Ansible inventory files"), title: t("Upload static Ansible inventory files and preview their mapping."), onSelect: () => setInventoryImporting(true) },
+        { label: t("Import Ansible inventory files"), title: t("Upload static Ansible inventory files and preview their mapping."), onSelect: () => setInventoryImporting('ini') },
+        { label: t("Import server JSON"), title: t("Upload one server and its services, then review the changes."), onSelect: () => setInventoryImporting('server_json') },
         { label: t("Export JSON"), title: t("Download this system’s configuration as JSON without secrets."), onSelect: () => { void exportConfig(projectId, 'json').catch((cause: unknown) => setError(message(cause))); } },
         { label: t("Export YAML"), title: t("Download this system’s configuration as YAML without secrets."), onSelect: () => { void exportConfig(projectId, 'yaml').catch((cause: unknown) => setError(message(cause))); } },
       ]} />}<h1 title={config.project.description}><a href={`/systems/${encodeURIComponent(projectId)}/${section}`} onClick={event => { if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) event.preventDefault(); }}>{config.project.name}</a></h1><code className="system-id" title={projectId}>{projectId}</code></div>
@@ -260,7 +261,7 @@ export default function SystemWorkspace({ projectId, session, navigate, branding
     {moving && <MoveDialog config={config} selection={moving} onClose={() => setMoving(null)} onMove={move} />}
     {deleting && <DeleteDialog impact={deleting.impact} kind={deleting.selection.kind} name={entity(config, deleting.selection)?.name ?? deleting.selection.id} onClose={() => setDeleting(null)} onConfirm={deleteSelected} />}
     {importing && <ConfigImport config={config} revision={topology.revision} onClose={() => setImporting(false)} onCommitted={load} />}
-    {inventoryImporting && editable && <InventoryImport config={config} revision={topology.revision} onClose={() => setInventoryImporting(false)} onCommitted={load} />}
+    {inventoryImporting && editable && <InventoryImport config={config} revision={topology.revision} initialFormat={inventoryImporting} onClose={() => setInventoryImporting(null)} onCommitted={load} />}
   </main>;
 }
 

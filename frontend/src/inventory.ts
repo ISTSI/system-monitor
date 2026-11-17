@@ -1,6 +1,6 @@
 import type { LogSource } from './topology';
 
-export type InventoryFormat = 'ini' | 'yaml' | 'canonical_json' | 'static_zip';
+export type InventoryFormat = 'ini' | 'yaml' | 'canonical_json' | 'server_json' | 'static_zip';
 export type InventoryDiagnostic = { code?: string; message?: string; [key: string]: unknown };
 export type InventorySource = { project_id?: string; id: string; name: string; created_us: string };
 export type InventoryUpload = {
@@ -10,7 +10,7 @@ export type InventoryUpload = {
 };
 export type InventoryProcess = { id: string; name: string; pcs_resource_name?: string | null; log_source: LogSource };
 export type InventoryHost = {
-  alias: string; address: string; port: number; user: string | null; groups: string[];
+  alias: string; name?: string; address: string; port: number; user: string | null; groups: string[];
   vars: Record<string, unknown>; processes: InventoryProcess[]; provenance: unknown; warnings: InventoryDiagnostic[];
 };
 export type InventoryParsed = {

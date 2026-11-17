@@ -5089,3 +5089,329 @@ remote command, deployment, migration, Docker-wide restart or push occurred.
 Refresh the 8445 page to obtain a fresh workspace and explicitly start any
 desired new monitor. Stage 08 remains at its existing native Ubuntu/Rocky and
 strict clean-host offline qualification gate.
+
+## 8 November 2026 — custom single-server JSON importer
+
+The user requested a JSON format for an external host/services dump script,
+then explicitly selected **Add the upload option and JSON format**. The source
+now includes Administrator-only **System → Import server JSON**, a downloadable
+example and English/Polish guidance/Help. This is a scoped import follow-up;
+it does not close Stage 08 or authorize deployment.
+
+The independent format is `system-inspector-server`, schema version `1.0`,
+with exactly one `server` object and a `services` list. The exporter guide is
+`examples/server-import/README.md`; its runnable-data example is
+`examples/server-import/server.example.json`. The self-contained schema is
+`contracts/server-import.schema.json`, identically packaged under the backend's
+contracts directory. It reuses the existing project log-source contract and
+does not change project interchange 2.0, event identities or the database schema.
+
+The existing project/source/owner/revision-bound upload, safe parse, mapping,
+preview and atomic commit remain the only persistence path. A host's import key
+and service-local IDs are independent of display names/addresses. A sequence
+of one-host files can share one inventory source, and repeated imports retain
+other hosts, omitted services, documentation, layouts and unrelated processes.
+Manual changes to importer-managed fields remain review conflicts. Unknown
+fields/future versions and ZIP/multiple-source input are rejected. Every service
+needs a known file log source and a same-System parser reference or explicit
+mapping. No uploaded script, credentials, approvals or automatic target contact
+are introduced. The unresolved-account diagnostic now uses format-independent
+wording, **No SSH username was supplied**.
+
+Changed files:
+
+- Backend: `backend/src/inspector/inventory_parser.py`, `inventory.py`,
+  `contracts/server-import.schema.json`, `backend/openapi.json`,
+  `backend/tests/unit/test_server_import.py` and
+  `backend/tests/integration/test_inventory.py`.
+- Frontend: `frontend/src/components/SystemWorkspace.tsx`, `InventoryImport.tsx`,
+  `frontend/src/inventory.ts`, `api/schema.d.ts`, `helpContent.ts`,
+  `i18n/topology.pl.ts`, `i18n/errors.pl.ts` and `frontend/e2e/inventory.spec.ts`.
+- Contract/documentation: root `README.md`, `contracts/README.md`,
+  `contracts/server-import.schema.json`, `contracts/inventory-import.schema.json`,
+  both files in `examples/server-import/`, `docs/05_API_AND_WEBSOCKET.md`,
+  `docs/10_ANSIBLE_IMPORT.md`, `docs/12_TRACEABILITY.md`,
+  `tools/validate_schemas.py`, `progress/DECISIONS.md` and this status.
+
+Commands actually run (`PY` = `backend/.venv/Scripts/python.exe`, `NODE` =
+`.toolchains/node-v24.22.0-win-x64/node.exe`; paths below are repository-root
+relative unless a working directory is stated):
+
+| Command/check | Actual outcome |
+|---|---|
+| `PY -m pytest backend/tests/unit/test_server_import.py backend/tests/unit/test_inventory_parser.py backend/tests/unit/test_inventory_reconcile.py backend/tests/unit/test_inventory_limits.py backend/tests/unit/test_inventory_workers.py -q -rs` | PASS: **188 passed**, final run 1.88 seconds after the diagnostic wording change; earlier run 1.99 seconds. New importer file contains 41 cases. |
+| `PY -m ruff check --config backend/pyproject.toml backend/src/inspector/inventory.py backend/src/inspector/inventory_parser.py backend/tests/unit/test_server_import.py backend/tests/integration/test_inventory.py`; same file list with `ruff format --check` | PASS, all four files formatted. |
+| From `backend`: `.venv/Scripts/python.exe -m mypy src` | PASS: **37 source files**. |
+| `PY -m pytest backend/tests/integration/test_inventory.py --collect-only -q` | PASS collection: **19 tests**, including the new two-host/reimport/project/role scenario. |
+| `PY -m pytest backend/tests/integration/test_inventory.py -q -rs -p no:cacheprovider` | **19 skipped**, no database execution: `SI_TEST_DISPOSABLE_MARIADB=1` and a disposable MariaDB fixture are unavailable. These are not test passes. |
+| Read-only Docker `version`, container/image/network inspection via default and Linux-engine pipes, API versions 1.45/1.46; loopback listener inspection | BLOCKED: local Docker daemon returns **HTTP 500** for `/version`, `/containers/json` and image/network inspection. No 8449 listener. No fixture schema/container was created and no Docker/retained service was restarted. |
+| `PY tools/validate_schemas.py` | PASS: **21 schemas**, 103 successful instance validations, 36 rejected negative instances and 21 YAML files; includes the new export example. Package contracts only. |
+| `PY tools/validate_package.py` | FAIL on an existing generated artifact: UTF-8 BOM in `verification/supervisor-8445-recovery/windows-resume-events.json`. That unrelated evidence was not modified. |
+| `$env:INSPECTOR_CONFIG_FILE=(Resolve-Path examples/deployment-policy.example.yaml).Path; PY -m inspector.cli openapi --output backend/openapi.json` | PASS. Initial call without this explicit synthetic configuration failed with `Cannot read deployment configuration file`; corrected invocation generates schema without connecting to MariaDB. |
+| `NODE frontend/node_modules/openapi-typescript/bin/cli.js backend/openapi.json -o frontend/src/api/schema.d.ts`; from `frontend`: `NODE scripts/check-api-types.mjs` | PASS generation and consistency. |
+| From `frontend`: `NODE node_modules/typescript/bin/tsc --noEmit`; `NODE node_modules/vite/bin/vite.js build` | PASS. Existing large-chunk warning remains; all assets and the example are bundled locally. |
+| From `frontend`: `NODE --experimental-strip-types --test tests/*.test.mjs`; focused `tests/i18n.test.mjs` after Help/translations | PASS: **20 frontend tests**, then **4 focused translation tests**. |
+| From `frontend`: `NODE node_modules/eslint/bin/eslint.js src e2e tests scripts *.ts eslint.config.js --parser-options 'tsconfigRootDir:C:/_Projects/system-monitor/frontend' --max-warnings 0` | PASS source lint. Initial plain `eslint . --max-warnings 0` failed with 118 ambiguous configuration/root errors because retained ignored `frontend/.cache/stage2-8444-recovery` contains another configuration. No importer lint findings; unrelated lint configuration unchanged. |
+| From `frontend`: `NODE node_modules/@playwright/test/cli.js test --config e2e/help.playwright.config.ts` | PASS: **4 offline Help browser tests**, Administrator/Inspector × English/Polish, 6.4 seconds. |
+| From `frontend`: `$env:PLAYWRIGHT_BROWSERS_PATH='C:/_Projects/system-monitor/.cache/playwright'; NODE .cache/server-import-browser/verify.mjs` | PASS **test-only component browser harness with mocked HTTP**, not MariaDB/API integration. Checks downloadable JSON, source/project/revision and CSRF payloads, parse/mapping/preview/commit, required review, validation and wrong-project errors, English/Polish, light/dark at 1280/1920, no external requests/page errors. Initial harness-only baseURL/locator/Polish wording failures were corrected without weakening product contracts. |
+| `git diff --check` | PASS with normal Windows line-ending notices. |
+
+Browser receipt: `verification/server-import-browser-test-only/results.json`;
+screenshots are in its `screenshots/` directory. Light upload and dark review at
+1280×720 and Polish source selection at 1920×1080 were visually inspected;
+scrolling content and persistent actions are readable. The harness and its
+temporary Vite/browser processes were closed. Its helpers live only under the
+ignored `frontend/.cache/server-import-browser` directory.
+
+The source includes real MariaDB and browser regression tests, but **real
+database/API execution remains unverified** while Docker returns HTTP 500.
+Once the local test runtime is available, use a fresh disposable suffix with
+`PY scripts/verify_stage7.py inventory --suffix s7_server_<freshhex> --match single_server_json`,
+then run the new inventory browser scenarios against an explicitly identified
+synthetic fixture via `INSPECTOR_E2E_INVENTORY_FIXTURE`; these invocations were
+not executed against retained installations. No deployment, database migration,
+real credential use, monitored-host connection, remote command, data upload,
+infrastructure change or push occurred. Next step for this follow-up is the
+disposable MariaDB/API/browser verification; the separate Stage 08 native
+Ubuntu/Rocky and strict clean-host offline qualification gates remain open.
+
+## 16 November 2026 — retained local installation started and verified
+
+The user requested the latest System Inspector and explicitly authorized a
+Docker Desktop restart followed by startup of the retained 8445 installation.
+The latest installed version remains the Stage 08 Help frontend with frozen
+backend/schema `0016_optional_connection`; the newer single-server importer
+source has not been deployed by this startup operation.
+
+Docker's Linux API returned HTTP 500 for both API 1.46 and 1.43. Local logs
+identify a failed Resource Saver pause followed by an unreachable internal VM
+(`192.168.65.7:2375`, `no route to host`). The application ports 8445, 8449 and
+8444 were not listening. `wsl --list --verbose` identified only the
+`docker-desktop` distribution. After authorization, graceful Docker Desktop
+shutdown/relaunch did not recover the stuck VM. Docker Desktop was stopped;
+`wsl --terminate docker-desktop` and `wsl --shutdown` eventually completed.
+The native `Restart-Service WslService -Force` operation was denied by Windows
+service permissions, rather than by automatic approval review. The first
+Windows elevation prompt was accepted, but the service became stuck in
+`StopPending`. The user approved a second standard Windows administrator
+prompt to complete that already-requested service restart. Both service
+receipts now report `Running`; Docker Desktop was relaunched successfully.
+Its Linux engine reports Docker 27.1.1/API 1.46. Only the retained MariaDB
+and 8445 application containers were started; other installations and fixtures
+remain stopped. The default browser was opened at https://localhost:8445.
+
+The existing localhost certificate expired on 24 October. Its public
+certificate was backed up inside the same protected directory and renewed
+through 16 December 2026 using the unchanged private key, subject and localhost
+SAN. The original DACL and file attributes were verified after the write.
+The receipt contains only public certificate fingerprints and validity dates:
+`verification/startup-20261116/certificate.json`. No workstation/browser trust
+setting was changed.
+
+Commands actually run include `docker --context desktop-linux version` and
+`ps -a` (HTTP 500), the same Docker checks with
+`DOCKER_API_VERSION=1.43` (HTTP 500), read-only local Docker log/service/process
+inspection, `DockerCli.exe -Shutdown`, hidden Docker Desktop relaunch,
+`wsl --terminate docker-desktop`, `wsl --shutdown`, and the service restart
+attempts described above. `PY .cache/renew_8445_certificate_20261116.py` passed;
+`PY -m py_compile .cache/start_8445_20261116.py` passed. `PY` denotes
+`backend/.venv/Scripts/python.exe`.
+
+Operational helpers are retained only under ignored `.cache/` and
+`frontend/.cache/startup-20261116/`. Additional commands actually run:
+
+| Command/check | Actual result |
+|---|---|
+| `PY .cache/start_8445_20261116.py` | Started only the two existing containers with `docker start`; MariaDB healthy, verified HTTPS readiness 200 and installed index equality passed. Final aggregate configuration-hash assertion failed; see limitation below. |
+| Independent certificate-checked HTTPS requests to `/api/v1/health/live`, `/api/v1/health/ready`, `/`, and the installed JS/CSS assets | PASS: alive/ready, HTTP 200; all three frontend files match the frozen installed build byte-for-byte. Receipt: `verification/startup-20261116/http-assets.json`. |
+| From `frontend`: `NODE .cache/startup-20261116/verify-login.mjs` | PASS: actual signed-out Polish login, empty username/password inputs, functional submit-button semantics, exact localhost certificate SPKI/TLS 1.3, six local requests, no external requests or page errors. Initial harness incorrectly required an explicit HTML `type` attribute; corrected to verify native `button.type === 'submit'`, then reran successfully. No product change. |
+| `docker --context desktop-linux ps --format '{{.Names}}\|{{.Status}}\|{{.Ports}}'` | PASS: only `system-inspector-local-mariadb-1` (healthy) and `system-inspector-local-runtime-stage3-1` (8445) running. |
+| `git -c core.safecrlf=false diff --check` | PASS. |
+
+`NODE` denotes `.toolchains/node-v24.22.0-win-x64/node.exe`. The actual-served
+login screenshot `verification/startup-20261116/login.png` was visually
+inspected: the existing light-theme Polish sign-in page renders correctly.
+Browser evidence is `login.json`; the initial harness failure is preserved
+separately. This operational check did not sign in, test authenticated flows,
+run integration tests or qualify a release platform.
+
+Preservation evidence and limitation: both original container IDs and images
+match the pre-start receipt. Explicit checks pass for the frozen backend,
+installed Help frontend, recovered Linux cache volume, retained MariaDB data
+volume and loopback-only 8445 binding. The strict aggregate configuration/
+mount hash changed across `docker start`. Eight DNS null/empty-array variants
+did not reconstruct the earlier hash; Docker also reports mixed Windows/Linux
+bind-source representations. Because the pre-start receipt retains only
+hashes, the exact metadata difference remains unresolved. Full configuration-
+hash equality is **not** claimed, and its failed assertion was not relaxed.
+Successful independent HTTP/browser checks are separate evidence.
+
+The only tracked change for this operational recovery is this status entry;
+earlier source changes remain intact. No application source, images, Compose
+files, SQL schema, volumes or account credentials were changed by this task.
+Normal serving/startup may update its own runtime metadata. No monitored host
+was contacted, no image was pulled and no migration, source deployment or push
+was performed. The single-server importer still needs its separate disposable
+MariaDB/API/browser verification and installation decision. Stage 08 native
+Ubuntu/Rocky and strict clean-host offline qualification gates remain open.
+
+## 16 November 2026 — authorized server JSON deployment to 8445, verified
+
+The user explicitly requested **Deploy it** after confirming that 8445 still
+served the older build. Scope is the single-server JSON importer on local
+`https://localhost:8445`; no other retained application or monitored host is
+included. The source delta is exactly two backend modules plus the packaged
+server-import schema, and the matching bundled frontend/Help. Dependencies,
+runtime image, migrations and schema `0016_optional_connection` remain unchanged.
+
+The previously blocked real verification now runs with the recovered local
+Docker daemon. Actual checks completed before deployment:
+
+- `PY scripts/verify_stage7.py inventory --suffix s7_json_1611b --match single_server_json`:
+  **1 passed**. The preceding `s7_json_1611a` run failed because the new
+  cross-project parse test supplied the source project's revision to its target
+  project. The test now supplies `other_revision` while retaining the required
+  `404` assertion; no contract was relaxed.
+- `PY scripts/verify_stage7.py inventory --suffix s7_json_1611c`:
+  **21 passed in 28.26 seconds** against disposable MariaDB schemas. Includes
+  existing inventory formats, atomic rollback, cancellation, scope/roles,
+  parser mapping and source-snapshot preservation. Receipts remain under
+  `verification/stage-7/s7_json_1611*-command.json` and matching logs.
+- The focused inventory unit command recorded in the 8 November entry:
+  **188 passed in 2.51 seconds**. `PY tools/validate_schemas.py`:
+  **21 schemas**, 103 successful instance checks and 36 rejected negative cases.
+- Frontend typecheck, scoped source lint, API-type consistency, production build
+  and **20 Node tests** passed. The compiled current script is
+  `assets/index-DX9FwQ2T.js`.
+- Two real browser cases passed against the separately generated synthetic
+  8457 installation: incremental host import/reimport with stable service IDs
+  and manual documentation; invalid version rejection. Receipt:
+  `verification/stage-7/server-import-20261116-browser-published.json`
+  (**2 expected, zero skipped/unexpected/flaky**, 6.7 seconds). Initial fixture
+  attempts failed on protected-file access and an unpublished port on an
+  internal Docker network; only the new test service was corrected using an
+  existing local browser network. No new network was created. That test service
+  is stopped; its schema, configuration and evidence are retained.
+
+The new guarded helper is ignored
+`.cache/deploy_server_import_8445_20261116.py`; independent review corrected its
+stop-attempt recovery guard and moved the exact startup baseline to a read-only
+one-off container **after** serving stops. Rollback validates frozen artifacts
+independently of later worktree changes. Both source/web mounts change in one
+atomic Compose write followed by recreating only `runtime-stage3` with
+`--no-deps --pull never`. Old hashed frontend assets remain available.
+
+First attempt records are retained under
+`verification/server-import-8445-20261116/`, with frozen artifacts under the same
+name in `.state/` and protected recovery material under `.secrets/`. Its
+consistent stopped-service backup passed: **49 tables**, SQL gzip
+**194,762,724 bytes**, verified state/cache archive members, modes and UID/GID.
+The separately retained vault recovery source matches the 32-byte runtime key;
+the key is excluded from the state archive. Original cache:
+**904 files / 230,889,027 bytes**. The candidate became healthy with the correct
+new JS, but the exact 49-table check failed and automatic rollback restored the
+previous source/web mounts without SQL restore or migration.
+
+Read-only diagnosis proved precisely one normal browser workspace expiry:
+`detached/revision 2` became `expired/revision 3`, with unchanged already-due
+expiry and every other column unchanged. Reversing only that transition
+reconstructs the complete expected hash for **all 378 workspace rows**. All
+five other metadata tables, including **all 33 authentication sessions**, match
+exactly; stable tables/cache/configuration had already passed preservation
+checks. Proof: `metadata-diagnosis.json` in that first-attempt directory.
+
+The retry uses a fresh sealed baseline with **zero active workspaces**, and
+keeps the original exact 49-table assertion. Its unique deployment ID is
+`server-import-8445-20261116-retry1` in `.state/`, `.secrets/` and `verification/`.
+`SI_SERVER_IMPORT_DEPLOY_ID` selects that ID for the guarded helper. Build and
+read-only preflight passed. The second consistent backup is **194,762,718
+compressed SQL bytes**, and its exact **49-table canonical hash assertion
+passed**. A later filesystem comparison caused another automatic rollback.
+Read-only `files-diagnosis.json` proves that the stopped diagnostic container
+had no `/tmp/inspector-state/supervisor.lock`, while the running app creates
+that one-byte temporary lock. The running filesystem aggregates match the
+original running preflight exactly. All persistent state/cache manifests,
+hashes, modes and UID/GID match exactly; no data file changed.
+
+The corrected helper now captures fresh **running** filesystem hashes before
+stop and compares them with the running application after restart. The database
+still uses its stopped-service baseline and the original exact canonical
+comparison of **all 49 tables**. No files are ignored or normalized. Redundant
+standalone 43-table canonical scans were removed because the 49-table scan
+already includes those rows; interim checks retain counts, MariaDB checksums,
+exact original authentication rows and full persistent file manifests.
+Independent static review passes. The final attempt uses deployment ID
+`server-import-8445-20261116-retry2`. Its build, corrected read-only preflight,
+consistent stopped-service backup and installation **pass**. The exact canonical
+hash comparison of **all 49 database tables passes** before browser activity;
+running filesystem/protected-file comparisons and full persistent manifests
+also pass. The SQL gzip is again **194,762,718 bytes**. State/cache archives and
+the separate vault-key recovery source are verified. Previous hashed frontend
+assets remain in the new read-only web tree.
+
+Installed Administrator/Inspector browser checks **pass** against the actual
+served assets, without mocks or asset substitution. Administrator opens
+**System → Import server JSON**, downloads the exact staged example and cancels;
+Inspector has no import action. Both roles can search the bundled Help for the
+new format. Their existing Polish preference is preserved. Six light/dark
+screenshots are retained privately, and the actual installed import dialog in
+both themes was visually inspected. There are zero external requests,
+WebSockets, forbidden writes or page errors. No source, upload, preview or
+configuration is created in an existing System during this smoke test.
+
+Only its two freshly created synthetic login sessions were removed after
+validating the exact token-hash/owner ledger. Its two server-issued workspaces
+were acknowledged detached and retained; both new login audit events remain.
+The final read-only audit proves **all 33 original login sessions exact**,
+original rows in all **six metadata tables exact**, and all **43 stable table
+counts/checksums exact**. Metadata comparison excludes only those precisely
+identified new test workspace and login-audit rows, matching timestamps to the
+test sessions before removal. State/cache hashes, modes and ownership,
+configuration/vault/TLS hashes, schema and other service identities are unchanged.
+This complements the full 49-table canonical audit performed before browser
+activity, without rescanning the same retained event rows repeatedly.
+
+The separate independent audit **passes**: all three actual backend
+module/schema hashes, active import locations, `server_json` API type and
+schema 1.0 marker; all five installed current web files; certificate- and
+hostname-verified HTTP 200 liveness/readiness and the three served index/JS/CSS
+hashes. UID/GID 10001, zero capabilities, read-only root/source/web mounts,
+bounded resources, one worker, loopback-only 8445 and absence of Docker socket
+or migration/root secrets are verified. Its first read-only harness attempt
+incorrectly requested the bundled license files over HTTP; the existing app
+routes index/assets only. The corrected harness verifies those installed files
+by byte hash and performs HTTP checks on the actual public assets. That failed
+attempt is retained as `independent-audit-attempt1.json`; no product contract
+or route was changed to accommodate it.
+
+Actual deployment commands (`PY` and `NODE` as above):
+
+| Command | Result |
+|---|---|
+| `PY .cache/deploy_server_import_8445_20261116.py build/preflight/deploy`, with default ID and then `SI_SERVER_IMPORT_DEPLOY_ID=server-import-8445-20261116-retry1` | Verified backups; safely rolled back on the precisely diagnosed lease and temporary-lock comparison mismatches. Both sets of immutable receipts/backups remain retained. |
+| Same helper `build`, `preflight`, `deploy` with `SI_SERVER_IMPORT_DEPLOY_ID=server-import-8445-20261116-retry2` | **PASS**, serving the tested backend/frontend, unchanged schema/image/dependencies and exact 49-table startup data. |
+| `SI_VERIFY_SERVER_IMPORT_8445=1 NODE .cache/verify_server_import_8445_20261116.mjs` | **PASS**, actual installed both-role UI/download/Help, both themes, 5.23 seconds. |
+| `PY .cache/audit_server_import_8445_20261116.py` | **PASS**, independent read-only installed backend/schema/runtime/TLS/assets proof. |
+| `SI_SERVER_IMPORT_DEPLOY_ID=server-import-8445-20261116-retry2 PY .cache/final_server_import_preservation_20261116.py record-logins` | **PASS**, recorded only the two test session timestamps for exact audit-row matching. |
+| Same deployment ID and main helper `cleanup` | **PASS**, removed only two recorded smoke sessions; preserved all original sessions and detached workspaces. |
+| Same deployment ID and final preservation helper `verify` | **PASS**, original six metadata projections, 43 stable tables, 33 original sessions, state/cache/configuration/vault/TLS and other services. |
+| Generated helpers `py_compile`, installed browser helper `node --check` and scoped ESLint | **PASS**. |
+
+Final evidence is in `verification/server-import-8445-20261116-retry2/`:
+`installed.json`, `browser.json`, `independent-audit.json`, `session-cleanup.json`
+and `final-preservation.json`. Frozen source/web artifacts are under the same
+ID in `.state/`; protected SQL/state/cache backups, previous Compose definition,
+rollback instructions, exact smoke-session ledger and screenshots are under
+that ID in `.secrets/`. The application remains running and healthy at
+**https://localhost:8445**. Refresh an existing page to load the new importer.
+
+Tracked changes for this deployment are the narrowly corrected test request in
+`backend/tests/integration/test_inventory.py`, root `README.md`,
+`docs/12_TRACEABILITY.md` and this status. Earlier importer source remains as
+implemented. The user's `discover/` scripts are unchanged. Existing offline rc3
+release archives were not rebuilt or modified.
+
+No monitored-host authentication, SSH command, discovery-script execution,
+upload into existing systems, schema migration, dependency download, unrelated
+service restart, push or native/offline qualification has occurred. The
+separate Stage 08 Ubuntu/Rocky and strict clean-host gates remain open.

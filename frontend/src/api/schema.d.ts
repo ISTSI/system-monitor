@@ -2910,7 +2910,7 @@ export interface components {
              * Format
              * @enum {string}
              */
-            format: "ini" | "yaml" | "canonical_json" | "static_zip";
+            format: "ini" | "yaml" | "canonical_json" | "server_json" | "static_zip";
             /** Source Files */
             source_files: string[];
         };
@@ -3710,7 +3710,7 @@ export interface components {
              * Format
              * @enum {string}
              */
-            format: "ini" | "yaml" | "canonical_json" | "static_zip";
+            format: "ini" | "yaml" | "canonical_json" | "server_json" | "static_zip";
             /** Source Files */
             source_files: string[];
             /** Project Id */

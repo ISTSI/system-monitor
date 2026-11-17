@@ -1,5 +1,31 @@
 # 12 — Requirement-to-acceptance traceability
 
+The **16 November 2026 authorized 8445 importer deployment** closes the earlier
+Docker-blocked verification for this extension: **21 real MariaDB integration
+tests**, **2 real inventory browser cases**, and installed Administrator/Inspector
+UI checks now pass. Before installed browser activity, all **49 database tables**
+match the exact stopped-service canonical baseline; original sessions and full
+persistent state/cache manifests are preserved. The installed source/API/schema
+and actual served assets have a separate read-only audit. Evidence is under
+`verification/server-import-8445-20261116-retry2/`; the two safely rolled-back
+audit attempts and their precise lease-expiry/temporary-lock diagnoses remain
+separate. See [execution and preservation details](../progress/STATUS.md).
+This local deployment keeps schema `0016_optional_connection` and leaves native
+Ubuntu/Rocky and strict offline release qualification open.
+
+The **8 November 2026 single-server JSON** extension supports R05/R11/R15,
+R35/R37/R39 and R47–R54 through the existing project-scoped inventory pipeline.
+`backend/tests/unit/test_server_import.py` covers schema/example parity, stable
+identities, incremental reimport, absent-record preservation, malformed/future
+input, secret-safe diagnostics and limits. Existing inventory parser,
+reconciliation, worker and limit regressions remain in the focused verification.
+`backend/tests/integration/test_inventory.py` adds a real-MariaDB incremental
+two-host/reimport/system/role scenario; `frontend/e2e/inventory.spec.ts` adds
+the upload/download/preview workflow and invalid-input browser cases. These
+integration cases require a disposable fixture; executed results and Docker
+limitations are recorded in [status](../progress/STATUS.md). Source changes
+do not close Stage 08 qualification or claim a deployment update.
+
 The **19 October 2026 connectivity repair** adds operational evidence for
 R02/R36/R45: an overlapping, unused release-test bridge was isolated and removed;
 both installed backends then fetched SSH banners and host keys from the two

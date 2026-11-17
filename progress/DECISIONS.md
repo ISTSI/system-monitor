@@ -160,3 +160,21 @@ Version 3 fixed requirements: multiple named systems per deployment; same-accoun
   keys with the same ASCII escaping as SQLAlchemy's persisted JSON. Real MariaDB
   tests verify punctuation/quotes/Unicode and distinguish literal escape text.
   Literal matching retains the shared Unicode-casefold engine contract.
+
+## 8 November 2026 — Incremental single-server JSON import
+
+- Add independent `system-inspector-server` schema version 1.0 with one host
+  and service instances. Keep project interchange 2.0 and the MariaDB schema
+  unchanged. The user's exporter need not generate an Ansible wrapper or a
+  complete replacement project.
+- Reuse inventory source/upload/parse/mapping/preview/commit, including project,
+  owner, authentication and optimistic revision checks. Identity is the existing
+  source + host alias + local service ID within the route's project; display
+  names and addresses remain editable. No mutable account-wide active System
+  is introduced.
+- A single-host file is incremental. Other hosts and omitted services are
+  retained, and manual managed-field edits remain conflicts. Reject ZIP/multiple
+  sources for this format. Require one known file log source per service, using
+  the existing project log-source contract and same-System parser mapping.
+  No imported command, credential, approval or automatic remote discovery is
+  introduced.

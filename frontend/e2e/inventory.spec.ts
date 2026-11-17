@@ -5,12 +5,12 @@ import { serveBuiltAssets, setAppearance, submitSignIn, systemAction } from './u
 import type { InventoryParsed, InventoryPreview } from '../src/inventory';
 import type { Topology } from '../src/topology';
 
-const enabled = process.env.INSPECTOR_E2E_URL === 'https://localhost:8449';
+const enabled = process.env.INSPECTOR_E2E_URL === 'https://localhost:8449' || !!process.env.INSPECTOR_E2E_INVENTORY_FIXTURE;
 const root = resolve('..');
-const fixture = enabled ? JSON.parse(readFileSync(resolve(root, '.state/stage7-browser/public-fixture.json'), 'utf8')) as { synthetic: boolean; host: string; projects: string[] } : null;
+const fixture = enabled ? JSON.parse(readFileSync(process.env.INSPECTOR_E2E_INVENTORY_FIXTURE ?? resolve(root, '.state/stage7-browser/public-fixture.json'), 'utf8')) as { synthetic: boolean; host: string; projects: string[] } : null;
 if (enabled && (!fixture?.synthetic || fixture.host !== 'stage7-sftp' || fixture.projects.join(',') !== 'stage7-fixture-a,stage7-fixture-b')) throw new Error('Only the isolated generated Stage 07 fixture is authorized.');
 const errors = new WeakMap<BrowserContext, string[]>(); const external = new WeakMap<BrowserContext, string[]>();
-test.skip(!enabled, 'Requires the generated Stage 07 MariaDB fixture at https://localhost:8449.');
+test.skip(!enabled, 'Requires an explicitly identified generated synthetic inventory MariaDB fixture.');
 test.beforeEach(async ({ page, context, baseURL }) => {
   const failures: string[] = []; errors.set(context, failures); page.on('pageerror', error => failures.push(error.message)); context.on('page', current => current.on('pageerror', error => failures.push(error.message)));
   const requests: string[] = []; external.set(context, requests); const origin = new URL(baseURL!).origin;
@@ -39,14 +39,14 @@ async function newSystem(page: Page, baseURL: string, name: string) {
   await page.goto(`/systems/${project_id}/topology`); await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/); return project_id;
 }
 async function readTopology(page: Page, id: string): Promise<Topology> { const response = await page.request.get(`/api/v1/projects/${id}/topology`); expect(response.status()).toBe(200); return await response.json() as Topology; }
-async function openWizard(page: Page) { await systemAction(page, 'Import Ansible inventory files'); const dialog = page.getByRole('dialog', { name: 'Import Ansible inventory files', exact: true }); await expect(dialog.getByLabel('Existing inventory source', { exact: true })).toBeEnabled(); return dialog; }
+async function openWizard(page: Page, serverJson = false) { const title = serverJson ? 'Import server JSON' : 'Import Ansible inventory files'; await systemAction(page, title); const dialog = page.getByRole('dialog', { name: title, exact: true }); await expect(dialog.getByLabel('Existing inventory source', { exact: true })).toBeEnabled(); return dialog; }
 async function source(dialog: Locator, existing?: string) {
   if (existing) { await dialog.getByLabel('Existing inventory source', { exact: true }).selectOption(existing); await dialog.getByRole('button', { name: 'Continue to upload', exact: true }).click(); }
   else { await dialog.getByLabel('New inventory source name', { exact: true }).fill('Browser static inventory'); await dialog.getByRole('button', { name: 'Create inventory source', exact: true }).click(); }
-  await expect(dialog.getByLabel('Inventory file or ZIP', { exact: true })).toBeVisible(); return await dialog.getByTestId('inventory-source-id').innerText();
+  await expect(dialog.getByLabel(/^(Inventory file or ZIP|Server JSON file)$/)).toBeVisible(); return await dialog.getByTestId('inventory-source-id').innerText();
 }
 async function upload(page: Page, dialog: Locator, name: string, content?: string) {
-  await dialog.getByLabel('Inventory file or ZIP', { exact: true }).setInputFiles(content === undefined ? resolve(root, 'examples/ansible', name) : { name, mimeType: 'text/plain', buffer: Buffer.from(content) });
+  await dialog.getByLabel(/^(Inventory file or ZIP|Server JSON file)$/).setInputFiles(content === undefined ? resolve(root, 'examples/ansible', name) : { name, mimeType: 'text/plain', buffer: Buffer.from(content) });
   const pending = page.waitForResponse(response => new URL(response.url()).pathname.endsWith('/inventory/uploads') && response.request().method() === 'POST');
   await dialog.getByRole('button', { name: 'Upload and inspect files', exact: true }).click(); expect((await pending).status()).toBe(200); await expect(dialog.getByRole('group', { name: 'Choose static source files in read order' })).toBeVisible();
 }
@@ -60,6 +60,39 @@ async function screenshot(page: Page, name: string) { const directory = resolve(
 async function matrixScreenshot(page: Page, name: string) {
   for (const size of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) { await page.setViewportSize(size); for (const theme of ['light', 'dark'] as const) { await setAppearance(page, theme); expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true); await screenshot(page, `${name}-${theme}-${size.width}x${size.height}`); } }
 }
+
+test('Server JSON imports one host at a time and preserves other hosts, service IDs and manual documentation', async ({ page, baseURL }) => {
+  test.setTimeout(120000); await login(page, 'administrator'); const projectId = await newSystem(page, baseURL!, 'single-server JSON');
+  const sample = JSON.parse(readFileSync(resolve(root, 'examples/server-import/server.example.json'), 'utf8'));
+  sample.services = sample.services.slice(0, 1);
+  const dialog = await openWizard(page, true); const sourceId = await source(dialog);
+  await expect(dialog.getByLabel('Single server JSON format')).toContainText('other servers and omitted services are retained');
+  const downloading = page.waitForEvent('download'); await dialog.getByRole('button', { name: 'Download server JSON example', exact: true }).click();
+  const download = await downloading; expect(download.suggestedFilename()).toBe('server.example.json');
+  const downloaded = JSON.parse(readFileSync((await download.path())!, 'utf8')); expect(downloaded.format).toBe('system-inspector-server'); expect(downloaded.server.id).toBe(sample.server.id);
+  await upload(page, dialog, 'server-one.json', JSON.stringify(sample)); await expect(dialog.getByRole('combobox', { name: 'Inventory format', exact: true })).toHaveValue('server_json');
+  const parsed = await parse(page, dialog); expect(parsed.hosts.map(host => [host.alias, host.name])).toEqual([[sample.server.id, sample.server.name]]); expect(parsed.process_count).toBe(1);
+  const proposed = await preview(page, dialog); expect(proposed.can_commit).toBe(true); await expect(dialog.getByRole('button', { name: 'Commit reviewed inventory', exact: true })).toBeDisabled();
+  await commit(page, dialog);
+  const first = await readTopology(page, projectId); const serverId = first.config.servers[0].id; const processId = first.config.processes[0].id;
+  first.config.servers[0].description = 'Manual server documentation'; first.config.processes[0].description = 'Manual service documentation';
+  const headers = await mutationHeaders(page, baseURL!); const manual = await page.request.put(`/api/v1/projects/${projectId}/topology`, { headers, data: { expected_revision: first.revision, config: first.config } }); expect(manual.status()).toBe(200);
+  await page.reload(); await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/);
+  const second = structuredClone(sample); second.server.id = 'second-server'; second.server.name = 'Second server'; second.server.address = '192.0.2.21'; second.services[0].name = 'Second server API';
+  const secondDialog = await openWizard(page, true); await source(secondDialog, sourceId); await upload(page, secondDialog, 'server-two.json', JSON.stringify(second)); await parse(page, secondDialog);
+  const secondPreview = await preview(page, secondDialog); expect(secondPreview.can_commit).toBe(true); expect(secondPreview.records.some(record => record.alias === sample.server.id && record.status === 'absent')).toBe(true); await commit(page, secondDialog);
+  const both = await readTopology(page, projectId); expect(both.config.servers).toHaveLength(2); expect(both.config.processes).toHaveLength(2); expect(both.config.servers.find(server => server.id === serverId)?.description).toBe('Manual server documentation');
+  sample.server.name = 'Renamed first server'; sample.server.address = '192.0.2.22'; sample.services[0].name = 'Renamed first API';
+  const repeated = await openWizard(page, true); await source(repeated, sourceId); await upload(page, repeated, 'renamed-export.json', JSON.stringify(sample)); await parse(page, repeated); expect((await preview(page, repeated)).can_commit).toBe(true); await commit(page, repeated);
+  const after = await readTopology(page, projectId); expect(after.config.servers).toHaveLength(2); expect(after.config.servers.find(server => server.id === serverId)).toMatchObject({ name: sample.server.name, description: 'Manual server documentation' }); expect(after.config.processes.find(process => process.id === processId)).toMatchObject({ name: sample.services[0].name, description: 'Manual service documentation' });
+});
+
+test('Server JSON rejects invalid input before any configuration commit', async ({ page, baseURL }) => {
+  await login(page, 'administrator'); const projectId = await newSystem(page, baseURL!, 'invalid server JSON'); const dialog = await openWizard(page, true); await source(dialog);
+  await upload(page, dialog, 'invalid-server.json', JSON.stringify({ format: 'system-inspector-server', schema_version: '99.0', server: { id: 'future', address: '192.0.2.33' }, services: [] }));
+  const pending = page.waitForResponse(response => response.url().endsWith('/inventory/parse')); await dialog.getByRole('button', { name: 'Parse selected sources', exact: true }).click(); expect((await pending).status()).toBe(422);
+  await expect(dialog.getByRole('alert')).toBeVisible(); await expect(dialog.getByRole('button', { name: 'Commit reviewed inventory', exact: true })).toHaveCount(0); expect((await readTopology(page, projectId)).config.servers).toHaveLength(0);
+});
 
 for (const [filename, count] of [['inventory.hosts.ini', 0], ['hosts', 0], ['inventory.static.yaml', 5], ['inventory.canonical.json', 5], ['inventory-with-vars.zip', 5]] as const) test(`Administrator directly imports ${filename} with exact host mapping and stable same-source reimport`, async ({ page, baseURL }) => {
   test.setTimeout(120000); await login(page, 'administrator'); const projectId = await newSystem(page, baseURL!, filename); const dialog = await openWizard(page); if (filename === 'inventory.static.yaml') await matrixScreenshot(page, 'inventory-source-identity'); const sourceId = await source(dialog);
@@ -183,7 +216,7 @@ test('Same-account pages keep separate project previews and reject cross-project
 });
 
 test('Inspector cannot open inventory tools or forge any inventory endpoint', async ({ page, baseURL }) => {
-  await login(page, 'inspector'); const projectId = fixture!.projects[0]; await page.goto(`/systems/${projectId}/topology`); await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/); await expect(page.getByRole('button', { name: 'System', exact: true })).toHaveCount(0); await expect(page.getByRole('button', { name: 'Import Ansible inventory files', exact: true })).toHaveCount(0);
+  await login(page, 'inspector'); const projectId = fixture!.projects[0]; await page.goto(`/systems/${projectId}/topology`); await expect(page.getByTestId('workspace-id')).toHaveText(/^[0-9a-f-]{36}$/); await expect(page.getByRole('button', { name: 'System', exact: true })).toHaveCount(0); await expect(page.getByRole('button', { name: 'Import Ansible inventory files', exact: true })).toHaveCount(0); await expect(page.getByRole('button', { name: 'Import server JSON', exact: true })).toHaveCount(0);
   const base = `/api/v1/projects/${projectId}/inventory`; const headers = await mutationHeaders(page, baseURL!); expect((await page.request.get(`${base}/sources`)).status()).toBe(403);
   for (const [path, data] of [['sources', { name: 'Forbidden' }], ['parse', { inventory_source_id: 'missing', upload_id: 'missing', expected_revision: 1, format: 'ini', source_files: ['hosts'] }], ['preview', { project_id: projectId, inventory_source_id: 'missing', upload_id: 'missing', expected_revision: 1, format: 'ini', source_files: ['hosts'], mapping: { group_to_subsystem: {}, host_to_subsystem: {}, tag_only_groups: [], credential_mapping: {}, jump_mapping: {}, parser_mapping: {}, preserve_existing_documentation: true, preserve_existing_layout: true, delete_missing_hosts: false } }], ['commit', { preview_id: 'missing', expected_revision: 1 }], ['uploads/missing/cancel', {}], ['previews/missing/cancel', {}]] as const) expect((await page.request.post(`${base}/${path}`, { headers, data })).status()).toBe(403);
   expect((await page.request.post(`${base}/uploads?inventory_source_id=missing&expected_revision=1`, { headers: { ...headers, 'Content-Type': 'application/octet-stream', 'X-Inventory-Filename': 'hosts' }, data: Buffer.from('[app]\nhost\n') })).status()).toBe(403);

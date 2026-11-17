@@ -1,0 +1,44 @@
+{
+  "format": "system-inspector-server",
+  "schema_version": "1.0",
+  "server": {
+    "id": "app-server-01",
+    "name": "Application server 01",
+    "address": "192.0.2.20",
+    "port": 22,
+    "user": "logreader",
+    "subsystem_id": "s-core"
+  },
+  "services": [
+    {
+      "id": "orders-api.service",
+      "name": "app-server-01: Orders API",
+      "pcs_resource_name": null,
+      "log_source": {
+        "active_path": "/var/log/orders-api/application.log",
+        "rotated_patterns": ["/var/log/orders-api/application.log.[0-9]"],
+        "archives": [
+          {
+            "path_pattern": "/var/log/orders-api/application.log.*.tar.gz",
+            "member_patterns": ["application.log.*"]
+          }
+        ],
+        "parser_id": "parser-iso-utc",
+        "encoding": "utf-8",
+        "allow_symlink": false
+      }
+    },
+    {
+      "id": "orders-worker-1",
+      "name": "app-server-01: Orders worker 1",
+      "log_source": {
+        "active_path": "/var/log/orders-worker/worker-1.log",
+        "rotated_patterns": [],
+        "archives": [],
+        "parser_id": "parser-iso-utc",
+        "encoding": "utf-8",
+        "allow_symlink": false
+      }
+    }
+  ]
+}

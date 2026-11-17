@@ -132,6 +132,184 @@ async def commit(client, project_id, pending):
     return response.json()
 
 
+async def test_single_server_json_incremental_reimport_scope_and_role_guards(foundation):
+    """Two incremental host files share one source without replacing other hosts."""
+    project_id, other_id = foundation.project_a, foundation.project_b
+    value = json.loads(
+        (ROOT / "examples/server-import/server.example.json").read_text(encoding="utf-8")
+    )
+    selected = mapping(group_to_subsystem={})
+    async with foundation.client(foundation.database.administrator) as client:
+        revision = await seed_parser(client, project_id)
+        other_revision = await seed_parser(client, other_id)
+        source_id = await source(client, project_id, "Incremental host exports")
+        other_source = await source(client, other_id, "Independent host exports")
+
+        staged = await upload(
+            client, project_id, source_id, revision, "host-a.json", json.dumps(value).encode()
+        )
+        assert staged["format"] == "server_json"
+        parsed = await client.post(
+            f"/api/v1/projects/{project_id}/inventory/parse",
+            json=parse_payload(staged, "server_json"),
+        )
+        assert parsed.status_code == 200, parsed.text
+        assert parsed.json()["hosts"][0]["name"] == value["server"]["name"]
+        first = await commit(
+            client, project_id, await preview(client, project_id, staged, "server_json", selected)
+        )
+        server_id = first["config"]["servers"][0]["id"]
+        process_ids = {process["id"] for process in first["config"]["processes"]}
+        first["config"]["servers"][0]["description"] = (
+            "Manual documentation survives incremental import."
+        )
+        written = await client.put(
+            f"/api/v1/projects/{project_id}/topology",
+            json={"expected_revision": first["revision"], "config": first["config"]},
+        )
+        assert written.status_code == 200, written.text
+        revision = written.json()["revision"]
+
+        second_value = copy.deepcopy(value)
+        second_value["server"].update(
+            id="second-host", name="Second application host", address="192.0.2.21"
+        )
+        for service in second_value["services"]:
+            service["name"] = "Second host: " + service["name"]
+        staged = await upload(
+            client,
+            project_id,
+            source_id,
+            revision,
+            "host-b.json",
+            json.dumps(second_value).encode(),
+        )
+        pending = await preview(client, project_id, staged, "server_json", selected)
+        assert pending["can_commit"]
+        assert any(
+            record["status"] == "absent" and record["target_id"] == server_id
+            for record in pending["records"]
+        )
+        second = await commit(client, project_id, pending)
+        assert len(second["config"]["servers"]) == 2
+        assert len(second["config"]["processes"]) == 2 * len(value["services"])
+
+        value["server"].update(name="Renamed application host", address="192.0.2.22")
+        value["services"][0]["name"] = "Renamed service"
+        staged = await upload(
+            client,
+            project_id,
+            source_id,
+            second["revision"],
+            "renamed-host-a.json",
+            json.dumps(value).encode(),
+        )
+        pending = await preview(client, project_id, staged, "server_json", selected)
+        foreign_commit = await client.post(
+            f"/api/v1/projects/{other_id}/inventory/commit",
+            json={"preview_id": pending["preview_id"], "expected_revision": other_revision},
+        )
+        assert foreign_commit.status_code == 404
+        foreign_parse = await client.post(
+            f"/api/v1/projects/{other_id}/inventory/parse",
+            json={**parse_payload(staged, "server_json"), "expected_revision": other_revision},
+        )
+        assert foreign_parse.status_code == 404
+
+        async with foundation.client(foundation.alice) as inspector:
+            endpoint = f"/api/v1/projects/{project_id}/inventory"
+            for suffix, body in [
+                ("/parse", parse_payload(staged, "server_json")),
+                (
+                    "/preview",
+                    dict(
+                        project_id=project_id,
+                        **parse_payload(staged, "server_json"),
+                        mapping=selected,
+                    ),
+                ),
+                (
+                    "/commit",
+                    {"preview_id": pending["preview_id"], "expected_revision": second["revision"]},
+                ),
+            ]:
+                denied = await inspector.post(endpoint + suffix, json=body)
+                assert denied.status_code == 403, (suffix, denied.text)
+            denied_upload = await inspector.post(
+                endpoint + "/uploads",
+                params={"inventory_source_id": source_id, "expected_revision": second["revision"]},
+                content=json.dumps(value).encode(),
+                headers={"x-inventory-filename": "host.json"},
+            )
+            assert denied_upload.status_code == 403
+
+        third = await commit(client, project_id, pending)
+        renamed = next(server for server in third["config"]["servers"] if server["id"] == server_id)
+        assert renamed["name"] == "Renamed application host"
+        assert renamed["description"] == "Manual documentation survives incremental import."
+        assert {
+            process["id"]
+            for process in third["config"]["processes"]
+            if process["server_id"] == server_id
+        } == process_ids
+
+        staged = await upload(
+            client,
+            project_id,
+            source_id,
+            third["revision"],
+            "again.json",
+            json.dumps(value).encode(),
+        )
+        repeated = await preview(client, project_id, staged, "server_json", selected)
+        assert repeated["can_commit"]
+        assert {record["status"] for record in repeated["records"]} == {"unchanged", "absent"}
+        unchanged = await commit(client, project_id, repeated)
+        assert unchanged["revision"] == third["revision"]
+        assert unchanged["config"] == third["config"]
+
+        # The same host/service identifiers in another System remain separate mappings.
+        staged = await upload(
+            client,
+            other_id,
+            other_source,
+            other_revision,
+            "host-a.json",
+            json.dumps(value).encode(),
+        )
+        independent = await commit(
+            client, other_id, await preview(client, other_id, staged, "server_json", selected)
+        )
+        assert len(independent["config"]["servers"]) == 1
+        assert independent["config"]["servers"][0]["id"] != server_id
+        assert independent["config"]["servers"][0]["description"] == ""
+        still_first = (await client.get(f"/api/v1/projects/{project_id}/config")).json()
+        assert still_first["revision"] == unchanged["revision"]
+        assert still_first["config"] == unchanged["config"]
+
+        async with foundation.database.sessions() as session:
+            for model in (SSHHostTrust, SourceAccessApproval):
+                assert (
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(model)
+                        .where(model.project_id.in_([project_id, other_id]))
+                    )
+                ) == 0
+            assert (
+                await session.scalar(
+                    select(func.count())
+                    .select_from(InventoryHostMapping)
+                    .where(InventoryHostMapping.project_id.in_([project_id, other_id]))
+                )
+            ) == 3
+            assert await session.scalar(
+                select(func.count())
+                .select_from(InventoryProcessMapping)
+                .where(InventoryProcessMapping.project_id.in_([project_id, other_id]))
+            ) == 3 * len(value["services"])
+
+
 @pytest.mark.parametrize(
     "filename,format,process_count",
     [

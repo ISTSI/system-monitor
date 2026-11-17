@@ -1,5 +1,28 @@
 # 10 — Import Ansible inventory files into system setup
 
+## Custom single-server JSON
+
+Administrators can also choose **Import server JSON** on the selected System's
+topology page. This accepts a direct file with one `server` object and a
+`services` list, using independent schema version 1.0. The
+[format guide](../examples/server-import/README.md),
+[example](../examples/server-import/server.example.json) and
+[schema](../contracts/server-import.schema.json) define the exporter contract.
+This is an additional format; all existing static Ansible inputs remain supported.
+
+The wizard uses the same source, scoped upload, mapping, revision-bound preview
+and atomic commit. `server.id` is the stable host alias; optional `server.name`
+is its display name. Service IDs are local to the host. Reuse the same inventory
+source on repeat imports and across one-host dumps from the same exporter.
+Other hosts and omitted services are retained, with absent records visible in
+the preview. The format rejects unknown fields, unsupported versions, multiple
+sources and ZIP input. It supplies no passwords, executable commands, trust or
+project authority and starts no connection. Every service needs a supported
+plain-file log source and a parser reference resolved in the selected System.
+Unit and MariaDB integration cases are in `test_server_import.py` and
+`test_inventory.py`; browser cases extend `frontend/e2e/inventory.spec.ts`.
+Executed results and environmental limitations belong in `progress/STATUS.md`.
+
 ## Stage 07 implementation and operator workflow
 
 The application now provides **Import Ansible inventory files** on the selected

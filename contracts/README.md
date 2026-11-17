@@ -5,6 +5,7 @@ All `*.schema.json` files use JSON Schema Draft 2020-12 with local self-containe
 | Contract | Purpose |
 |---|---|
 | `project.schema.json` | Current project format 2.0: topology, views, parsers, log-source/connection references; no credentials, user accounts, theme setting or database location |
+| `server-import.schema.json` | Single-server format 1.0: one host and service instances, for incremental previewed inventory reconciliation in the selected System |
 | `project-v1.schema.json` | Preserved legacy format 1.0 accepted only through explicit Administrator import conversion |
 | `event.schema.json` | Parsed event plus exact original-byte provenance |
 | `filter.schema.json` | Exact literal include/exclude/any/all/case behaviour |

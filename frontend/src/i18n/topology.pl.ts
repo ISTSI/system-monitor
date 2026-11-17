@@ -467,5 +467,16 @@ export default {
   "Add a parser profile before adding a process.": "Dodaj profil parsera przed dodaniem procesu.",
   "SSH connection (optional)": "Połączenie SSH (opcjonalne)",
   "No connection": "Brak połączenia",
-  "This server appears on the map without SSH access. You can assign a connection later.": "Ten serwer jest widoczny na mapie bez dostępu SSH. Połączenie możesz przypisać później."
+  "This server appears on the map without SSH access. You can assign a connection later.": "Ten serwer jest widoczny na mapie bez dostępu SSH. Połączenie możesz przypisać później.",
+  "Import server JSON": "Importuj serwer z JSON",
+  "Upload one server and its services, then review the changes.": "Prześlij jeden serwer z usługami, a następnie przejrzyj zmiany.",
+  "Single server JSON": "JSON pojedynczego serwera",
+  "Server JSON file": "Plik JSON serwera",
+  "Upload one server JSON file": "Prześlij plik JSON jednego serwera",
+  "One file describes one server and its services. Upload limit: up to 10 MiB; deployment limits may be lower.": "Jeden plik opisuje jeden serwer i jego usługi. Limit przesyłania: do 10 MiB; limity wdrożenia mogą być niższe.",
+  "Single server JSON format": "Format JSON pojedynczego serwera",
+  "Keep server.id and each service id stable across exports. Select the same inventory source for repeat imports; other servers and omitted services are retained.": "Zachowaj stałe server.id oraz identyfikatory usług pomiędzy eksportami. Przy kolejnym imporcie wybierz to samo źródło inwentarza; pozostałe serwery i pominięte usługi zostają zachowane.",
+  "Each service becomes a process with one file log source. Supply a parser ID from this system or map it before committing. Credentials and SSH trust are configured separately.": "Każda usługa staje się procesem z jednym plikowym źródłem logów. Podaj identyfikator parsera z tego systemu lub przypisz go przed zatwierdzeniem. Poświadczenia i zaufanie SSH konfiguruje się osobno.",
+  "Download a complete single-server JSON example for your export script.": "Pobierz kompletny przykład JSON jednego serwera do swojego skryptu eksportującego.",
+  "Download server JSON example": "Pobierz przykład JSON serwera",
 };

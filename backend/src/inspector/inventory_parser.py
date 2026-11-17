@@ -22,10 +22,11 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from io import BytesIO
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Any, NoReturn
 
 import yaml
+from jsonschema import Draft202012Validator
 
 from inspector.errors import DomainError
 
@@ -78,6 +79,13 @@ _SUFFIX_FORMAT = {".ini": "ini", ".yaml": "yaml", ".yml": "yaml", ".json": "cano
 _ARCHIVE_SUFFIXES = (".zip", ".tar", ".tar.gz", ".tgz", ".gz", ".bz2", ".xz", ".7z")
 _IGNORED_PARTS = {".git", "roles", "playbooks", "plugins", "inventory_plugins", "vars_plugins"}
 _IGNORED_NAMES = {"ansible.cfg", "readme", "readme.md", "readme.txt", "license", "license.txt"}
+_SERVER_IMPORT_VALIDATOR = Draft202012Validator(
+    json.loads(
+        (Path(__file__).parent / "contracts" / "server-import.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+)
 
 
 class InventoryParseError(DomainError):
@@ -484,7 +492,25 @@ def _zip_files(data: bytes, budget: _Budget) -> dict[str, bytes]:
     return files
 
 
-def _file_format(path: str, data: bytes) -> str | None:
+def _json_format(data: bytes, budget: _Budget) -> str:
+    """Inspect a JSON marker under the upload's existing bounds and deadline."""
+    detection = _Budget(budget.limits, budget.cancelled)
+    detection.deadline = budget.deadline
+    try:
+        document = _data(data, "canonical_json", detection)
+    except InventoryParseError as error:
+        if error.code in {"IMPORT_CANCELLED", "IMPORT_TIMEOUT"}:
+            raise
+        # Inspection does not replace parse diagnostics or prevent explicit selection.
+        return "canonical_json"
+    return (
+        "server_json"
+        if isinstance(document, dict) and document.get("format") == "system-inspector-server"
+        else "canonical_json"
+    )
+
+
+def _file_format(path: str, data: bytes, budget: _Budget) -> str | None:
     item = PurePosixPath(path)
     if (
         any(part.casefold() in _IGNORED_PARTS for part in item.parts)
@@ -492,14 +518,15 @@ def _file_format(path: str, data: bytes) -> str | None:
     ):
         return None
     if item.suffix.lower() in _SUFFIX_FORMAT:
-        return _SUFFIX_FORMAT[item.suffix.lower()]
+        format = _SUFFIX_FORMAT[item.suffix.lower()]
+        return _json_format(data, budget) if format == "canonical_json" else format
     if item.suffix:
         return None
     stripped = data.lstrip(b"\xef\xbb\xbf \t\r\n")
     if stripped.startswith(b"#!"):
         return None
     if stripped.startswith(b"{"):
-        return "canonical_json"
+        return _json_format(data, budget)
     # Extensionless inventories can be YAML; an INI group section starts with '['.
     meaningful = b"\n".join(
         line for line in stripped.splitlines() if not line.lstrip().startswith((b"#", b";"))
@@ -511,7 +538,7 @@ def _file_format(path: str, data: bytes) -> str | None:
     return "ini"
 
 
-def _role(path: str, data: bytes) -> tuple[str, str | None]:
+def _role(path: str, data: bytes, budget: _Budget) -> tuple[str, str | None]:
     parts = PurePosixPath(path).parts
     if "group_vars" in parts or "host_vars" in parts:
         suffix = PurePosixPath(path).suffix.lower()
@@ -520,7 +547,7 @@ def _role(path: str, data: bytes) -> tuple[str, str | None]:
             if suffix in ("", ".yml", ".yaml", ".json")
             else ("ignored", None)
         )
-    format = _file_format(path, data)
+    format = _file_format(path, data, budget)
     return ("source", format) if format is not None else ("ignored", None)
 
 
@@ -541,14 +568,14 @@ def _upload(filename: str, data: bytes, budget: _Budget) -> tuple[dict[str, byte
             _fail("EXPANDED_LIMIT", "Inventory expanded-byte limit exceeded.")
         with _location(filename, "inventory"):
             _text(data, budget)
-        if _role(filename, data)[0] != "source":
+        if _role(filename, data, budget)[0] != "source":
             _fail(
                 "SOURCE_UNSUPPORTED",
-                "Upload a supported static INI, YAML or canonical JSON source; executable and other file types are unsupported.",
+                "Upload a supported static INI, YAML, canonical inventory JSON or single-server JSON source; executable and other file types are unsupported.",
             )
     rows: list[dict[str, Any]] = []
     for path, raw in files.items():
-        role, format = _role(path, raw)
+        role, format = _role(path, raw, budget)
         rows.append(
             {
                 "path": path,
@@ -575,7 +602,7 @@ def _upload(filename: str, data: bytes, budget: _Budget) -> tuple[dict[str, byte
     )
     manifest = {
         "filename": filename,
-        "format": "static_zip" if is_zip else _file_format(filename, data),
+        "format": "static_zip" if is_zip else _file_format(filename, data, budget),
         "files": rows,
         "file_count": len(rows),
         "expanded_bytes": sum(row["size"] for row in rows),
@@ -1230,6 +1257,61 @@ class _Inventory:
         }
 
 
+def _server_document(document: Any, budget: _Budget) -> tuple[dict[str, Any], str]:
+    """Validate one host export, then reuse the normal inventory normalization."""
+    budget.check()
+    error = next(_SERVER_IMPORT_VALIDATOR.iter_errors(document), None)
+    if error is not None:
+        # Neither jsonschema's message nor arbitrary uploaded property names are safe diagnostics.
+        field = "server_import"
+        known = {
+            "format",
+            "schema_version",
+            "server",
+            "services",
+            "id",
+            "name",
+            "address",
+            "port",
+            "user",
+            "subsystem_id",
+            "pcs_resource_name",
+            "log_source",
+            "active_path",
+            "rotated_patterns",
+            "archives",
+            "path_pattern",
+            "member_patterns",
+            "parser_id",
+            "encoding",
+            "allow_symlink",
+        }
+        for part in error.absolute_path:
+            if type(part) is int:
+                field += f"[{part}]"
+            elif part in known:
+                field += "." + part
+            else:
+                break
+        _fail(
+            "INVALID_SERVER_IMPORT",
+            "Single-server JSON does not match the documented schema; check required fields, types and allowed properties.",
+            field=field,
+        )
+    server = document["server"]
+    variables = {
+        "ansible_host": server["address"],
+        "ansible_port": server.get("port", 22),
+        "inspector_processes": document["services"],
+    }
+    if "user" in server:
+        variables["ansible_user"] = server["user"]
+    if "subsystem_id" in server:
+        variables["inspector_subsystem"] = server["subsystem_id"]
+    budget.check()
+    return {"_meta": {"hostvars": {server["id"]: variables}}}, server.get("name", server["id"])
+
+
 def parse_inventory(
     filename: str,
     data: bytes,
@@ -1248,8 +1330,11 @@ def parse_inventory(
     budget = _Budget(limits, cancelled)
     files, manifest = _upload(filename, data, budget)
     is_zip = manifest["format"] == "static_zip"
-    if format not in {"auto", "ini", "yaml", "canonical_json", "static_zip"}:
-        _fail("FORMAT_UNSUPPORTED", "Choose static INI, YAML, canonical JSON or a ZIP bundle.")
+    if format not in {"auto", "ini", "yaml", "canonical_json", "server_json", "static_zip"}:
+        _fail(
+            "FORMAT_UNSUPPORTED",
+            "Choose static INI, YAML, canonical inventory JSON, single-server JSON or a ZIP bundle.",
+        )
     if format == "static_zip" and not is_zip:
         _fail("FORMAT_MISMATCH", "Selected ZIP format does not match the uploaded content.")
     if source_files is None:
@@ -1268,15 +1353,21 @@ def parse_inventory(
             "INVALID_SOURCE_SELECTION",
             "Select one or more unique uploaded inventory sources in explicit order.",
         )
+    if format == "server_json" and (is_zip or source_files != [filename]):
+        _fail(
+            "SERVER_IMPORT_SINGLE_FILE",
+            "Single-server JSON requires one directly uploaded file; ZIP companions and multiple sources are unsupported.",
+        )
     inventory = _Inventory(budget)
     formats: list[dict[str, str]] = []
+    server_name: str | None = None
     for path in source_files:
         _member_path(path, budget)
         with _location(path, "inventory"):
             if path not in files:
                 _fail("SOURCE_NOT_FOUND", "A selected inventory source is absent from this upload.")
             raw = files[path]
-            role, detected = _role(path, raw)
+            role, detected = _role(path, raw, budget)
             if role != "source" or detected is None:
                 _fail(
                     "SOURCE_UNSUPPORTED",
@@ -1287,12 +1378,27 @@ def parse_inventory(
                     "DYNAMIC_INVENTORY_UNSUPPORTED",
                     "Executable inventories are unsupported; upload static inventory or canonical JSON.",
                 )
+            if detected == "server_json" and (is_zip or source_files != [filename]):
+                _fail(
+                    "SERVER_IMPORT_SINGLE_FILE",
+                    "Single-server JSON requires one directly uploaded file; ZIP companions and multiple sources are unsupported.",
+                )
+            if detected == "server_json" and format not in {"auto", "server_json"}:
+                _fail(
+                    "FORMAT_MISMATCH",
+                    "The single-server JSON marker requires the single-server JSON format.",
+                )
             selected_format = detected if format in {"auto", "static_zip"} else format
             formats.append({"source": path, "format": selected_format})
             if selected_format == "ini":
                 inventory.ini(raw, path)
             elif selected_format == "yaml":
                 inventory.yaml(_data(raw, selected_format, budget), path)
+            elif selected_format == "server_json":
+                document, server_name = _server_document(
+                    _data(raw, "canonical_json", budget), budget
+                )
+                inventory.canonical(document, path)
             else:
                 inventory.canonical(_data(raw, selected_format, budget), path)
     companions = inventory.companions(files, source_files) if is_zip else []
@@ -1309,6 +1415,8 @@ def parse_inventory(
             )
         )
     result = inventory.normalize()
+    if server_name is not None:
+        result["hosts"][0]["name"] = server_name
     result["manifest"] = manifest
     result["provenance"] = {
         "source_files": source_files,

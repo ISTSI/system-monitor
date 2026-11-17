@@ -54,7 +54,7 @@ class SourceInput(topology.StrictInput):
 class ParseInput(topology.RevisionInput):
     inventory_source_id: str = Field(pattern=ID_PATTERN)
     upload_id: str = Field(pattern=ID_PATTERN)
-    format: Literal["ini", "yaml", "canonical_json", "static_zip"]
+    format: Literal["ini", "yaml", "canonical_json", "server_json", "static_zip"]
     source_files: list[str] = Field(min_length=1, max_length=200)
 
 
@@ -630,7 +630,12 @@ def reconcile(
             copy.deepcopy(existing_server)
             if existing_server
             else dict(id=server_id, description="")
-        ) | dict(name=alias, subsystem_id=subsystem_id, connection_id=connection_id, tags=tags)
+        ) | dict(
+            name=host.get("name", alias),
+            subsystem_id=subsystem_id,
+            connection_id=connection_id,
+            tags=tags,
+        )
         paths = [
             process["log_source"]["active_path"]
             for process in host["processes"]
@@ -860,7 +865,7 @@ def reconcile(
             dict(
                 code="UNRESOLVED_USERNAME",
                 alias=host["alias"],
-                message="No ansible_user was supplied; the disabled proposal uses an unresolved account placeholder. Configure a dedicated log-read account before access testing.",
+                message="No SSH username was supplied; the disabled proposal uses an unresolved account placeholder. Configure a dedicated log-read account before access testing.",
             )
             for host in parsed["hosts"]
             if not host.get("user")
